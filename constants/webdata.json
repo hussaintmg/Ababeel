@@ -1,0 +1,51 @@
+{
+  "brand": {
+    "name": "Ababeel",
+    "shortName": "Ababeel",
+    "legalName": "Ababeel",
+    "tagline": "Ababeel",
+    "description": "Ababeel"
+  },
+  "contact": {
+    "supportEmail": "support@ababeel.com",
+    "infoEmail": "info@ababeel.com",
+    "phone": "+923191634446",
+    "whatsapp": "+923191634446",
+    "address": "102 Chaucer Road, Peterborough, England PE1 3LR, United Kingdom.",
+    "country": "United Kingdom"
+  },
+  "urls": {
+    "site": "",
+    "certificateVerificationPath": "/verify-certificate",
+    "courseCertificateVerificationPath": "/verify-certificate"
+  },
+  "assets": {
+    "logos": {
+      "mark": "/logo.png",
+      "full": "/logo-full.png",
+      "secondary": "/logo-2.png",
+      "favicon": "/favicon.ico"
+    },
+    "hero": {
+      "primary": "/bannar.webp",
+      "secondary": "/bannerv2.webp",
+      "partner": "/partner-hero.avif"
+    }
+  },
+  "seo": {
+    "defaultTitle": "Ababeel",
+    "defaultDescription": "Ababeel"
+  },
+  "email": {
+    "fromName": "Ababeel Support",
+    "teamName": "Ababeel Team"
+  },
+  "documents": {
+    "invoicePrefix": "ABABEEL-INVOICE",
+    "certificatePrefix": "ABABEEL-CERTIFICATE",
+    "catalogPrefix": "ABABEEL-CATALOG"
+  },
+  "ui": {
+    "copyright": "Ababeel. All rights reserved."
+  }
+}

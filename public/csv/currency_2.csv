@@ -1,0 +1,31 @@
+Country,Currency,Symbol
+United States,US Dollar,$
+European Union,Euro,€
+United Kingdom,British Pound,£
+Japan,Japanese Yen,¥
+Saudi Arabia,Saudi Riyal,ر.س
+United Arab Emirates,UAE Dirham,د.إ
+Qatar,Qatari Riyal,ر.ق
+Kuwait,Kuwaiti Dinar,د.ك
+Oman,Omani Rial,ر.ع.
+Bahrain,Bahraini Dinar,.د.ب
+Canada,Canadian Dollar,$
+Australia,Australian Dollar,$
+Switzerland,Swiss Franc,CHF
+China,Chinese Yuan,¥
+India,Indian Rupee,₹
+Pakistan,Pakistani Rupee,₨
+Bangladesh,Bangladeshi Taka,৳
+Sri Lanka,Sri Lankan Rupee,රු
+Nepal,Nepalese Rupee,₨
+South Africa,South African Rand,R
+Egypt,Egyptian Pound,£
+Jordan,Jordanian Dinar,د.ا
+Lebanon,Lebanese Pound,ل.ل
+Turkey,Turkish Lira,₺
+Russia,Russian Ruble,₽
+Brazil,Brazilian Real,R$
+Mexico,Mexican Peso,$
+Singapore,Singapore Dollar,$
+Hong Kong,Hong Kong Dollar,$
+Malaysia,Malaysian Ringgit,RM
