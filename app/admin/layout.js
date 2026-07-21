@@ -7,6 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import { usePathname } from "next/navigation";
 import { CourseProvider } from "@/context/CourseContext";
 import { usePath } from "@/context/PathContext";
+import DashboardTheme from "@/Components/cms/DashboardTheme";
 
 import {
   BookOpen,
@@ -108,7 +109,8 @@ export default function AdminLayout({ children }) {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="cms-dash min-h-screen bg-gray-50">
+      <DashboardTheme />
         <CourseProvider>
             {/* Mobile Sidebar Overlay */}
             {mobileSidebarOpen && (

@@ -7,6 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import { usePathname } from "next/navigation";
 import { CourseProvider } from "@/context/CourseContext";
 import { usePath } from "@/context/PathContext";
+import DashboardTheme from "@/Components/cms/DashboardTheme";
 
 import {
   BookOpen,
@@ -16,6 +17,8 @@ import {
   MonitorCog,
   Building2,
   Users,
+  LayoutTemplate,
+  FileBadge,
 } from "lucide-react";
 
 export default function OwnerLayout({ children }) {
@@ -112,11 +115,26 @@ export default function OwnerLayout({ children }) {
       url: "/owner/enquiries",
       dropdown: null,
     },
+    {
+      id: "cms",
+      name: "Website CMS",
+      icon: <LayoutTemplate size={20} />,
+      url: "/owner/cms",
+      dropdown: null,
+    },
+    {
+      id: "pdf-template",
+      name: "PDF Templates",
+      icon: <FileBadge size={20} />,
+      url: "/owner/pdf-template",
+      dropdown: null,
+    },
     // Add Training Resources, Trainers, and Training Test removed.
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="cms-dash min-h-screen bg-gray-50">
+        <DashboardTheme />
         <CourseProvider>
               {/* Mobile Sidebar Overlay */}
               {mobileSidebarOpen && (

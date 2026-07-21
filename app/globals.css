@@ -74,3 +74,124 @@ button{cursor: pointer;}
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+/* ---------- CMS rich-text (block editor) typography ---------- */
+.cms-prose {
+  color: #374151;
+  line-height: 1.75;
+  font-size: 1rem;
+}
+.cms-prose > :first-child { margin-top: 0; }
+.cms-prose h1 { font-size: 2rem; font-weight: 800; color: #111827; margin: 1.4em 0 0.6em; line-height: 1.2; }
+.cms-prose h2 { font-size: 1.6rem; font-weight: 700; color: #111827; margin: 1.3em 0 0.5em; line-height: 1.25; }
+.cms-prose h3 { font-size: 1.25rem; font-weight: 700; color: #1f2937; margin: 1.2em 0 0.5em; }
+.cms-prose h4 { font-size: 1.1rem; font-weight: 600; color: #1f2937; margin: 1.1em 0 0.4em; }
+.cms-prose p { margin: 0 0 1em; }
+.cms-prose a { color: #2563eb; text-decoration: underline; }
+.cms-prose a:hover { color: #1d4ed8; }
+.cms-prose strong { color: #111827; font-weight: 700; }
+.cms-prose ul { list-style: disc; padding-left: 1.5em; margin: 0 0 1em; }
+.cms-prose ol { list-style: decimal; padding-left: 1.5em; margin: 0 0 1em; }
+.cms-prose li { margin: 0.35em 0; }
+.cms-prose blockquote { border-left: 4px solid #93c5fd; padding-left: 1em; color: #4b5563; font-style: italic; margin: 1em 0; }
+.cms-prose img { border-radius: 0.75rem; margin: 1em 0; max-width: 100%; height: auto; }
+.cms-prose hr { border: 0; border-top: 1px solid #e5e7eb; margin: 2em 0; }
+.cms-prose table { width: 100%; border-collapse: collapse; margin: 1em 0; }
+.cms-prose th, .cms-prose td { border: 1px solid #e5e7eb; padding: 0.5em 0.75em; text-align: left; }
+.cms-prose th { background: #f9fafb; font-weight: 600; }
+.cms-prose.text-center { text-align: center; }
+.cms-prose.text-center ul, .cms-prose.text-center ol { list-style-position: inside; padding-left: 0; }
+.cms-prose.text-right { text-align: right; }
+
+/* ---------- Skeleton loading (shimmer) ---------- */
+@keyframes cms-shimmer {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+.cms-skeleton {
+  background: #e9edf3;
+  background-image: linear-gradient(
+    90deg,
+    rgba(233, 237, 243, 0) 0,
+    rgba(255, 255, 255, 0.85) 45%,
+    rgba(255, 255, 255, 0.85) 55%,
+    rgba(233, 237, 243, 0) 100%
+  );
+  background-size: 1000px 100%;
+  background-repeat: no-repeat;
+  animation: cms-shimmer 1.6s ease-in-out infinite;
+  border-radius: 8px;
+}
+.cms-skeleton-dark {
+  background-color: #1e293b;
+  background-image: linear-gradient(
+    90deg,
+    rgba(30, 41, 59, 0) 0,
+    rgba(255, 255, 255, 0.08) 45%,
+    rgba(255, 255, 255, 0.08) 55%,
+    rgba(30, 41, 59, 0) 100%
+  );
+}
+@media (prefers-reduced-motion: reduce) {
+  .cms-skeleton { animation: none; }
+}
+
+/* ---------- CMS content fade-in on load ---------- */
+@keyframes cms-fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.cms-fade-in {
+  animation: cms-fade-in 0.5s ease-out both;
+}
+
+/* ---------- CMS block entrance animations (scroll reveal) ----------
+   Applied by BlockRenderer when a block's Design > Animation is set.
+   The block starts hidden; the `.is-visible` class (added by an
+   IntersectionObserver wrapper) plays the transition. */
+[data-cms-anim] {
+  opacity: 0;
+  transition-property: opacity, transform;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  transition-duration: var(--cms-anim-duration, 700ms);
+  transition-delay: var(--cms-anim-delay, 0ms);
+  will-change: opacity, transform;
+}
+[data-cms-anim="fade"] { transform: none; }
+[data-cms-anim="fade-up"] { transform: translateY(40px); }
+[data-cms-anim="fade-down"] { transform: translateY(-40px); }
+[data-cms-anim="fade-left"] { transform: translateX(40px); }
+[data-cms-anim="fade-right"] { transform: translateX(-40px); }
+[data-cms-anim="zoom-in"] { transform: scale(0.9); }
+[data-cms-anim="zoom-out"] { transform: scale(1.06); }
+[data-cms-anim].is-visible {
+  opacity: 1;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-cms-anim] { opacity: 1 !important; transform: none !important; }
+}
+
+/* ---------- CMS block hover effects (Design tab) ---------- */
+
+.cms-hover-lift { transition: transform .35s cubic-bezier(0.22,1,0.36,1), box-shadow .35s ease; }
+.cms-hover-lift:hover { transform: translateY(-6px); box-shadow: 0 24px 50px rgba(0,0,0,.16); }
+.cms-hover-glow { transition: box-shadow .35s ease, transform .35s ease; }
+.cms-hover-glow:hover { box-shadow: 0 0 0 1px rgba(59,130,246,.35), 0 18px 50px rgba(59,130,246,.35); }
+.cms-hover-zoom { transition: transform .5s cubic-bezier(0.22,1,0.36,1); }
+.cms-hover-zoom:hover { transform: scale(1.02); }
+
+/* ---------- Template preview (scaled live thumbnail) ---------- */
+/* Inside a preview, force animated blocks visible and freeze motion so the
+   thumbnail is a clean static snapshot of the design. */
+.cms-preview [data-cms-anim] { opacity: 1 !important; transform: none !important; }
+.cms-preview .cms-kenburns { animation: none !important; }
+
+/* ---------- Slider Ken-Burns (slow pan/zoom) ---------- */
+@keyframes cms-kenburns {
+  0% { transform: scale(1) translate(0, 0); }
+  100% { transform: scale(1.12) translate(-1.5%, -1.5%); }
+}
+.cms-kenburns { animation: cms-kenburns 8s ease-out both; }
+@media (prefers-reduced-motion: reduce) {
+  .cms-kenburns { animation: none; }
+}

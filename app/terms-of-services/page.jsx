@@ -1,5 +1,6 @@
 'use client';
 
+import CmsPageContent from "@/Components/cms/CmsPageContent";
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { 
@@ -44,7 +45,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { webData } from '@/constants';
 
-export default function TermsAndConditions() {
+function TermsAndConditionsInner() {
   const [activeSection, setActiveSection] = useState('introduction');
   const [expandedArticles, setExpandedArticles] = useState(['1']);
   const [scrollProgress, setScrollProgress] = useState(0);
@@ -780,5 +781,12 @@ export default function TermsAndConditions() {
         </div>
       </div>
     </div>
+  );
+}
+export default function TermsAndConditions(props) {
+  return (
+    <CmsPageContent pageKey="terms-of-services">
+      <TermsAndConditionsInner {...props} />
+    </CmsPageContent>
   );
 }

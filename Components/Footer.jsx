@@ -8,16 +8,73 @@ import logo from "@/public/logo-2.png";
 import Link from "next/link";
 import Image from "next/image";
 import webData from "@/constants";
+import { useSiteContent } from "@/context/SiteContentContext";
 
 const Footer = () => {
   const [email, setEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const { showFooter } = usePath();
+  const { settings } = useSiteContent();
 
   if (!showFooter) {
     return <></>;
   }
+
+  // CMS-driven values with static fallbacks.
+  const fSettings = settings?.footer || {};
+  const brand = settings?.brand || webData.brand;
+  const contact = settings?.contact || webData.contact;
+  const footerLogo = settings?.logos?.footer || null;
+  const footerColumns =
+    Array.isArray(fSettings.columns) && fSettings.columns.length
+      ? fSettings.columns
+      : [
+          {
+            title: "Quick Links",
+            links: [
+              { name: "About Us", href: "/about-us" },
+              { name: "Qualifications", href: "/qualification" },
+              { name: "Professional Development", href: "/professional-dev" },
+            ],
+          },
+          {
+            title: "Support",
+            links: [
+              { name: `${brand.shortName} Logo Use`, href: "/logo-use" },
+              { name: "Glossary of Terms", href: "/glossary-of-terms" },
+              { name: "FAQs", href: "/FAQs" },
+            ],
+          },
+        ];
+  const bottomLinks =
+    Array.isArray(fSettings.bottomLinks) && fSettings.bottomLinks.length
+      ? fSettings.bottomLinks
+      : [
+          { name: "Privacy Policy", href: "/privacy-policy" },
+          { name: "Terms of Service", href: "/terms-of-services" },
+        ];
+  const footerEmail = contact.infoEmail || contact.supportEmail;
+
+  // CMS-driven footer appearance (Global Settings → Footer → Appearance).
+  const fStyle = fSettings.style || {};
+  const footerStyle = {
+    backgroundColor: fStyle.bg || undefined,
+    color: fStyle.text || undefined,
+    ...(fStyle.align === "center" ? { textAlign: "center" } : {}),
+  };
+  const cols = parseInt(fStyle.columns, 10);
+  const topGridStyle = Number.isNaN(cols)
+    ? undefined
+    : { gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` };
+  const FSEL = 'footer[data-cms-footer="on"]';
+  const footerCss = [
+    fStyle.heading ? `${FSEL} h3, ${FSEL} h4 { color: ${fStyle.heading}; }` : "",
+    fStyle.link ? `${FSEL} a { color: ${fStyle.link}; }` : "",
+    fStyle.linkHover ? `${FSEL} a:hover { color: ${fStyle.linkHover}; }` : "",
+    fStyle.text ? `${FSEL} p { color: ${fStyle.text}; }` : "",
+    fStyle.borderColor ? `${FSEL} .border-gray-800 { border-color: ${fStyle.borderColor} !important; }` : "",
+  ].filter(Boolean).join("\n");
 
   const handleSubscribe = (e) => {
     e.preventDefault();
@@ -48,69 +105,56 @@ const Footer = () => {
     }
   };
 
-  const footerLinks = {
-    "Quick Links": [
-      { name: "About Us", href: "/about-us" },
-      { name: "Qualifications", href: "/qualification" },
-      { name: "Professional Development", href: "/professional-dev" },
-    ],
-    // "Safety Courses": [
-    //   { name: "Risk Assessment", href: "/qualification/risk-assessment" },
-    //   { name: "Chemical Safety", href: "/qualification/chemical-safety" },
-    //   { name: "Fire Safety", href: "/qualification/fire-safety" },
-    // ],
-    Support: [
-      { name: `${webData.brand.shortName} Logo Use`, href: "/logo-use" },
-      { name: "Glossary of Terms", href: "/glossary-of-terms" },
-      { name: "FAQs", href: "/FAQs" },
-    ],
-  };
-
   return (
-    <footer className="bg-gray-900 text-white pt-12 pb-8">
+    <footer data-cms-footer="on" style={footerStyle} className="bg-gray-900 text-white pt-12 pb-8">
+      {footerCss ? <style dangerouslySetInnerHTML={{ __html: footerCss }} /> : null}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 mb-12" style={topGridStyle}>
           {/* Company Info */}
           <div className="lg:col-span-2">
             <div className="flex items-center md:flex-none">
               <Link href="/" className="flex items-center">
                 <div className="relative h-20 w-40">
-                  <Image
-                    src={logo}
-                    alt="Logo"
-                    fill
-                    className="object-contain"
-                    priority
-                    sizes="(max-width: 160px) 100vw, 160px"
-                  />
+                  {footerLogo ? (
+                    <img
+                      src={footerLogo}
+                      alt={brand.name || "Logo"}
+                      className="h-full w-full object-contain"
+                    />
+                  ) : (
+                    <Image
+                      src={logo}
+                      alt="Logo"
+                      fill
+                      className="object-contain"
+                      priority
+                      sizes="(max-width: 160px) 100vw, 160px"
+                    />
+                  )}
                 </div>
               </Link>
             </div>
             <p className="text-gray-400 mb-6 max-w-md">
-              {webData.brand.shortName} is a UK based technical and safety certification
-              platform, committed to advancing workplace safety and technical
-              competence across industries. Registered in England and Wales,
-              {webData.brand.shortName} operates in alignment with international standards,
-              delivering globally recognized qualifications that support
-              compliance, risk reduction, and professional credibility.
+              {fSettings.description ||
+                `${brand.shortName} is a UK based technical and safety certification platform, committed to advancing workplace safety and technical competence across industries. Registered in England and Wales, ${brand.shortName} operates in alignment with international standards, delivering globally recognized qualifications that support compliance, risk reduction, and professional credibility.`}
             </p>
           </div>
 
           {/* Footer Links */}
-          {Object.entries(footerLinks).map(([category, links], index) => (
+          {footerColumns.map((column, index) => (
             <motion.div
-              key={category}
+              key={column.title || index}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
               viewport={{ once: true }}
             >
-              <h3 className="text-lg font-bold mb-4 text-white">{category}</h3>
+              <h3 className="text-lg font-bold mb-4 text-white">{column.title}</h3>
               <ul className="space-y-3">
-                {links.map((link) => (
-                  <li key={link.name}>
+                {(column.links || []).map((link, li) => (
+                  <li key={link.name || li}>
                     <Link
-                      href={link.href}
+                      href={link.href || "#"}
                       className="text-gray-400 hover:text-white transition-colors"
                     >
                       {link.name}
@@ -211,7 +255,7 @@ const Footer = () => {
             </div>
           </div> */}
 
-          {(webData.contact.infoEmail || webData.contact.supportEmail) && (
+          {fSettings.showEmail !== false && footerEmail && (
           <div className="text-center md:text-left">
             <div className="flex items-center justify-center md:justify-start space-x-3 mb-3">
               <div className="w-10 h-10 bg-green-500/20 rounded-full flex items-center justify-center">
@@ -231,12 +275,13 @@ const Footer = () => {
               </div>
               <div>
                 <h4 className="font-bold">Email Us</h4>
-                <p className="text-gray-400">{webData.contact.infoEmail || webData.contact.supportEmail}</p>
+                <p className="text-gray-400">{footerEmail}</p>
               </div>
             </div>
           </div>
           )}
 
+          {fSettings.showAddress !== false && (
           <div className="text-center md:text-right">
             <div className="flex items-center justify-center md:justify-start gap-3 mb-3 md:flex-row-reverse">
               <div className="min-w-10 min-h-10 bg-purple-500/20 rounded-full flex items-center justify-center">
@@ -263,32 +308,32 @@ const Footer = () => {
               <div>
                 <h4 className="font-bold">Visit Us</h4>
                 <p className="text-gray-400">
-                  {webData.contact.address || "Address pending"}
+                  {contact.address || "Address pending"}
                 </p>
               </div>
             </div>
           </div>
+          )}
         </div>
 
         {/* Bottom Bar */}
         <div className="pt-8 border-t border-gray-800">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-gray-400 text-sm mb-4 md:mb-0">
-              © {webData.ui.copyright}
+              © {new Date().getFullYear()} {fSettings.copyright || webData.ui.copyright}
             </p>
             <div className="flex space-x-6">
-              <Link
-                href="/privacy-policy"
-                className="text-gray-400 hover:text-white transition-colors"
-              >
-                Privacy Policy
-              </Link>
-              <Link
-                href="/terms-of-services"
-                className="text-gray-400 hover:text-white transition-colors md:mr-15"
-              >
-                Terms of Service
-              </Link>
+              {bottomLinks.map((link, i) => (
+                <Link
+                  key={link.name || i}
+                  href={link.href || "#"}
+                  className={`text-gray-400 hover:text-white transition-colors ${
+                    i === bottomLinks.length - 1 ? "md:mr-15" : ""
+                  }`}
+                >
+                  {link.name}
+                </Link>
+              ))}
             </div>
           </div>
         </div>

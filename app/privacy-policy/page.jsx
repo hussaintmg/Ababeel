@@ -1,5 +1,6 @@
 "use client";
 
+import CmsPageContent from "@/Components/cms/CmsPageContent";
 import { useState } from "react";
 import {
   Shield,
@@ -18,7 +19,7 @@ import {
 } from "lucide-react";
 import webData from "@/constants";
 
-export default function PrivacyPolicy() {
+function PrivacyPolicyInner() {
   const [activeSection, setActiveSection] = useState("overview");
   const [expandedSections, setExpandedSections] = useState(["data-collection"]);
 
@@ -803,5 +804,13 @@ export default function PrivacyPolicy() {
         }
       `}</style>
     </div>
+  );
+}
+
+export default function PrivacyPolicy(props) {
+  return (
+    <CmsPageContent pageKey="privacy-policy">
+      <PrivacyPolicyInner {...props} />
+    </CmsPageContent>
   );
 }

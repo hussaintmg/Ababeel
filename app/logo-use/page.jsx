@@ -1,6 +1,7 @@
+import CmsPageContent from "@/Components/cms/CmsPageContent";
 import { webData } from "@/constants";
 
-export default function LogoUse() {
+function LogoUseInner() {
   return (
     <div className="min-h-screen bg-gray-100 px-4 py-12">
       <div className="mx-auto max-w-3xl rounded-lg bg-white p-8 shadow-sm">
@@ -45,5 +46,13 @@ export default function LogoUse() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LogoUse(props) {
+  return (
+    <CmsPageContent pageKey="logo-use">
+      <LogoUseInner {...props} />
+    </CmsPageContent>
   );
 }

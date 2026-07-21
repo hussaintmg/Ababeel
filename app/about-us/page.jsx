@@ -1,5 +1,6 @@
 "use client";
 
+import CmsPageContent from "@/Components/cms/CmsPageContent";
 import Image from "next/image";
 import useHasMounted from "@/utils/useHasMounted";
 import Link from "next/link";
@@ -91,7 +92,7 @@ const itemVariants = {
   },
 };
 
-export default function AboutPage() {
+function AboutPageInner() {
   // Gates the motion elements until hydration; see useHasMounted for why this
   // replaces the useState + useEffect pair.
   const isClient = useHasMounted();
@@ -767,5 +768,13 @@ export default function AboutPage() {
         </div>
       </section>
     </div>
+  );
+}
+
+export default function AboutPage(props) {
+  return (
+    <CmsPageContent pageKey="about-us">
+      <AboutPageInner {...props} />
+    </CmsPageContent>
   );
 }

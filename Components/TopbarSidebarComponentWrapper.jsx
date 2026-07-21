@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Topbar from "./Topbar";
 import Sidebar from "./Sidebar";
 import { usePath } from "@/context/PathContext";
+import { useSiteContent } from "@/context/SiteContentContext";
 // import { qualificationsData } from "@/app/data/qualifications";
 
 // const safetyCourses = Object.values(qualificationsData);
@@ -85,14 +86,24 @@ const ownerNavLinks = [
       },
     ],
   },
+  { name: "Website CMS", url: "/owner/cms" },
 ];
 export default function TopbarSidebarComponentWrapper() {
   const { isDashboard, isAdmin, isOwner, pathname, hasMounted } = usePath();
+  const { settings } = useSiteContent();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const handleCloseSidebar = () => {
     setMobileOpen(false);
   };
+
+  // Public navigation is CMS-managed; fall back to the built-in links if the
+  // owner hasn't configured any.
+  const publicNav =
+    Array.isArray(settings?.topbar?.navLinks) && settings.topbar.navLinks.length > 0
+      ? settings.topbar.navLinks
+      : navLinks;
+
   // Purely a function of the current section, so it is derived during render
   // rather than mirrored into state by an effect.
   const TopbarLinks = isDashboard
@@ -101,7 +112,7 @@ export default function TopbarSidebarComponentWrapper() {
       ? adminNavLinks
       : isOwner
         ? ownerNavLinks
-        : navLinks;
+        : publicNav;
 
   return (
     <div className="sticky top-0 z-500">
@@ -115,7 +126,7 @@ export default function TopbarSidebarComponentWrapper() {
       <Sidebar
         isOpen={mobileOpen}
         onClose={handleCloseSidebar}
-        navLinks={navLinks}
+        navLinks={publicNav}
       />
     </div>
   );

@@ -1,5 +1,6 @@
 "use client";
 
+import CmsPageContent from "@/Components/cms/CmsPageContent";
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -214,7 +215,7 @@ const itemVariants = {
   },
 };
 
-export default function QualificationPage() {
+function QualificationPageInner() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [imageErrors, setImageErrors] = useState(new Set());
 
@@ -419,5 +420,13 @@ export default function QualificationPage() {
         </motion.div>
       </div>
     </div>
+  );
+}
+
+export default function QualificationPage(props) {
+  return (
+    <CmsPageContent pageKey="qualification">
+      <QualificationPageInner {...props} />
+    </CmsPageContent>
   );
 }

@@ -15,6 +15,12 @@ function getExtension(buffer) {
   if (buffer[0] === 0x47 && buffer[1] === 0x49) return ".gif";
   if (buffer[0] === 0x25 && buffer[1] === 0x50) return ".pdf";
   if (buffer[0] === 0x52 && buffer[1] === 0x49) return ".webp";
+  // ICO: 00 00 01 00
+  if (buffer[0] === 0x00 && buffer[1] === 0x00 && buffer[2] === 0x01 && buffer[3] === 0x00)
+    return ".ico";
+  // SVG: leading whitespace then "<svg" or "<?xml"
+  const head = buffer.slice(0, 256).toString("utf8").trimStart().toLowerCase();
+  if (head.startsWith("<svg") || head.startsWith("<?xml")) return ".svg";
   return ".bin";
 }
 

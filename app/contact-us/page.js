@@ -1,5 +1,6 @@
 "use client";
 
+import CmsPageContent from "@/Components/cms/CmsPageContent";
 import React, { useState, useEffect, use } from "react";
 import {
   User,
@@ -19,7 +20,7 @@ import { toast } from "react-toastify";
 import { fetchCountries } from "@/utils/countries";
 import webData from "@/constants";
 
-const ContactUs = () => {
+const ContactUsInner = () => {
   const [countries, setCountries] = useState([]);
   const [formData, setFormData] = useState({
     contact_fullname: "",
@@ -530,5 +531,11 @@ const ContactUs = () => {
     </div>
   );
 };
+
+const ContactUs = () => (
+  <CmsPageContent pageKey="contact-us">
+    <ContactUsInner />
+  </CmsPageContent>
+);
 
 export default ContactUs;

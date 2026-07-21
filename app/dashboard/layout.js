@@ -9,6 +9,7 @@ import { CourseProvider } from "@/context/CourseContext";
 import { CourseReferenceProvider } from "@/context/CourseReferenceContext";
 import { usePath } from "@/context/PathContext";
 import WhatsAppButton from "@/Components/WhatsAppButton";
+import DashboardTheme from "@/Components/cms/DashboardTheme";
 
 export default function DashboardLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -62,7 +63,8 @@ export default function DashboardLayout({ children }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="cms-dash min-h-screen bg-gray-50">
+      <DashboardTheme />
         <CourseProvider>
           <CourseReferenceProvider>
                 {/* Mobile Sidebar Overlay */}

@@ -9,9 +9,39 @@ import { useAuth } from "@/context/AuthContext";
 import axios from "axios";
 import { usePath } from "@/context/PathContext";
 import { useRouter } from "next/navigation";
+import { useSiteContent } from "@/context/SiteContentContext";
+
+// Build the scoped CSS overrides for the topbar from its style settings. Only
+// emits a rule when a value is set, so unset options keep the Tailwind defaults.
+// Higher specificity than Tailwind utilities so overrides win.
+const SEL = 'header[data-cms-topbar="on"]';
+function buildTopbarCss(s = {}) {
+  const r = [];
+  // Nav links
+  if (s.text) r.push(`${SEL} nav a, ${SEL} nav button { color: ${s.text}; }`);
+  if (s.hover) r.push(`${SEL} nav a:hover, ${SEL} nav button:hover { color: ${s.hover}; }`);
+  if (s.hoverBg) r.push(`${SEL} nav a:hover, ${SEL} nav button:hover { background-color: ${s.hoverBg}; }`);
+  if (s.activeText) r.push(`${SEL} nav a[aria-current="page"] { color: ${s.activeText}; }`);
+  if (s.activeBg) r.push(`${SEL} nav a[aria-current="page"] { background-color: ${s.activeBg}; }`);
+  // Nav dropdown menus
+  if (s.ddBg) r.push(`${SEL} .cms-dropdown { background-color: ${s.ddBg}; }`);
+  if (s.ddText) r.push(`${SEL} .cms-dropdown a { color: ${s.ddText}; }`);
+  if (s.ddHover) r.push(`${SEL} .cms-dropdown a:hover { color: ${s.ddHover}; }`);
+  if (s.ddHoverBg) r.push(`${SEL} .cms-dropdown a:hover { background-color: ${s.ddHoverBg}; }`);
+  // Login / Dashboard button (override the gradient)
+  if (s.btnBg) r.push(`${SEL} [data-cms-navbtn] { background-image: none; background-color: ${s.btnBg}; }`);
+  if (s.btnText) r.push(`${SEL} [data-cms-navbtn] { color: ${s.btnText}; }`);
+  if (s.btnHoverBg) r.push(`${SEL} [data-cms-navbtn]:hover { background-image: none; background-color: ${s.btnHoverBg}; }`);
+  // User dropdown menu
+  if (s.menuBg) r.push(`${SEL} .cms-usermenu { background-color: ${s.menuBg}; }`);
+  if (s.menuText) r.push(`${SEL} .cms-usermenu a, ${SEL} .cms-usermenu button, ${SEL} .cms-usermenu p { color: ${s.menuText}; }`);
+  if (s.menuHover) r.push(`${SEL} .cms-usermenu a:hover, ${SEL} .cms-usermenu button:hover { background-color: ${s.menuHover}; }`);
+  return r.join("\n");
+}
 
 export default function Topbar({ mobileOpen, setMobileOpen, navLinks }) {
   const { user, setUser } = useAuth();
+  const { settings } = useSiteContent();
   const router = useRouter();
   const {
     isDashboard,
@@ -24,6 +54,7 @@ export default function Topbar({ mobileOpen, setMobileOpen, navLinks }) {
     setOwnerSideBarOpen,
     ownerSideBarOpen,
     isLogSign,
+    pathname,
   } = usePath();
   const [openDropdown, setOpenDropdown] = useState(null);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -118,15 +149,40 @@ export default function Topbar({ mobileOpen, setMobileOpen, navLinks }) {
     }
   };
 
+  // CMS-driven topbar appearance (Global Settings → Navigation → Appearance).
+  const tb = settings?.topbar?.style || {};
+  const barH = parseInt(tb.height, 10);
+  const headerStyle = {
+    backgroundColor: tb.bg || undefined,
+    borderColor: tb.borderColor || undefined,
+    boxShadow: tb.shadow === false ? "none" : undefined,
+  };
+  const containerMax = tb.container === "normal" ? "80rem" : tb.container === "full" ? "100%" : "88rem";
+  const navJustify = tb.navAlign === "left" ? "flex-start" : tb.navAlign === "right" ? "flex-end" : "center";
+  const logoH = parseInt(tb.logoHeight, 10);
+  const tbCss = buildTopbarCss(tb);
+  // Active-link detection (case-insensitive; "/" only matches home exactly).
+  const isActive = (url) => {
+    if (!url || !pathname) return false;
+    if (url === "/") return pathname === "/";
+    return pathname === url || pathname.startsWith(url + "/");
+  };
+
   return (
     <header
+      data-cms-topbar="on"
+      style={headerStyle}
       className={`${
         isLogSign ? "hidden" : ""
       } w-full bg-white shadow-sm border-b border-gray-500`}
     >
-      <div className="max-w-full mx-auto pl-2 pr-4">
+      {tbCss ? <style dangerouslySetInnerHTML={{ __html: tbCss }} /> : null}
+      <div className="mx-auto pl-2 pr-4" style={{ maxWidth: containerMax }}>
         {/* Main Container */}
-        <div className="flex items-center justify-between h-14 md:h-16 lg:h-20">
+        <div
+          className="flex items-center justify-between h-14 md:h-16 lg:h-20"
+          style={Number.isNaN(barH) ? undefined : { height: barH }}
+        >
           {/* Mobile Menu Button */}
           <div className="flex items-center md:flex-none">
             <button
@@ -151,22 +207,35 @@ export default function Topbar({ mobileOpen, setMobileOpen, navLinks }) {
           {/* Logo */}
           <div className="flex items-center md:flex-none">
             <Link href="/" className="flex items-center">
-              <div className="relative h-30 w-30">
-                <Image
-                  src={logo}
-                  alt="Logo"
-                  fill
-                  className="object-contain"
-                  priority
-                  sizes="(max-width: 160px) 100vw, 160px"
-                />
+              <div
+                className="relative h-30 w-30"
+                style={Number.isNaN(logoH) ? undefined : { height: logoH, width: logoH }}
+              >
+                {settings?.logos?.topbar ? (
+                  // CMS-managed logo (may be an uploaded/external URL) so use a
+                  // plain img to avoid next/image domain configuration.
+                  <img
+                    src={settings.logos.topbar}
+                    alt={settings?.brand?.name || "Logo"}
+                    className="h-full w-full object-contain"
+                  />
+                ) : (
+                  <Image
+                    src={logo}
+                    alt="Logo"
+                    fill
+                    className="object-contain"
+                    priority
+                    sizes="(max-width: 160px) 100vw, 160px"
+                  />
+                )}
               </div>
             </Link>
           </div>
 
           {/* Center: Desktop Navigation */}
-          <nav className="hidden lg:flex items-center justify-center flex-1">
-            <div className="flex items-center justify-center gap-0 xl:gap-1">
+          <nav className="hidden lg:flex items-center flex-1" style={{ justifyContent: navJustify }}>
+            <div className="flex items-center gap-0 xl:gap-1">
               {navLinks.map((item, index) => (
                 <div
                   key={index}
@@ -193,6 +262,7 @@ export default function Topbar({ mobileOpen, setMobileOpen, navLinks }) {
                   ) : (
                     <Link
                       href={item.url}
+                      aria-current={isActive(item.url) ? "page" : undefined}
                       className="px-3 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors rounded-lg hover:bg-blue-50 whitespace-nowrap xl:px-4 relative z-10"
                     >
                       {item.name}
@@ -202,7 +272,7 @@ export default function Topbar({ mobileOpen, setMobileOpen, navLinks }) {
                   {/* Dropdown Menu with better positioning */}
                   {item.dropdown && openDropdown === index && (
                     <div
-                      className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-xl overflow-hidden z-50 border-t-2 border-t-red-500"
+                      className="cms-dropdown absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-xl overflow-hidden z-50 border-t-2 border-t-red-500"
                       onMouseEnter={() => handleDropdownMouseEnter(index)}
                       onMouseLeave={() => handleDropdownMouseLeave(index)}
                       style={{
@@ -238,6 +308,7 @@ export default function Topbar({ mobileOpen, setMobileOpen, navLinks }) {
                 <div className="relative" ref={userMenuRef}>
                   {/* Dashboard Button with User Menu */}
                   <button
+                    data-cms-navbtn
                     onClick={() => setUserMenuOpen(!userMenuOpen)}
                     onMouseEnter={() => {
                       // Close other dropdowns when hovering over user menu
@@ -258,7 +329,7 @@ export default function Topbar({ mobileOpen, setMobileOpen, navLinks }) {
                   {/* User Dropdown Menu */}
                   {userMenuOpen && (
                     <div
-                      className="w-55! absolute top-full right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-xl overflow-hidden z-50 border-t-2 border-t-blue-500"
+                      className="cms-usermenu w-55! absolute top-full right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-xl overflow-hidden z-50 border-t-2 border-t-blue-500"
                       style={{
                         animation: "fadeIn 0.2s ease-out",
                       }}
@@ -340,6 +411,7 @@ export default function Topbar({ mobileOpen, setMobileOpen, navLinks }) {
                   <div className="hidden sm:block">
                     <Link
                       href="/login"
+                      data-cms-navbtn
                       className="inline-flex items-center gap-2 px-4 py-2.5 bg-linear-to-r from-blue-600 to-blue-700 text-white text-sm font-medium rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-300 whitespace-nowrap shadow-sm hover:shadow"
                     >
                       <User size={16} />
@@ -351,6 +423,7 @@ export default function Topbar({ mobileOpen, setMobileOpen, navLinks }) {
                   <div className="sm:hidden">
                     <Link
                       href="/login"
+                      data-cms-navbtn
                       className="inline-flex items-center gap-1 p-2.5 bg-linear-to-r from-blue-600 to-blue-700 text-white text-sm font-medium rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-300"
                     >
                       <User size={16} />

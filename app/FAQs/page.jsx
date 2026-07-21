@@ -1,3 +1,4 @@
+import CmsPageContent from "@/Components/cms/CmsPageContent";
 import { webData } from "@/constants";
 
 const faqs = [
@@ -38,7 +39,7 @@ const faqs = [
   },
 ];
 
-export default function FAQsPage() {
+function FAQsPageInner() {
   return (
     <div className="min-h-screen bg-gray-100 px-4 py-12">
       <div className="mx-auto max-w-3xl rounded-lg bg-white p-8 shadow-sm">
@@ -63,5 +64,13 @@ export default function FAQsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function FAQsPage(props) {
+  return (
+    <CmsPageContent pageKey="faqs">
+      <FAQsPageInner {...props} />
+    </CmsPageContent>
   );
 }

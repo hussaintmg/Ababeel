@@ -1,5 +1,6 @@
 'use client';
 
+import CmsPageContent from "@/Components/cms/CmsPageContent";
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import useHasMounted from '@/utils/useHasMounted';
@@ -43,7 +44,7 @@ import {
 } from 'lucide-react';
 import { webData } from '@/constants';
 
-export default function RefundPolicy() {
+function RefundPolicyInner() {
   const [activeTab, setActiveTab] = useState('cancellation');
   const [progress, setProgress] = useState(0);
   // True from hydration onward, which is what the mount animation was using
@@ -993,5 +994,12 @@ export default function RefundPolicy() {
         </motion.div>
       </div>
     </div>
+  );
+}
+export default function RefundPolicy(props) {
+  return (
+    <CmsPageContent pageKey="refund-policy">
+      <RefundPolicyInner {...props} />
+    </CmsPageContent>
   );
 }

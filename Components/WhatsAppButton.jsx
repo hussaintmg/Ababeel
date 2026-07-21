@@ -5,16 +5,24 @@ import { FaWhatsapp } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePath } from "@/context/PathContext";
 import { useAuth } from "@/context/AuthContext";
+import { useSiteContent } from "@/context/SiteContentContext";
 import webData from "@/constants";
 
 const WhatsAppButton = () => {
   const { isDashboard, isAdmin, isOwner } = usePath();
   const { user } = useAuth();
+  const { settings } = useSiteContent();
   const [isVisible, setIsVisible] = useState(true);
   const [isHovered, setIsHovered] = useState(false);
-  const phoneNumber = webData.contact.whatsapp;
+  // Live from the CMS contact settings (WhatsApp first, then phone), falling
+  // back to the static default so updating the number in the CMS updates here.
+  const phoneNumber =
+    settings?.contact?.whatsapp ||
+    settings?.contact?.phone ||
+    webData.contact.whatsapp ||
+    "";
 
-  const whatsappUrl = `https://wa.me/${phoneNumber.replace(/\D/g, "")}`;
+  const whatsappUrl = `https://wa.me/${String(phoneNumber).replace(/\D/g, "")}`;
 
   // Hide on scroll down, show on scroll up
   useEffect(() => {

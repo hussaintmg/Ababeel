@@ -12,6 +12,8 @@ import { InvoiceProvider } from "@/context/InvoiceContext";
 import { ContactProvider } from "@/context/ContactContext";
 import { ContactReferenceProvider } from "@/context/ContactReferenceContext";
 import CookieBanner from "@/Components/CookieBanner";
+import { SiteContentProvider } from "@/context/SiteContentContext";
+import { getGlobalBundle, getGlobalSettings } from "@/lib/cms";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -133,9 +135,20 @@ export async function generateMetadata() {
     const pathname = headersList.get("x-invoke-path") || "/";
     const pageTitle = getPageTitle(pathname);
 
+    // Pull live branding from the CMS so the site title, description and
+    // favicon are all editable from the owner dashboard.
+    const settings = await getGlobalSettings();
+    const template = settings?.seo?.titleTemplate || "%s | Ababeel";
+    const brand = settings?.brand?.shortName || "Ababeel";
+    const title = template.includes("%s")
+      ? template.replace("%s", pageTitle)
+      : `${pageTitle} | ${brand}`;
+    const favicon = settings?.logos?.favicon || "/favicon.ico";
+
     return {
-      title: `${pageTitle} | Ababeel`,
-      description: "Your safety technology partner",
+      title,
+      description: settings?.seo?.defaultDescription || "Your safety technology partner",
+      icons: { icon: favicon, shortcut: favicon },
     };
   } catch (error) {
     return {
@@ -145,7 +158,8 @@ export async function generateMetadata() {
   }
 }
 
-export default function RootLayout({ children }) {
+export default async function RootLayout({ children }) {
+  const { settings, customCss } = await getGlobalBundle();
   return (
     <html lang="en">
       <head>
@@ -162,6 +176,7 @@ export default function RootLayout({ children }) {
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <AuthProvider>
+          <SiteContentProvider initialSettings={settings} initialCss={customCss}>
           <PathProvider>
               <NotificationsProvider>
                 <InvoiceProvider>
@@ -188,6 +203,7 @@ export default function RootLayout({ children }) {
                 </InvoiceProvider>
               </NotificationsProvider>
           </PathProvider>
+          </SiteContentProvider>
         </AuthProvider>
       </body>
     </html>

@@ -1,10 +1,11 @@
 // app/professional-dev/page.jsx
 "use client";
 
+import CmsPageContent from "@/Components/cms/CmsPageContent";
 import { useEffect, useState } from "react";
 import { professionalDevCategories } from "@/app/data/professional-dev";
 
-export default function ProfessionalDevPage() {
+function ProfessionalDevPageInner() {
   const [activeTab, setActiveTab] = useState(
     professionalDevCategories[0]?.id || "cpd",
   );
@@ -265,5 +266,13 @@ export default function ProfessionalDevPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ProfessionalDevPage(props) {
+  return (
+    <CmsPageContent pageKey="professional-dev">
+      <ProfessionalDevPageInner {...props} />
+    </CmsPageContent>
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import CmsPageContent from "@/Components/cms/CmsPageContent";
 import React, { useState, useEffect, useCallback } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import bannar from "@/public/bannar.webp";
@@ -8,7 +9,7 @@ import FAQ from "@/Components/FAQ";
 import { motion } from "framer-motion";
 import webData from "@/constants";
 
-const HomePage = () => {
+const HomePageInner = () => {
   const images = [
     // {
     //   id: 1,
@@ -526,5 +527,11 @@ const AboutUsSection = () => {
     </div>
   );
 };
+
+const HomePage = () => (
+  <CmsPageContent pageKey="home">
+    <HomePageInner />
+  </CmsPageContent>
+);
 
 export default HomePage;
