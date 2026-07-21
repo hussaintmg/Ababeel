@@ -3,7 +3,7 @@
 import { useState } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
-import { AlertTriangle, CheckCircle2 } from "lucide-react";
+import { AlertTriangle, ChevronLeft } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useSiteContent } from "@/context/SiteContentContext";
 
@@ -26,7 +26,7 @@ export default function MaintenanceBar() {
     try {
       await axios.put("/api/owner/maintenance", { enabled: !on }, { withCredentials: true });
       await refresh?.();
-      toast.success(!on ? "Maintenance mode ON — site hidden from visitors" : "Maintenance mode OFF — site is live");
+      toast.success("Maintenance mode OFF — site is live");
     } catch (e) {
       toast.error(e?.response?.data?.error || "Could not update maintenance mode");
     } finally {
@@ -36,40 +36,40 @@ export default function MaintenanceBar() {
 
   return (
     <div
-      className={`w-full text-white ${on ? "bg-amber-600" : "bg-slate-800"}`}
+      className="fixed bottom-4 right-4 z-[1000] group flex items-stretch drop-shadow-xl"
       role="region"
       aria-label="Maintenance control"
     >
-      <div className="max-w-full mx-auto px-4 h-9 flex items-center justify-between gap-3">
-        {/* Left: status */}
+      <div className="pointer-events-none flex items-center gap-3 rounded-l-xl bg-amber-600 px-4 text-white opacity-0 translate-x-3 transition-all duration-200 group-hover:pointer-events-auto group-hover:opacity-100 group-hover:translate-x-0 group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-focus-within:translate-x-0">
         <div className="flex items-center gap-2 min-w-0">
-          {on ? <AlertTriangle size={15} className="shrink-0" /> : <CheckCircle2 size={15} className="shrink-0 text-emerald-300" />}
-          <span className="text-xs sm:text-sm font-medium truncate">
-            {on ? "Website is under maintenance — only you can see it" : "Website is live"}
+          <AlertTriangle size={16} className="shrink-0" />
+          <span className="text-xs sm:text-sm font-medium whitespace-nowrap">
+            Website is under maintenance — only you can see it
           </span>
         </div>
 
-        {/* Right: capsule toggle */}
         <button
           type="button"
           onClick={toggle}
           disabled={busy}
-          aria-pressed={on}
-          title={on ? "Turn maintenance OFF" : "Turn maintenance ON"}
-          className="flex items-center gap-2 shrink-0 disabled:opacity-60"
+          aria-label="Turn maintenance mode off"
+          className="flex items-center gap-2 shrink-0 rounded-full bg-white/15 px-2.5 py-1.5 hover:bg-white/25 disabled:opacity-60"
         >
-          <span className="hidden sm:inline text-[11px] uppercase tracking-wide opacity-90">
-            {on ? "Maintenance" : "Live"}
-          </span>
-          <span
-            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${on ? "bg-white/90" : "bg-white/30"}`}
-          >
-            <span
-              className={`inline-block h-4 w-4 transform rounded-full transition-transform ${on ? "translate-x-4 bg-amber-600" : "translate-x-0.5 bg-white"}`}
-            />
+          <span className="text-[11px] uppercase tracking-wide">Turn off</span>
+          <span className="relative inline-flex h-5 w-9 items-center rounded-full bg-white/90">
+            <span className="inline-block h-4 w-4 translate-x-4 rounded-full bg-amber-600" />
           </span>
         </button>
       </div>
+
+      <button
+        type="button"
+        aria-label="Show maintenance controls"
+        title="Maintenance controls"
+        className="flex w-10 items-center justify-center rounded-xl bg-amber-600 text-white transition-colors hover:bg-amber-700 group-hover:rounded-l-none group-focus-within:rounded-l-none"
+      >
+        <ChevronLeft size={19} className="transition-transform duration-200 group-hover:rotate-180 group-focus-within:rotate-180" />
+      </button>
     </div>
   );
 }
