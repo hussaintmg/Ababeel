@@ -11,7 +11,9 @@ export async function GET(request, { params }) {
       const { settings, customCss } = await getGlobalBundle();
       return NextResponse.json(
         { success: true, key: "global", settings, customCss },
-        { headers: { "Cache-Control": "public, max-age=0, s-maxage=30, stale-while-revalidate=60" } }
+        // Global settings include the maintenance switch. Never serve a stale
+        // copy here: the owner's quick toggle must take effect immediately.
+        { headers: { "Cache-Control": "private, no-cache, no-store, max-age=0, must-revalidate" } }
       );
     }
 

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import axios from "axios";
 import { toast } from "react-toastify";
+import AuthTheme from "@/Components/cms/AuthTheme";
 
 export default function ResetPassword() {
   const { token } = useParams();
@@ -47,12 +48,13 @@ export default function ResetPassword() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 px-4">
-      <div className="w-full max-w-md bg-white rounded-3xl shadow-xl p-8">
-        <h1 className="text-3xl font-bold text-gray-800 text-center mb-4">
+    <div className="cms-auth min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 px-4">
+      <AuthTheme />
+      <div className="cms-auth-card w-full max-w-md bg-white rounded-3xl shadow-xl p-8">
+        <h1 className="cms-auth-title text-3xl font-bold text-gray-800 text-center mb-4">
           Reset Password
         </h1>
-        <p className="text-gray-500 text-center mb-8">
+        <p className="cms-auth-sub text-gray-500 text-center mb-8">
           Enter your new password below to update your account.
         </p>
         <form onSubmit={submit}>
@@ -69,7 +71,7 @@ export default function ResetPassword() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter new password"
-              className="w-full border border-gray-300 rounded-lg px-4 py-3
+              className="cms-auth-input w-full border border-gray-300 rounded-lg px-4 py-3
               focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400
               transition text-gray-800 placeholder-gray-400"
             />
@@ -78,14 +80,14 @@ export default function ResetPassword() {
           <button
             disabled={loading}
             type="submit"
-            className="cursor-pointer w-full py-3 bg-emerald-600 text-white font-semibold rounded-lg
+            className="cms-auth-btn cursor-pointer w-full py-3 bg-emerald-600 text-white font-semibold rounded-lg
             hover:bg-emerald-500 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? "Updating..." : "Update Password"}
           </button>
         </form>
 
-        <p className="text-sm text-gray-400 text-center mt-6">
+        <p className="cms-auth-sub text-sm text-gray-400 text-center mt-6">
           Make sure your password is at least 8 characters long
         </p>
       </div>

@@ -7,10 +7,15 @@ import axios from "axios";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { useSiteContent } from "@/context/SiteContentContext";
+import AuthTheme from "@/Components/cms/AuthTheme";
 
 export default function Page() {
   const router = useRouter();
   const { setUser } = useAuth();
+  const { settings } = useSiteContent();
+  const auth = settings?.auth?.style || {};
+  const hideImg = !!auth.hideLoginImage;
 
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -42,22 +47,45 @@ export default function Page() {
   };
 
   return (
-    <div className="w-full h-screen flex relative">
+    <div className="cms-auth w-full h-screen flex relative items-center justify-center">
+      <AuthTheme />
       {/* Left Image Section */}
-      <div className="w-[60%] h-full relative max-[700px]:w-full">
-        <Image
-          src={bg}
-          alt="Login background"
-          fill
-          className="object-cover"
-          priority
-        />
-      </div>
+      {!hideImg ? (
+        <div
+          className="w-[60%] h-full relative max-[700px]:w-full"
+          style={auth.loginImageWidth ? { width: `${parseInt(auth.loginImageWidth, 10) || 60}%` } : undefined}
+        >
+          {auth.loginImage ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={auth.loginImage} alt="Login background" className="w-full h-full object-cover" />
+          ) : (
+            <Image
+              src={bg}
+              alt="Login background"
+              fill
+              className="object-cover"
+              priority
+            />
+          )}
+        </div>
+      ) : null}
 
       {/* Login Form Section */}
-      <div className="w-1/2 h-full absolute top-0 left-1/2 flex max-[700px]:w-[80%] max-[700px]:top-1/2 max-[700px]:-translate-1/2 max-[700px]:h-[80%]">
-        <div className="w-full h-full bg-white border-l border-stone-300 shadow-xl p-[15%] rounded-l-4xl max-[700px]:rounded-4xl max-[700px]:p-[10%]">
-          <h2 className="text-2xl font-semibold text-slate-800 mb-6 text-center">
+      <div
+        className={
+          hideImg
+            ? "w-full max-w-md flex px-4"
+            : "w-1/2 h-full absolute top-0 left-1/2 flex max-[700px]:w-[80%] max-[700px]:top-1/2 max-[700px]:-translate-1/2 max-[700px]:h-[80%]"
+        }
+      >
+        <div
+          className={
+            hideImg
+              ? "cms-auth-card w-full bg-white border border-stone-200 shadow-xl p-8 sm:p-10 rounded-3xl"
+              : "cms-auth-card w-full h-full bg-white border-l border-stone-300 shadow-xl p-[15%] rounded-l-4xl max-[700px]:rounded-4xl max-[700px]:p-[10%]"
+          }
+        >
+          <h2 className="cms-auth-title text-2xl font-semibold text-slate-800 mb-6 text-center">
             Welcome Back
           </h2>
 
@@ -72,7 +100,7 @@ export default function Page() {
                 required
                 autoComplete="off"
                 placeholder=" "
-                className="peer w-[90%] h-[1cm] text-[1.1rem] rounded-md px-[0.5cm] py-[0.3cm]
+                className="cms-auth-input peer w-[90%] h-[1cm] text-[1.1rem] rounded-md px-[0.5cm] py-[0.3cm]
                border-b-2 border-[#ccc] bg-transparent outline-none
                transition-all duration-300 focus:shadow-[0_4px_20px_#0f8f4461]
                focus:border-[#0f8f44]"
@@ -98,7 +126,7 @@ export default function Page() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 placeholder=" "
-                className="peer w-[90%] h-[1cm] text-[1.1rem] rounded-md px-[0.5cm] py-[0.3cm]
+                className="cms-auth-input peer w-[90%] h-[1cm] text-[1.1rem] rounded-md px-[0.5cm] py-[0.3cm]
                border-b-2 border-[#ccc] bg-transparent outline-none
                transition-all duration-300 focus:shadow-[0_4px_20px_#0f8f4461]
                focus:border-[#0f8f44]"
@@ -147,7 +175,7 @@ export default function Page() {
               </div>
               <Link
                 href="/forgot-password"
-                className="text-indigo-600 hover:underline"
+                className="cms-auth-link text-indigo-600 hover:underline"
               >
                 Forgot password?
               </Link>
@@ -155,7 +183,7 @@ export default function Page() {
 
             <button
               type="submit"
-              className={`cursor-pointer active:translate-y-1 w-full py-2 ${
+              className={`cms-auth-btn cursor-pointer active:translate-y-1 w-full py-2 ${
                 loading ? "bg-indigo-500" : "bg-indigo-600"
               }  text-white rounded-md hover:bg-indigo-700 transition`}
             >

@@ -6,7 +6,7 @@ import Link from "next/link";
 import { toast } from "react-toastify";
 import {
   Save, Loader2, ArrowLeft, Palette, Phone, ImageIcon, Search, Menu,
-  PanelBottom, Share2, Code2, LayoutDashboard,
+  PanelBottom, Share2, Code2, LayoutDashboard, KeyRound, Wrench,
 } from "lucide-react";
 import {
   Label, TextInput, TextArea, ImagePicker, Toggle, ListEditor, ColorInput, SelectInput,
@@ -21,6 +21,8 @@ const TABS = [
   { id: "topbar", label: "Navigation", icon: Menu },
   { id: "footer", label: "Footer", icon: PanelBottom },
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { id: "auth", label: "Auth Pages", icon: KeyRound },
+  { id: "maintenance", label: "Maintenance", icon: Wrench },
   { id: "social", label: "Social", icon: Share2 },
   { id: "css", label: "Global CSS", icon: Code2 },
 ];
@@ -316,6 +318,103 @@ export default function GlobalSettingsEditor({ meta }) {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </SubSection>
+            </Section>
+          ) : null}
+
+          {tab === "auth" ? (
+            <Section title="Auth pages appearance" desc="Style the Login, Forgot Password, Verification (OTP) and Reset Password pages — background, card, inputs, buttons and layout. Leave anything blank to keep the built-in look.">
+              <SubSection title="Page background">
+                <F label="Background type">
+                  <SelectInput
+                    value={s.auth?.style?.bgType || ""}
+                    onChange={(v) => set(["auth", "style", "bgType"], v)}
+                    options={[{ value: "", label: "default" }, { value: "solid", label: "solid color" }, { value: "gradient", label: "gradient" }, { value: "image", label: "image" }]}
+                  />
+                </F>
+                {s.auth?.style?.bgType === "solid" ? (
+                  <F label="Background color"><ColorInput value={s.auth?.style?.bgColor} onChange={(v) => set(["auth", "style", "bgColor"], v)} /></F>
+                ) : null}
+                {s.auth?.style?.bgType === "gradient" ? (
+                  <Grid2>
+                    <F label="Gradient from"><ColorInput value={s.auth?.style?.gradFrom} onChange={(v) => set(["auth", "style", "gradFrom"], v)} /></F>
+                    <F label="Gradient to"><ColorInput value={s.auth?.style?.gradTo} onChange={(v) => set(["auth", "style", "gradTo"], v)} /></F>
+                    <F label="Angle (deg)"><TextInput value={s.auth?.style?.gradAngle} onChange={(v) => set(["auth", "style", "gradAngle"], v)} placeholder="135" /></F>
+                  </Grid2>
+                ) : null}
+                {s.auth?.style?.bgType === "image" ? (
+                  <>
+                    <F label="Background image"><ImagePicker value={s.auth?.style?.bgImage} onChange={(v) => set(["auth", "style", "bgImage"], v)} /></F>
+                    <F label="Dark overlay (0–100)"><TextInput value={s.auth?.style?.bgOverlay} onChange={(v) => set(["auth", "style", "bgOverlay"], v)} placeholder="e.g. 40" /></F>
+                  </>
+                ) : null}
+              </SubSection>
+
+              <SubSection title="Card">
+                <Grid2>
+                  <F label="Card background"><ColorInput value={s.auth?.style?.cardBg} onChange={(v) => set(["auth", "style", "cardBg"], v)} /></F>
+                  <F label="Card text color"><ColorInput value={s.auth?.style?.cardText} onChange={(v) => set(["auth", "style", "cardText"], v)} /></F>
+                  <F label="Border color"><ColorInput value={s.auth?.style?.cardBorderColor} onChange={(v) => set(["auth", "style", "cardBorderColor"], v)} /></F>
+                  <F label="Corner radius (px)"><TextInput value={s.auth?.style?.cardRadius} onChange={(v) => set(["auth", "style", "cardRadius"], v)} placeholder="e.g. 24" /></F>
+                  <F label="Max width (px)"><TextInput value={s.auth?.style?.cardMaxWidth} onChange={(v) => set(["auth", "style", "cardMaxWidth"], v)} placeholder="e.g. 440" /></F>
+                  <F label="Shadow"><SelectInput value={s.auth?.style?.cardShadow || ""} onChange={(v) => set(["auth", "style", "cardShadow"], v)} options={[{ value: "", label: "default" }, "none", "sm", "md", "lg", "xl"]} /></F>
+                  <F label="Card position"><SelectInput value={s.auth?.style?.cardAlign || ""} onChange={(v) => set(["auth", "style", "cardAlign"], v)} options={[{ value: "", label: "default" }, { value: "left", label: "left" }, { value: "center", label: "center" }, { value: "right", label: "right" }]} /></F>
+                </Grid2>
+              </SubSection>
+
+              <SubSection title="Text">
+                <Grid2>
+                  <F label="Heading color"><ColorInput value={s.auth?.style?.titleColor} onChange={(v) => set(["auth", "style", "titleColor"], v)} /></F>
+                  <F label="Subtitle / helper color"><ColorInput value={s.auth?.style?.subtitleColor} onChange={(v) => set(["auth", "style", "subtitleColor"], v)} /></F>
+                </Grid2>
+              </SubSection>
+
+              <SubSection title="Buttons & links">
+                <Grid2>
+                  <F label="Button color"><ColorInput value={s.auth?.style?.accent} onChange={(v) => set(["auth", "style", "accent"], v)} /></F>
+                  <F label="Button hover color"><ColorInput value={s.auth?.style?.accentHover} onChange={(v) => set(["auth", "style", "accentHover"], v)} /></F>
+                  <F label="Button text color"><ColorInput value={s.auth?.style?.buttonText} onChange={(v) => set(["auth", "style", "buttonText"], v)} /></F>
+                  <F label="Link color"><ColorInput value={s.auth?.style?.linkColor} onChange={(v) => set(["auth", "style", "linkColor"], v)} /></F>
+                </Grid2>
+              </SubSection>
+
+              <SubSection title="Inputs">
+                <Grid2>
+                  <F label="Input background"><ColorInput value={s.auth?.style?.inputBg} onChange={(v) => set(["auth", "style", "inputBg"], v)} /></F>
+                  <F label="Input border"><ColorInput value={s.auth?.style?.inputBorder} onChange={(v) => set(["auth", "style", "inputBorder"], v)} /></F>
+                  <F label="Input text"><ColorInput value={s.auth?.style?.inputText} onChange={(v) => set(["auth", "style", "inputText"], v)} /></F>
+                  <F label="Focus color"><ColorInput value={s.auth?.style?.inputFocus} onChange={(v) => set(["auth", "style", "inputFocus"], v)} /></F>
+                </Grid2>
+              </SubSection>
+
+              <SubSection title="Login image (login page only)" desc="The photo shown beside the login form.">
+                <F label="Image (overrides the default)"><ImagePicker value={s.auth?.style?.loginImage} onChange={(v) => set(["auth", "style", "loginImage"], v)} /></F>
+                <Grid2>
+                  <F label="Image width (%)"><TextInput value={s.auth?.style?.loginImageWidth} onChange={(v) => set(["auth", "style", "loginImageWidth"], v)} placeholder="e.g. 60" /></F>
+                  <F label="Hide image"><Toggle value={!!s.auth?.style?.hideLoginImage} onChange={(v) => set(["auth", "style", "hideLoginImage"], v)} label="Hide image → centered card" /></F>
+                </Grid2>
+              </SubSection>
+
+              <SubSection title="Custom auth CSS (advanced)" desc="Full control — target elements with a .cms-auth prefix, e.g. .cms-auth-card { ... }.">
+                <textarea
+                  value={s.auth?.css || ""}
+                  onChange={(e) => set(["auth", "css"], e.target.value)}
+                  rows={8}
+                  spellCheck={false}
+                  placeholder={`.cms-auth-card { backdrop-filter: blur(6px); }\n.cms-auth-title { letter-spacing: -0.02em; }`}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </SubSection>
+            </Section>
+          ) : null}
+
+          {tab === "maintenance" ? (
+            <Section title="Maintenance mode" desc="When ON, every visitor except you (the owner) sees the maintenance screen on all pages — only the login page stays reachable. You always see the live site. You can also flip this from the bar at the top of the header.">
+              <F label="Maintenance mode">
+                <Toggle value={!!s.maintenance?.enabled} onChange={(v) => set(["maintenance", "enabled"], v)} label={s.maintenance?.enabled ? "ON — site hidden from visitors" : "OFF — site is live"} />
+              </F>
+              <F label="Heading"><TextInput value={s.maintenance?.title} onChange={(v) => set(["maintenance", "title"], v)} placeholder="We'll be back soon" /></F>
+              <F label="Message shown to visitors"><TextArea value={s.maintenance?.message} onChange={(v) => set(["maintenance", "message"], v)} rows={4} /></F>
+              <p className="text-xs text-gray-400">Tip: after editing the text here, click <b>Save</b>. To quickly turn maintenance on/off without opening this page, use the toggle in the header bar.</p>
             </Section>
           ) : null}
 

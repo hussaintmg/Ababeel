@@ -4,6 +4,7 @@ import { useState } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
+import AuthTheme from "@/Components/cms/AuthTheme";
 
 export default function ForgotPassword() {
   const router = useRouter();
@@ -42,13 +43,14 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 px-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] p-8">
+    <div className="cms-auth min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 px-4">
+      <AuthTheme />
+      <div className="cms-auth-card w-full max-w-md bg-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] p-8">
         {/* Title */}
-        <h1 className="text-3xl font-bold text-gray-800 text-center mb-2">
+        <h1 className="cms-auth-title text-3xl font-bold text-gray-800 text-center mb-2">
           Forgot Password
         </h1>
-        <p className="text-gray-500 text-sm text-center mb-8">
+        <p className="cms-auth-sub text-gray-500 text-sm text-center mb-8">
           {useUsername
             ? "Enter your username to reset your password"
             : "Enter your email to recover your account"}
@@ -60,7 +62,7 @@ export default function ForgotPassword() {
               type={useUsername ? "text" : "email"}
               value={value}
               onChange={(e) => setValue(e.target.value)}
-              className="peer w-full border border-gray-300 rounded-lg px-4 py-3
+              className="cms-auth-input peer w-full border border-gray-300 rounded-lg px-4 py-3
             text-gray-800 placeholder-transparent outline-none
             focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30"
               placeholder="value"
@@ -86,7 +88,7 @@ export default function ForgotPassword() {
               setUseUsername(!useUsername);
               setValue("");
             }}
-            className="text-sm text-emerald-600 hover:text-emerald-500 transition mb-6 cursor-pointer"
+            className="cms-auth-link text-sm text-emerald-600 hover:text-emerald-500 transition mb-6 cursor-pointer"
           >
             {useUsername
               ? "Forgot username? Use email instead"
@@ -97,7 +99,7 @@ export default function ForgotPassword() {
           <button
             disabled={loading}
             type="submit"
-            className="w-full py-3 rounded-lg font-semibold text-white
+            className="cms-auth-btn w-full py-3 rounded-lg font-semibold text-white
           bg-emerald-600 hover:bg-emerald-500 transition
           disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
@@ -105,7 +107,7 @@ export default function ForgotPassword() {
           </button>
         </form>
         {/* Footer */}
-        <p className="text-xs text-gray-400 text-center mt-6">
+        <p className="cms-auth-sub text-xs text-gray-400 text-center mt-6">
           A secure reset code will be sent to you Email
         </p>
       </div>

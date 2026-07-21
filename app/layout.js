@@ -13,6 +13,7 @@ import { ContactProvider } from "@/context/ContactContext";
 import { ContactReferenceProvider } from "@/context/ContactReferenceContext";
 import CookieBanner from "@/Components/CookieBanner";
 import { SiteContentProvider } from "@/context/SiteContentContext";
+import MaintenanceGate from "@/Components/cms/MaintenanceGate";
 import { getGlobalBundle, getGlobalSettings } from "@/lib/cms";
 
 const geistSans = Geist({
@@ -191,13 +192,15 @@ export default async function RootLayout({ children }) {
                           pauseOnHover
                           theme="dark"
                         />
-                        <TopbarSidebarComponentWrapper />
-                        {children}
-                        <Footer />
-                        <div className="fixed bottom-4 right-4 z-51">
-                          <NotificationComponent />
-                        </div>
-                        <CookieBanner />
+                        <MaintenanceGate>
+                          <TopbarSidebarComponentWrapper />
+                          {children}
+                          <Footer />
+                          <div className="fixed bottom-4 right-4 z-51">
+                            <NotificationComponent />
+                          </div>
+                          <CookieBanner />
+                        </MaintenanceGate>
                       </ContactProvider>
                     </ContactReferenceProvider>
                 </InvoiceProvider>
