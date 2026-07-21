@@ -18,9 +18,8 @@ export default function MaintenanceBar() {
   const { settings, refresh } = useSiteContent();
   const [busy, setBusy] = useState(false);
 
-  if (user?.role !== "owner") return null;
-
   const on = !!settings?.maintenance?.enabled;
+  if (user?.role !== "owner" || !on) return null;
 
   const toggle = async () => {
     setBusy(true);

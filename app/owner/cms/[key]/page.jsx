@@ -4,6 +4,7 @@ import { use } from "react";
 import { MANAGED_PAGES } from "@/lib/cmsDefaults";
 import PageBuilder from "@/Components/owner/cms/PageBuilder";
 import GlobalSettingsEditor from "@/Components/owner/cms/GlobalSettingsEditor";
+import AuthPagesEditor from "@/Components/owner/cms/AuthPagesEditor";
 
 function humanize(slug) {
   return String(slug || "")
@@ -19,6 +20,9 @@ export default function CmsEditorPage({ params }) {
 
   if (managed?.kind === "global") {
     return <GlobalSettingsEditor meta={managed} />;
+  }
+  if (managed?.kind === "auth") {
+    return <AuthPagesEditor meta={managed} />;
   }
   if (managed) {
     return <PageBuilder pageKey={key} meta={managed} />;

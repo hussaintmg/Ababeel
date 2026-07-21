@@ -44,7 +44,7 @@ export default function ForgotPassword() {
 
   return (
     <div className="cms-auth min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 px-4">
-      <AuthTheme />
+      <AuthTheme page="forgot" />
       <div className="cms-auth-card w-full max-w-md bg-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] p-8">
         {/* Title */}
         <h1 className="cms-auth-title text-3xl font-bold text-gray-800 text-center mb-2">

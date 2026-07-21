@@ -21,10 +21,12 @@ const SHADOWS = {
 //   .cms-auth-link   inline links
 // Every rule is emitted only when a value is set, so unset options keep the
 // page's built-in look.
-export default function AuthTheme() {
+export default function AuthTheme({ page }) {
   const { settings } = useSiteContent();
-  const s = settings?.auth?.style || {};
-  const css = settings?.auth?.css || "";
+  const common = settings?.auth || {};
+  const pageConfig = common?.pages?.[page] || {};
+  const s = { ...(common.style || {}), ...(pageConfig.style || {}) };
+  const css = [common.css, pageConfig.css].filter(Boolean).join("\n");
   const px = (v) => {
     const n = parseInt(v, 10);
     return Number.isNaN(n) ? null : `${n}px`;
@@ -53,6 +55,12 @@ export default function AuthTheme() {
     const j = s.cardAlign === "left" ? "flex-start" : s.cardAlign === "right" ? "flex-end" : "center";
     r.push(`.cms-auth { justify-content: ${j} !important; }`);
   }
+  if (s.verticalAlign) {
+    const a = s.verticalAlign === "top" ? "flex-start" : s.verticalAlign === "bottom" ? "flex-end" : "center";
+    r.push(`.cms-auth { align-items: ${a} !important; }`);
+  }
+  const pagePadding = px(s.pagePadding);
+  if (pagePadding) r.push(`.cms-auth { padding: ${pagePadding} !important; }`);
 
   // ---- card ----
   const cardBits = [];
@@ -64,6 +72,8 @@ export default function AuthTheme() {
   const cmw = px(s.cardMaxWidth);
   if (cmw) cardBits.push(`max-width: ${cmw}; width: 100%`);
   if (s.cardBorderColor) cardBits.push(`border: 1px solid ${s.cardBorderColor}`);
+  const cp = px(s.cardPadding);
+  if (cp) cardBits.push(`padding: ${cp} !important`);
   if (cardBits.length) r.push(`.cms-auth .cms-auth-card { ${cardBits.join("; ")}; }`);
 
   // ---- typography ----

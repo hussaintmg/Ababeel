@@ -24,16 +24,29 @@ function getExtension(buffer) {
   return ".bin";
 }
 
-export async function uploadFile(buffer, folder, resourceType = "image") {
+async function optimizeRasterImage(buffer) {
+  const ext = getExtension(buffer);
+  if (![".jpg", ".png", ".webp"].includes(ext)) return buffer;
+
+  const sharp = (await import("sharp")).default;
+  return sharp(buffer)
+    .rotate()
+    .resize({ width: 2560, height: 2560, fit: "inside", withoutEnlargement: true })
+    .webp({ quality: 82, effort: 4 })
+    .toBuffer();
+}
+
+export async function uploadFile(buffer, folder, resourceType = "image", options = {}) {
   try {
+    const outputBuffer = options.optimize ? await optimizeRasterImage(buffer) : buffer;
     const folderPath = path.join(UPLOADS_DIR, folder);
     ensureDir(folderPath);
 
-    const ext = resourceType === "video" ? ".mp4" : getExtension(buffer);
+    const ext = resourceType === "video" ? ".mp4" : getExtension(outputBuffer);
     const uniqueName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext}`;
     const filePath = path.join(folderPath, uniqueName);
 
-    await fs.promises.writeFile(filePath, buffer);
+    await fs.promises.writeFile(filePath, outputBuffer);
 
     const publicId = `${folder}/${uniqueName}`;
     const url = `/uploads/${folder}/${uniqueName}`;

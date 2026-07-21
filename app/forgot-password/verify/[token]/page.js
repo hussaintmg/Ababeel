@@ -53,7 +53,7 @@ export default function VerifyCode() {
 
   return (
     <div className="cms-auth min-h-screen bg-gray-50 flex items-center justify-center px-4">
-      <AuthTheme />
+      <AuthTheme page="otp" />
       {/* Background Forgot Password */}
       <div className="absolute inset-0 opacity-40 pointer-events-none">
         <ForgotPassword />
@@ -82,7 +82,7 @@ export default function VerifyCode() {
 
             <button
               onClick={() => setCode("")}
-              className="mt-4 w-full py-2 bg-gray-100 rounded-lg text-gray-600 hover:bg-gray-200 transition"
+              className="cms-auth-secondary-btn mt-4 w-full py-2 bg-gray-100 rounded-lg text-gray-600 hover:bg-gray-200 transition"
             >
               Clear
             </button>

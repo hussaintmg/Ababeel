@@ -19,8 +19,8 @@ export async function POST(request) {
     if (!file || typeof file === "string") {
       return badRequestResponse("No file provided");
     }
-    if (file.size > 5 * 1024 * 1024) {
-      return badRequestResponse("File must be smaller than 5MB");
+    if (file.size > 50 * 1024 * 1024) {
+      return badRequestResponse("File must be 50MB or smaller");
     }
 
     const allowed = ["image/png", "image/jpeg", "image/jpg", "image/gif", "image/webp", "image/x-icon", "image/vnd.microsoft.icon", "image/svg+xml"];
@@ -29,7 +29,9 @@ export async function POST(request) {
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    const { url, publicId } = await uploadFile(buffer, "cms");
+    const { url, publicId } = await uploadFile(buffer, "cms", "image", {
+      optimize: true,
+    });
 
     return successResponse({ url, publicId });
   } catch (error) {

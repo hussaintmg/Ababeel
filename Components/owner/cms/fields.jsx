@@ -167,6 +167,9 @@ export function ImagePicker({ value, onChange }) {
           onChange={(e) => handleFile(e.target.files?.[0])}
         />
       </div>
+      <p className="mt-1 text-[11px] text-gray-400">
+        Maximum 50MB. Large JPG, PNG and WebP files are automatically optimized for fast loading.
+      </p>
       {error ? <p className="mt-1 text-xs text-red-500">{error}</p> : null}
     </div>
   );

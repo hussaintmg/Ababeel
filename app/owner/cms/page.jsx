@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Settings, Home, Info, Mail, Award, Briefcase, HelpCircle, BookOpen,
   Image as ImageIcon, Shield, Receipt, FileText, ExternalLink, Loader2,
-  Eye, EyeOff, LayoutTemplate, Plus, Trash2, X, Globe,
+  Eye, EyeOff, LayoutTemplate, Plus, Trash2, X, Globe, KeyRound,
 } from "lucide-react";
 import { slugify } from "@/lib/cmsDefaults";
 
@@ -17,6 +17,7 @@ const ICONS = {
   settings: Settings, home: Home, info: Info, mail: Mail, award: Award,
   briefcase: Briefcase, help: HelpCircle, book: BookOpen, image: ImageIcon,
   shield: Shield, receipt: Receipt, file: FileText,
+  key: KeyRound,
 };
 
 export default function CmsDashboardPage() {

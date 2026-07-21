@@ -14,7 +14,10 @@ export default function Page() {
   const router = useRouter();
   const { setUser } = useAuth();
   const { settings } = useSiteContent();
-  const auth = settings?.auth?.style || {};
+  const auth = {
+    ...(settings?.auth?.style || {}),
+    ...(settings?.auth?.pages?.login?.style || {}),
+  };
   const hideImg = !!auth.hideLoginImage;
 
   const [showPassword, setShowPassword] = useState(false);
@@ -48,7 +51,7 @@ export default function Page() {
 
   return (
     <div className="cms-auth w-full h-screen flex relative items-center justify-center">
-      <AuthTheme />
+      <AuthTheme page="login" />
       {/* Left Image Section */}
       {!hideImg ? (
         <div

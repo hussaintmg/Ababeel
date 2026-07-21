@@ -6,7 +6,7 @@ import Link from "next/link";
 import { toast } from "react-toastify";
 import {
   Save, Loader2, ArrowLeft, Palette, Phone, ImageIcon, Search, Menu,
-  PanelBottom, Share2, Code2, LayoutDashboard, KeyRound, Wrench,
+  PanelBottom, Share2, Code2, LayoutDashboard, Wrench,
 } from "lucide-react";
 import {
   Label, TextInput, TextArea, ImagePicker, Toggle, ListEditor, ColorInput, SelectInput,
@@ -21,7 +21,6 @@ const TABS = [
   { id: "topbar", label: "Navigation", icon: Menu },
   { id: "footer", label: "Footer", icon: PanelBottom },
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { id: "auth", label: "Auth Pages", icon: KeyRound },
   { id: "maintenance", label: "Maintenance", icon: Wrench },
   { id: "social", label: "Social", icon: Share2 },
   { id: "css", label: "Global CSS", icon: Code2 },

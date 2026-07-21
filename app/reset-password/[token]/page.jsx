@@ -49,7 +49,7 @@ export default function ResetPassword() {
 
   return (
     <div className="cms-auth min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 px-4">
-      <AuthTheme />
+      <AuthTheme page="reset" />
       <div className="cms-auth-card w-full max-w-md bg-white rounded-3xl shadow-xl p-8">
         <h1 className="cms-auth-title text-3xl font-bold text-gray-800 text-center mb-4">
           Reset Password
