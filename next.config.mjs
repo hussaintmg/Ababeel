@@ -30,7 +30,7 @@ const nextConfig = {
   // Keep native/binary-dependent packages out of the server bundle so their
   // internal __dirname stays correct. pdfkit needs this to locate its font
   // metric (.afm) data files; archiver pulls in native zlib helpers.
-  serverExternalPackages: ["pdfkit", "archiver", "sharp"],
+  serverExternalPackages: ["pdfkit", "archiver"],
 
   webpack: (config, { isServer }) => {
     if (isServer) {

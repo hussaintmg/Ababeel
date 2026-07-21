@@ -29,9 +29,7 @@ export async function POST(request) {
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    const { url, publicId } = await uploadFile(buffer, "cms", "image", {
-      optimize: true,
-    });
+    const { url, publicId } = await uploadFile(buffer, "cms");
 
     return successResponse({ url, publicId });
   } catch (error) {

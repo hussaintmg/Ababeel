@@ -109,8 +109,9 @@ export function ImagePicker({ value, onChange }) {
     setError("");
     setUploading(true);
     try {
+      const uploadFile = await optimizeImageForUpload(file);
       const fd = new FormData();
-      fd.append("file", file);
+      fd.append("file", uploadFile);
       const res = await axios.post("/api/owner/cms/upload", fd, {
         headers: { "Content-Type": "multipart/form-data" },
         withCredentials: true,
@@ -173,6 +174,30 @@ export function ImagePicker({ value, onChange }) {
       {error ? <p className="mt-1 text-xs text-red-500">{error}</p> : null}
     </div>
   );
+}
+
+async function optimizeImageForUpload(file) {
+  const rasterTypes = new Set(["image/jpeg", "image/jpg", "image/png", "image/webp"]);
+  if (!rasterTypes.has(file.type) || typeof createImageBitmap !== "function") return file;
+
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, 2560 / bitmap.width, 2560 / bitmap.height);
+    const width = Math.max(1, Math.round(bitmap.width * scale));
+    const height = Math.max(1, Math.round(bitmap.height * scale));
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    canvas.getContext("2d").drawImage(bitmap, 0, 0, width, height);
+    bitmap.close?.();
+
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/webp", 0.82));
+    if (!blob || blob.size >= file.size) return file;
+    const base = file.name.replace(/\.[^.]+$/, "") || "image";
+    return new File([blob], `${base}.webp`, { type: "image/webp", lastModified: Date.now() });
+  } catch {
+    return file;
+  }
 }
 
 /* ---------------- link input ({label, href}) ---------------- */
