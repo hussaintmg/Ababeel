@@ -5,6 +5,7 @@ import Topbar from "./Topbar";
 import Sidebar from "./Sidebar";
 import { usePath } from "@/context/PathContext";
 import { useSiteContent } from "@/context/SiteContentContext";
+import MaintenanceBar from "@/Components/cms/MaintenanceBar";
 // import { qualificationsData } from "@/app/data/qualifications";
 
 // const safetyCourses = Object.values(qualificationsData);
@@ -116,6 +117,8 @@ export default function TopbarSidebarComponentWrapper() {
 
   return (
     <div className="sticky top-0 z-500">
+      {/* Owner-only maintenance control strip */}
+      <MaintenanceBar />
       {/* Topbar */}
       <Topbar
         mobileOpen={mobileOpen}
