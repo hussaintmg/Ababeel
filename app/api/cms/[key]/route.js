@@ -8,9 +8,9 @@ export async function GET(request, { params }) {
     const { key } = await params;
 
     if (key === "global") {
-      const { settings, customCss } = await getGlobalBundle();
+      const { settings, customCss, faviconVersion } = await getGlobalBundle();
       return NextResponse.json(
-        { success: true, key: "global", settings, customCss },
+        { success: true, key: "global", settings, customCss, faviconVersion },
         // Global settings include the maintenance switch. Never serve a stale
         // copy here: the owner's quick toggle must take effect immediately.
         { headers: { "Cache-Control": "private, no-cache, no-store, max-age=0, must-revalidate" } }

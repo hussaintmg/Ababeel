@@ -14,7 +14,7 @@ import { ContactReferenceProvider } from "@/context/ContactReferenceContext";
 import CookieBanner from "@/Components/CookieBanner";
 import { SiteContentProvider } from "@/context/SiteContentContext";
 import MaintenanceGate from "@/Components/cms/MaintenanceGate";
-import { getGlobalBundle, getGlobalSettings } from "@/lib/cms";
+import { getFaviconInfo, getGlobalBundle, getGlobalSettings } from "@/lib/cms";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -144,12 +144,16 @@ export async function generateMetadata() {
     const title = template.includes("%s")
       ? template.replace("%s", pageTitle)
       : `${pageTitle} | ${brand}`;
-    const favicon = settings?.logos?.favicon || "/favicon.ico";
+    // Always point at the /favicon.ico route (it resolves the CMS icon server
+    // side) and stamp it with a version that changes whenever the icon does —
+    // without the stamp browsers keep showing the previously cached icon.
+    const { version } = await getFaviconInfo();
+    const favicon = `/favicon.ico?v=${version}`;
 
     return {
       title,
       description: settings?.seo?.defaultDescription || "Your safety technology partner",
-      icons: { icon: favicon, shortcut: favicon },
+      icons: { icon: favicon, shortcut: favicon, apple: favicon },
     };
   } catch (error) {
     return {
@@ -160,7 +164,7 @@ export async function generateMetadata() {
 }
 
 export default async function RootLayout({ children }) {
-  const { settings, customCss } = await getGlobalBundle();
+  const { settings, customCss, faviconVersion } = await getGlobalBundle();
   return (
     <html lang="en">
       <head>
@@ -177,7 +181,11 @@ export default async function RootLayout({ children }) {
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <AuthProvider>
-          <SiteContentProvider initialSettings={settings} initialCss={customCss}>
+          <SiteContentProvider
+            initialSettings={settings}
+            initialCss={customCss}
+            initialFaviconVersion={faviconVersion}
+          >
           <PathProvider>
               <NotificationsProvider>
                 <InvoiceProvider>
