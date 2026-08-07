@@ -41,9 +41,9 @@
     "teamName": "Ababeel Team"
   },
   "documents": {
-    "invoicePrefix": "ABABEEL-INVOICE",
-    "certificatePrefix": "ABABEEL-CERTIFICATE",
-    "catalogPrefix": "ABABEEL-CATALOG"
+    "invoicePrefix": "AS-INV",
+    "certificatePrefix": "AS-CERT",
+    "catalogPrefix": "AS-CAT"
   },
   "ui": {
     "copyright": "Ababeel. All rights reserved."
