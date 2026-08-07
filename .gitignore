@@ -43,8 +43,8 @@ next-env.d.ts
 app/success-stories
 app/resources
 app/instructors
-app/cookie-policy
 app/professional-dev/[program]
+app/cookie-policy
 ex
 
 # credentials and secrets - never commit
@@ -53,6 +53,7 @@ ex
 **/service-account*.json
 **/credentials*.json
 **/*-service-account*.json
+public/ababeel-*.json
 public/safetech-*.json
 
 # local file storage

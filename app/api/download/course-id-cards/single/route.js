@@ -53,7 +53,7 @@ function maybeFormatLines(text, enable, maxWords = 3) {
 function buildQrUrl(candidate) {
   const first = candidate.firstName?.replaceAll(" ", "-") || "";
   const last = candidate.lastName?.replaceAll(" ", "-") || "";
-  return `https://www.safetechq.co.uk/verify-certificate/${first}/${last}/${candidate.traineeId}/${candidate._id}`;
+  return `https://www.ababeelsafety.com.co.uk/verify-certificate/${first}/${last}/${candidate.traineeId}/${candidate._id}`;
 }
 
 function transformElements(elements, dataMap) {
