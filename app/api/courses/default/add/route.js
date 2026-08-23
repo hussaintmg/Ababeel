@@ -80,7 +80,7 @@ export async function POST(request) {
     // Parse request body
     const data = await request.json();
 
-    const { name, price, currency, currencySymbol, currencyCode, country, description } = data;
+    const { name, description } = data;
 
     // Validation
     if (!name || !name.trim()) {
@@ -93,20 +93,6 @@ export async function POST(request) {
     if (name.trim().length < 3) {
       return NextResponse.json(
         { success: false, error: "Course name must be at least 3 characters" },
-        { status: 400 }
-      );
-    }
-
-    if (!price || isNaN(price) || parseFloat(price) <= 0) {
-      return NextResponse.json(
-        { success: false, error: "Valid price is required" },
-        { status: 400 }
-      );
-    }
-
-    if (!currency || !currencySymbol) {
-      return NextResponse.json(
-        { success: false, error: "Currency selection is required" },
         { status: 400 }
       );
     }
@@ -128,19 +114,14 @@ export async function POST(request) {
     }
 
     // Create new course
+    // Price and currency are intentionally not accepted here — they are chosen
+    // by the organization when a course reference is created.
     const courseData = {
       userId: user._id,
       name: name.trim(),
-      price: parseFloat(price),
-      currency: currency.trim(),
-      currencySymbol: currencySymbol.trim(),
-      currencyCode: currencyCode?.trim() || "",
-      country: country?.trim() || "",
       description: description?.trim() || name.trim(),
       isActive: true,
     };
-
-    console.log(courseData)
 
 
     const newCourse = await DefaultCourse.create(courseData);
@@ -149,11 +130,6 @@ export async function POST(request) {
     const responseCourse = {
       id: newCourse._id.toString(),
       name: newCourse.name,
-      price: newCourse.price,
-      currency: newCourse.currency,
-      currencySymbol: newCourse.currencySymbol,
-      currencyCode: newCourse.currencyCode,
-      country: newCourse.country,
       description: newCourse.description,
       isActive: newCourse.isActive,
       createdAt: newCourse.createdAt,

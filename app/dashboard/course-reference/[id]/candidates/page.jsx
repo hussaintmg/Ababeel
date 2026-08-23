@@ -1471,7 +1471,7 @@ export default function AddCandidatesPage() {
                   <div>
                     <p className="text-sm text-gray-500">Course Price</p>
                     <p className="font-medium">
-                      {course.currencySymbol}
+                      {course.currencySymbol || "₨"}{" "}
                       {course.coursePrice?.toLocaleString()}
                     </p>
                   </div>

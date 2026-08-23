@@ -14,27 +14,25 @@ const defaultCourseSchema = new mongoose.Schema({
     trim: true,
     maxlength: [1000, 'Description cannot exceed 1000 characters']
   },
+  // Price and currency are no longer captured for default courses — the
+  // organization sets them when creating a course reference. The fields are
+  // kept (optional) so existing documents keep validating.
   price: {
     type: Number,
-    required: [true, 'Course price is required'],
+    default: 0,
     min: [0, 'Price cannot be negative']
   },
   currency: {
-    type: String,
-    required: [true, 'Currency is required'],
-    default: 'GBP'
+    type: String
   },
   currencySymbol: {
-    type: String,
-    default: '£'
+    type: String
   },
   currencyCode: {
-    type: String,
-    default: 'GBP'
+    type: String
   },
   country: {
-    type: String,
-    default: 'United Kingdom'
+    type: String
   },
   // Default course indicator
   isDefaultCourse: {

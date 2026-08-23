@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCourses } from "@/context/CourseContext";
 import { useAuth } from "@/context/AuthContext";
 import { fetchCountries, searchCountries } from "@/utils/countries";
+import { ALLOWED_CURRENCIES, DEFAULT_CURRENCY } from "@/constants/currencies";
 import { ChevronDown, Search } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -21,10 +22,16 @@ export default function CreateCoursePage() {
   // from the default course catalogue only.
   const [formData, setFormData] = useState({
     courseId: "",
+    coursePrice: "",
+    currencyCode: DEFAULT_CURRENCY.code,
     country: "",
     countryDialCode: "",
     startDate: "",
   });
+
+  const selectedCurrency =
+    ALLOWED_CURRENCIES.find((c) => c.code === formData.currencyCode) ||
+    DEFAULT_CURRENCY;
 
   const [filteredCountries, setFilteredCountries] = useState([]);
   const [showCountryDropdown, setShowCountryDropdown] = useState(false);
@@ -122,6 +129,14 @@ export default function CreateCoursePage() {
     setCourseSearch("");
   };
 
+  const handlePriceChange = (e) => {
+    const { value } = e.target;
+    // Allow only digits and a single decimal point
+    if (value === "" || /^\d*\.?\d*$/.test(value)) {
+      setFormData((prev) => ({ ...prev, coursePrice: value }));
+    }
+  };
+
   const filteredCourses = activeCourses.filter((course) =>
     course.name.toLowerCase().includes(courseSearch.toLowerCase()),
   );
@@ -138,6 +153,13 @@ export default function CreateCoursePage() {
         return;
       }
 
+      const coursePrice = parseFloat(formData.coursePrice);
+      if (!formData.coursePrice || isNaN(coursePrice) || coursePrice <= 0) {
+        toast.error("Please enter a valid course price");
+        setLoading(false);
+        return;
+      }
+
       const selectedCourse = activeCourses.find(
         (course) => course._id === formData.courseId,
       );
@@ -145,8 +167,10 @@ export default function CreateCoursePage() {
       const courseData = {
         courseId: selectedCourse._id,
         courseName: selectedCourse.name,
-        coursePrice: selectedCourse.price,
-        currencySymbol: selectedCourse.currencySymbol || "₨",
+        coursePrice,
+        currency: selectedCurrency.currency,
+        currencyCode: selectedCurrency.code,
+        currencySymbol: selectedCurrency.symbol,
         startDate: formData.startDate,
         country: formData.country,
         createdBy: user._id,
@@ -280,6 +304,59 @@ export default function CreateCoursePage() {
               )}
             </div>
 
+            {/* Price and Currency */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Course Price *
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500">
+                    {selectedCurrency.symbol}
+                  </div>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    name="coursePrice"
+                    value={formData.coursePrice}
+                    onChange={handlePriceChange}
+                    className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                    placeholder="0.00"
+                  />
+                </div>
+                <p className="mt-1 text-xs text-gray-500">
+                  Price charged per candidate for this course reference.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Currency *
+                </label>
+                <select
+                  name="currencyCode"
+                  value={formData.currencyCode}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      currencyCode: e.target.value,
+                    }))
+                  }
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white"
+                >
+                  {ALLOWED_CURRENCIES.map((currency) => (
+                    <option key={currency.code} value={currency.code}>
+                      {currency.currency} ({currency.code}) {currency.symbol}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-xs text-gray-500">
+                  Only {ALLOWED_CURRENCIES.map((c) => c.code).join(" and ")} are
+                  supported.
+                </p>
+              </div>
+            </div>
+
             {/* Country */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -377,7 +454,9 @@ export default function CreateCoursePage() {
             <div className="pt-4">
               <button
                 type="submit"
-                disabled={loading || activeCourses.length === 0}
+                disabled={
+                  loading || activeCourses.length === 0 || !formData.coursePrice
+                }
                 className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? "Creating Course..." : "Next → Add Candidates"}

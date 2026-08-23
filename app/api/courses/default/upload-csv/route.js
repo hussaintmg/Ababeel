@@ -67,21 +67,25 @@ export async function POST(request) {
       const course = courses[i];
 
       // Basic validation
-      if (!course.name || !course.price || !course.description) {
+      if (!course.name || !course.description) {
         errors.push(`Row ${i + 1}: Missing required fields`);
         continue;
       }
 
-      // Validate price
-      const price = parseFloat(course.price);
-      if (isNaN(price) || price < 0) {
-        errors.push(`Row ${i + 1}: Invalid price`);
-        continue;
-      }
+      // Price and currency are not part of the course catalogue — they are
+      // chosen by the organization when a course reference is created, so any
+      // such columns coming from the CSV are dropped here.
+      const {
+        price,
+        currency,
+        currencySymbol,
+        currencyCode,
+        country,
+        ...courseFields
+      } = course;
 
-      // Prepare course data with default values
       validatedCourses.push({
-        ...course,
+        ...courseFields,
         createdBy: user._id,
         updatedBy: user._id,
         isDefaultCourse: true,
@@ -111,8 +115,6 @@ export async function POST(request) {
         courses: insertedCourses.map((course) => ({
           id: course._id,
           name: course.name,
-          price: course.price,
-          currency: course.currency,
         })),
       },
     });
@@ -149,11 +151,6 @@ export async function GET(request) {
     const sampleData = [
       {
         name: "Award in Boom Lift Safe Operator Training",
-        price: "3300",
-        currency: "PKR",
-        currencySymbol: "₨",
-        currencyCode: "PKR",
-        country: "Pakistan",
         description: "Award in Boom Lift Safe Operator Training",
         categories: "Safety,Operator Training",
         duration: "24",
@@ -161,11 +158,6 @@ export async function GET(request) {
       },
       {
         name: "Level 2 Award In Emergency First Aid at Work",
-        price: "1925",
-        currency: "PKR",
-        currencySymbol: "₨",
-        currencyCode: "PKR",
-        country: "Pakistan",
         description: "Level 2 Award In Emergency First Aid at Work",
         categories: "First Aid,Emergency",
         duration: "8",

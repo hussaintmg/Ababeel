@@ -17,19 +17,15 @@ const CSVUploadForm = () => {
   const [headers, setHeaders] = useState([]);
   const fileInputRef = useRef(null);
 
-  // Required columns for CSV
-  const requiredColumns = ['name', 'price', 'description'];
-  const optionalColumns = ['currency', 'currencySymbol', 'currencyCode', 'country', 'categories', 'duration', 'level'];
+  // Required columns for CSV. Price and currency are deliberately absent —
+  // they are chosen by the organization when a course reference is created.
+  const requiredColumns = ['name', 'description'];
+  const optionalColumns = ['categories', 'duration', 'level'];
 
   const downloadSampleCSV = () => {
     const sampleData = [
       {
         name: 'Award in Boom Lift Safe Operator Training',
-        price: '250',
-        currency: 'GBP',
-        currencySymbol: '£',
-        currencyCode: 'GBP',
-        country: 'United Kingdom',
         description: 'Comprehensive training for safe operation of boom lifts',
         categories: 'Safety,Operator Training,Construction',
         duration: '24',
@@ -37,11 +33,6 @@ const CSVUploadForm = () => {
       },
       {
         name: 'Level 2 Award In Emergency First Aid at Work',
-        price: '120',
-        currency: 'GBP',
-        currencySymbol: '£',
-        currencyCode: 'GBP',
-        country: 'United Kingdom',
         description: 'Essential first aid training for workplace emergencies',
         categories: 'First Aid,Emergency,Health & Safety',
         duration: '8',
@@ -49,11 +40,6 @@ const CSVUploadForm = () => {
       },
       {
         name: 'Advanced Construction Management',
-        price: '450',
-        currency: 'GBP',
-        currencySymbol: '£',
-        currencyCode: 'GBP',
-        country: 'United Kingdom',
         description: 'Advanced techniques in construction project management',
         categories: 'Management,Construction,Leadership',
         duration: '40',
@@ -67,7 +53,7 @@ const CSVUploadForm = () => {
     const url = URL.createObjectURL(blob);
     
     link.setAttribute('href', url);
-    link.setAttribute('download', 'course_template_uk.csv');
+    link.setAttribute('download', 'course_template.csv');
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -247,16 +233,6 @@ const CSVUploadForm = () => {
             errors.push(`Row ${rowNumber}: "${requiredColumn}" is empty or missing`);
             rowValid = false;
           }
-          
-          // Special validation for price
-          if (requiredColumn === 'price' && value) {
-            const priceStr = value.toString().replace(/[^\d.-]/g, '');
-            const price = parseFloat(priceStr);
-            if (isNaN(price) || price < 0) {
-              errors.push(`Row ${rowNumber}: Invalid price "${value}". Must be a positive number.`);
-              rowValid = false;
-            }
-          }
         }
       });
 
@@ -274,7 +250,7 @@ const CSVUploadForm = () => {
     }
   };
 
-  // Prepare courses for upload with UK defaults
+  // Prepare courses for upload
   const prepareCoursesForUpload = (data, detectedHeaders) => {
     const normalizedHeaders = detectedHeaders.map(h => 
       h.toLowerCase().replace(/[^a-zA-Z0-9]/g, '').replace(/\s+/g, '')
@@ -305,14 +281,6 @@ const CSVUploadForm = () => {
           .filter(cat => cat !== '');
       }
 
-      // Parse price
-      let price = 0;
-      const priceStr = getValue('price');
-      if (priceStr) {
-        const cleanPrice = priceStr.toString().replace(/[^\d.-]/g, '');
-        price = parseFloat(cleanPrice) || 0;
-      }
-
       // Parse duration
       let duration = null;
       const durationStr = getValue('duration');
@@ -334,12 +302,7 @@ const CSVUploadForm = () => {
 
       return {
         name: getValue('name'),
-        price: price,
         description: getValue('description'),
-        currency: getValue('currency') || 'GBP',
-        currencySymbol: getValue('currencysymbol') || getValue('currency_symbol') || '£',
-        currencyCode: getValue('currencycode') || getValue('currency_code') || 'GBP',
-        country: getValue('country') || 'United Kingdom',
         categories: categories,
         duration: duration,
         level: level,
@@ -352,8 +315,7 @@ const CSVUploadForm = () => {
       return course.name && 
              course.name.trim() !== '' && 
              course.description && 
-             course.description.trim() !== '' && 
-             course.price > 0;
+             course.description.trim() !== '';
     });
   };
 
@@ -432,7 +394,6 @@ const CSVUploadForm = () => {
                   totalRows: filteredData.length,
                   validRows: courses.length,
                   headers: results.meta.fields,
-                  region: 'UK'
                 })
               });
 
@@ -495,7 +456,7 @@ const CSVUploadForm = () => {
     <div className="bg-white rounded-xl shadow-lg p-4 md:p-6">
       <div className="mb-6">
         <h2 className="text-xl font-bold text-gray-900 mb-2">Upload Courses via CSV</h2>
-        <p className="text-gray-600">Bulk upload courses for United Kingdom region</p>
+        <p className="text-gray-600">Bulk upload courses into the course catalogue</p>
       </div>
 
       {/* File Upload Area */}
@@ -762,22 +723,21 @@ const CSVUploadForm = () => {
         </button>
       </div>
 
-      {/* CSV Format Requirements for UK */}
+      {/* CSV Format Requirements */}
       <div className="mt-8 pt-6 border-t border-gray-200">
         <h4 className="text-sm font-medium text-gray-900 mb-3">CSV Format Requirements:</h4>
         
         <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
           <div className="flex items-start gap-2">
             <div className="bg-blue-100 p-1.5 rounded">
-              <span className="text-sm font-bold text-blue-800">🇬🇧</span>
+              <span className="text-sm font-bold text-blue-800">ℹ️</span>
             </div>
             <div>
-              <p className="text-sm font-medium text-blue-900 mb-1">Region Defaults:</p>
+              <p className="text-sm font-medium text-blue-900 mb-1">Pricing:</p>
               <ul className="text-xs text-blue-800 space-y-1">
-                <li>• <strong>Currency:</strong> GBP (£) - Default currency symbol: £</li>
-                <li>• <strong>Country:</strong> United Kingdom</li>
-                <li>• <strong>Currency Code:</strong> GBP</li>
-                <li>• <strong>Price Format:</strong> Use numbers only (e.g., 250 for £250)</li>
+                <li>• Price and currency are <strong>not</strong> part of the course catalogue.</li>
+                <li>• Any <code>price</code> or <code>currency</code> column in the file is ignored.</li>
+                <li>• The organization selects the price and currency (AED or PKR) when creating a course reference.</li>
               </ul>
             </div>
           </div>
@@ -830,9 +790,8 @@ const CSVUploadForm = () => {
             <div>
               <p className="text-xs font-medium text-green-800 mb-1">Tips for CSV upload:</p>
               <ul className="text-xs text-green-700 space-y-1">
-                <li>• Use GBP (£) currency format for courses</li>
-                <li>• Set country to &quot;United Kingdom&quot; or leave empty for default</li>
-                <li>• Include only numbers in price column (no currency symbols)</li>
+                <li>• Only the course name and description are imported</li>
+                <li>• Price and currency columns are ignored if present</li>
                 <li>• Use specific categories (e.g., &quot;Construction&quot;, &quot;Health & Safety&quot;, &quot;First Aid&quot;)</li>
                 <li>• Duration should be in hours (e.g., 24 for a 24-hour course)</li>
                 <li>• Level should be: beginner, intermediate, advanced, or all</li>
@@ -849,12 +808,7 @@ const CSVUploadForm = () => {
 const getColumnDescription = (column) => {
   const descriptions = {
     name: 'Course name (text, required)',
-    price: 'Course price (number only, no £ symbol, required)',
     description: 'Course description (text, required)',
-    currency: 'Currency name e.g., "GBP"',
-    currencySymbol: 'Currency symbol e.g., "£"',
-    currencyCode: 'Currency code e.g., "GBP"',
-    country: 'Country name e.g., "United Kingdom"',
     categories: 'Comma-separated categories e.g., "Construction,Safety"',
     duration: 'Course duration in hours e.g., "24"',
     level: 'Course level: beginner, intermediate, advanced, or all'

@@ -11,7 +11,12 @@ const CourseReferenceSchema = new mongoose.Schema({
   courseId: { type: String, required: true },
   courseName: { type: String, required: true },
   coursePrice: { type: Number, required: true },
-  currencySymbol: { type: String, default: "£" },
+
+  // Currency is chosen by the organization when the reference is created and
+  // is restricted to the codes in constants/currencies.js (AED and PKR).
+  currency: { type: String, default: "Pakistani Rupee" },
+  currencyCode: { type: String, default: "PKR" },
+  currencySymbol: { type: String, default: "₨" },
 
   // Course duration and dates
   validity: { type: String },

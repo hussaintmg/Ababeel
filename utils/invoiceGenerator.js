@@ -2,6 +2,7 @@ import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import webData from "@/constants";
 import { buildPublicUrl } from "@/constants";
+import { resolveCurrency } from "@/constants/currencies";
 
 export const downloadInvoicePDF = async (
   invoice,
@@ -19,9 +20,17 @@ export const downloadInvoicePDF = async (
       return referenceMap ? referenceMap[refId] : null;
     };
 
-    // Helper to format currency
+    // Helper to format currency using the currency stored on the invoice
+    // (falling back to the linked course reference, then the default).
+    const invoiceCurrency = resolveCurrency(
+      invoice.currencyCode ||
+        invoice.currency ||
+        getReferenceDetails(invoice)?.currencyCode ||
+        getReferenceDetails(invoice)?.currencySymbol,
+    );
+
     const formatCurrency = (amount) => {
-      return `£ ${parseFloat(amount || 0)
+      return `${invoiceCurrency.symbol} ${parseFloat(amount || 0)
         .toFixed(2)
         .replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`;
     };

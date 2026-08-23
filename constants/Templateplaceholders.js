@@ -34,7 +34,7 @@ const SAMPLE_CANDIDATE = {
 const SAMPLE_COURSE_REFERENCE = {
   courseName:        "Accident Investigation Train the Trainer",
   coursePrice:       300,
-  currencySymbol:    "\u00a3",
+  currencySymbol:    "\u20a8",
   validity:          "3 Years",
   startDate:         "01 Feb 2024",
   endDate:           "28 Feb 2024",
@@ -52,9 +52,9 @@ const SAMPLE_COURSE_REFERENCE = {
 const SAMPLE_COURSE = {
   name:              "First Aid Level 2",
   price:             300,
-  currency:          "GBP",
-  currencySymbol:    "\u00a3",
-  country:           "United Kingdom",
+  currency:          "Pakistani Rupee",
+  currencySymbol:    "\u20a8",
+  country:           "Pakistan",
   description:       "Comprehensive first aid training covering CPR and emergency response.",
 };
 

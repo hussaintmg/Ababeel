@@ -5,6 +5,7 @@ import Invoice from "@/models/Invoice";
 import { getAuthenticatedUser } from "@/lib/auth";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit";
 import { isValidObjectId } from "@/lib/validation";
+import { resolveCurrency } from "@/constants/currencies";
 
 export async function POST(request) {
   try {
@@ -22,6 +23,18 @@ export async function POST(request) {
 
     const data = requestData.courseData || requestData;
     const userId = authUser._id.toString();
+
+    const coursePrice = parseFloat(data.coursePrice);
+    if (!Number.isFinite(coursePrice) || coursePrice <= 0) {
+      return NextResponse.json(
+        { success: false, error: "A valid course price is required" },
+        { status: 400 },
+      );
+    }
+
+    // Only the currencies in constants/currencies.js are supported; anything
+    // else falls back to the default rather than being stored as-is.
+    const currency = resolveCurrency(data.currencyCode || data.currency);
 
     const userCourseCount = await CourseReference.countDocuments({
       userId: userId,
@@ -54,16 +67,16 @@ export async function POST(request) {
     const courseData = {
       userId: userId,
       name: data.courseName || "Unnamed Course",
-      price: data.coursePrice || 0,
-      currency: data.currency || "PKR",
-      currencySymbol: data.currencySymbol || "₨",
-      currencyCode: data.currencyCode || "PKR",
+      price: coursePrice,
+      currency: currency.currency,
+      currencySymbol: currency.symbol,
+      currencyCode: currency.code,
       country: data.country || "",
       description: data.description || data.courseName || "Course description",
       isActive: true,
       courseId: data.courseId || `CRS-${referenceNumber}`,
       courseName: data.courseName,
-      coursePrice: data.coursePrice,
+      coursePrice,
       validity: data.validity,
       startDate: data.startDate ? new Date(data.startDate) : new Date(),
       endDate,
@@ -90,8 +103,8 @@ export async function POST(request) {
       {
         description: data.courseName || "Course",
         quantity: 1,
-        unitPrice: data.coursePrice || 0,
-        amount: data.coursePrice || 0,
+        unitPrice: coursePrice,
+        amount: coursePrice,
       },
     ];
 
@@ -100,9 +113,12 @@ export async function POST(request) {
       invoiceDate: new Date(),
       dueDate,
       courseId: course._id,
-      subtotal: data.coursePrice || 0,
-      totalAmount: data.coursePrice || 0,
-      balanceDue: data.coursePrice || 0,
+      currency: currency.currency,
+      currencyCode: currency.code,
+      currencySymbol: currency.symbol,
+      subtotal: coursePrice,
+      totalAmount: coursePrice,
+      balanceDue: coursePrice,
       clientId: userId,
       clientName: authUser.username || "Client",
       items,

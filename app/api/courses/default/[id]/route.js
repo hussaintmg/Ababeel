@@ -108,7 +108,6 @@ export async function PUT(request, { params }) {
         $set: {
           name: body.name,
           description: body.description || "",
-          price: parseFloat(body.price) || 0,
           status: body.status || "draft",
           updatedAt: Date.now()
         }

@@ -15,6 +15,7 @@ import {
   FileText,
   ChevronUp,
   ChevronDown,
+  Banknote,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -304,9 +305,7 @@ export default function CourseReferencesPage() {
                   </p>
                 </div>
                 <div className="p-2 md:p-3 bg-yellow-100 rounded-lg">
-                  <span className="text-sm md:text-2xl px-1 font-bold text-yellow-500">
-                    £
-                  </span>
+                  <Banknote className="h-4 w-4 md:h-6 md:w-6 text-yellow-500" />
                 </div>
               </div>
             </div>
@@ -399,8 +398,8 @@ export default function CourseReferencesPage() {
                           <div className="flex justify-between">
                             <span className="text-gray-500">Price:</span>
                             <span className="font-medium">
-                              {course.currencySymbol}{" "}
-                              {course.coursePrice?.toFixed(4)}
+                              {course.currencySymbol || "₨"}{" "}
+                              {course.coursePrice?.toFixed(2)}
                             </span>
                           </div>
                           <div className="flex justify-between">
@@ -545,7 +544,7 @@ export default function CourseReferencesPage() {
                           <td className="px-4 py-4">
                             <div className="flex items-center gap-1">
                               <span className="text-sm font-medium">
-                                {course.coursePrice?.toFixed(4)}
+                                {course.coursePrice?.toFixed(2)}
                               </span>
                               <span className="text-xs text-gray-500">
                                 {course.currencySymbol || "₨"}
@@ -658,8 +657,8 @@ export default function CourseReferencesPage() {
                         <div>
                           <p className="text-xs text-gray-500">Price</p>
                           <p className="font-medium text-sm md:text-base">
-                            {selectedCourse.currencySymbol}{" "}
-                            {selectedCourse.coursePrice?.toFixed(4)}
+                            {selectedCourse.currencySymbol || "₨"}{" "}
+                            {selectedCourse.coursePrice?.toFixed(2)}
                           </p>
                         </div>
                       </div>

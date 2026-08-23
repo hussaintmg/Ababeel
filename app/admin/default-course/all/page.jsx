@@ -98,7 +98,6 @@ const DefaultCoursesPage = () => {
     setEditFormData({
       name: course.name || "",
       description: course.description || "",
-      price: course.price || "",
       status: course.status || "draft",
     });
   };
@@ -201,12 +200,6 @@ const DefaultCoursesPage = () => {
     } finally {
       setDeleteAllLoading(false);
     }
-  };
-
-  // Format currency
-  const formatCurrency = (price,currencySymbol) => {
-    if (!price) return "Free";
-    return `${currencySymbol} ${parseFloat(price).toLocaleString("en-PK")}`;
   };
 
   // Get status badge
@@ -362,12 +355,6 @@ const DefaultCoursesPage = () => {
                       scope="col"
                       className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                     >
-                      Price
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
                       Status
                     </th>
                     <th
@@ -417,24 +404,6 @@ const DefaultCoursesPage = () => {
                                 {course.description || "No description"}
                               </div>
                             </div>
-                          </div>
-                        )}
-                      </td>
-
-                      {/* Price Column */}
-                      <td className="px-6 py-4">
-                        {editingCourse === course._id ? (
-                          <input
-                            type="number"
-                            name="price"
-                            value={editFormData.price}
-                            onChange={handleInputChange}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="Price"
-                          />
-                        ) : (
-                          <div className="font-semibold text-gray-900">
-                            {formatCurrency(course.price,course.currencySymbol)}
                           </div>
                         )}
                       </td>

@@ -25,6 +25,20 @@ const InvoiceSchema = new mongoose.Schema(
       required: false,
     },
 
+    // Currency (restricted to the codes in constants/currencies.js)
+    currency: {
+      type: String,
+      default: "Pakistani Rupee",
+    },
+    currencyCode: {
+      type: String,
+      default: "PKR",
+    },
+    currencySymbol: {
+      type: String,
+      default: "₨",
+    },
+
     // Amount details
     subtotal: {
       type: Number,
