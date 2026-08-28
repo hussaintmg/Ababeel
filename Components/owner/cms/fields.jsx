@@ -205,11 +205,18 @@ async function optimizeImageForUpload(file) {
 export function VideoPicker({ value, onChange }) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
+  // What the server had to do to the file to make it scrubbable — an index
+  // moved to the front, a codec converted, keyframes tightened. Worth saying:
+  // it explains why the uploaded file is not byte-identical, and on a host
+  // with no ffmpeg it is the warning that the video may not follow the scroll
+  // at all.
+  const [note, setNote] = useState("");
   const inputRef = useRef(null);
 
   const handleFile = async (file) => {
     if (!file) return;
     setError("");
+    setNote("");
     setUploading(true);
     try {
       const fd = new FormData();
@@ -218,8 +225,10 @@ export function VideoPicker({ value, onChange }) {
         headers: { "Content-Type": "multipart/form-data" },
         withCredentials: true,
       });
-      if (res.data?.success && res.data.url) onChange(res.data.url);
-      else setError(res.data?.error || "Upload failed");
+      if (res.data?.success && res.data.url) {
+        onChange(res.data.url);
+        setNote(res.data.data?.videoNote || res.data.videoNote || "");
+      } else setError(res.data?.error || "Upload failed");
     } catch (e) {
       setError(e?.response?.data?.error || "Upload failed");
     } finally {
@@ -268,8 +277,15 @@ export function VideoPicker({ value, onChange }) {
         />
       </div>
       <p className="mt-1 text-[11px] text-gray-400">
-        MP4 (H.264) or WebM, up to 200MB. Short, well-compressed clips scrub the most smoothly.
+        MP4 (H.264) or WebM, up to 200MB. Uploads are prepared for scrolling automatically — the
+        index is moved to the front so a browser can seek the file, and keyframes are tightened so
+        the picture keeps up.
       </p>
+      {note ? (
+        <p className="mt-1 rounded-lg bg-blue-50 border border-blue-100 px-2 py-1.5 text-[11px] text-blue-800">
+          {note}
+        </p>
+      ) : null}
       {error ? <p className="mt-1 text-xs text-red-500">{error}</p> : null}
     </div>
   );

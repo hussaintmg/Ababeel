@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireOwner } from "@/lib/auth";
 import { uploadFile } from "@/utils/upload";
+import { prepareScrollVideo } from "@/lib/cms/videoPrepare";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit";
 import { safeErrorResponse, successResponse, badRequestResponse } from "@/lib/errors";
 
@@ -35,10 +36,26 @@ export async function POST(request) {
       return badRequestResponse("Unsupported file type");
     }
 
-    const buffer = Buffer.from(await file.arrayBuffer());
+    let buffer = Buffer.from(await file.arrayBuffer());
+
+    // A video for the Scroll Video section is seeked, not played, and an
+    // ordinary export usually cannot be seeked at all until its index has been
+    // moved to the front — which is why an uploaded video would sit on one
+    // frame however far the visitor scrolled. Fixing it once, here, costs a
+    // second; leaving it costs every visitor. On any failure the original is
+    // stored unchanged and `videoNote` says what could not be done.
+    let videoNote = "";
+    let videoAction = "";
+    if (isVideo) {
+      const prepared = await prepareScrollVideo(buffer, file.name || "");
+      buffer = prepared.buffer;
+      videoNote = prepared.note || "";
+      videoAction = prepared.action || "";
+    }
+
     const { url, publicId } = await uploadFile(buffer, "cms");
 
-    return successResponse({ url, publicId });
+    return successResponse({ url, publicId, videoNote, videoAction });
   } catch (error) {
     console.error("CMS upload error:", error);
     return safeErrorResponse(error, 500);

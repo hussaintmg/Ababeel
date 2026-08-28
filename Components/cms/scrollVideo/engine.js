@@ -600,6 +600,13 @@ export function validateScrollVideo(p = {}) {
     );
   }
 
+  if (/\.(mov|m4v)(\?|#|$)/i.test(String(p.src || ""))) {
+    warn(
+      "This is a QuickTime file.",
+      "Browsers often cannot play .mov at all — it is frequently HEVC, which Chrome and Firefox refuse. Re-upload it and it will be converted to MP4 automatically, or export an MP4 from your editor."
+    );
+  }
+
   if (p.src && !looksLikeUrl(p.src)) {
     err(`The video address “${String(p.src).slice(0, 60)}” is not a usable URL.`, "It should start with / for an uploaded file, or https:// for one elsewhere.");
   } else if (p.src && !VIDEO_EXT.test(p.src) && !p.src.startsWith("blob:") && !p.src.startsWith("data:")) {

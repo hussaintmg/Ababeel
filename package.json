@@ -13,7 +13,8 @@
     "cms:animation": "node scripts/build-scroll-sequence.mjs",
     "cms:home": "node scripts/seed-ababeel-homepage.mjs",
     "cms:about": "node scripts/seed-about-page.mjs",
-    "cms:qualification": "node scripts/seed-qualification-page.mjs"
+    "cms:qualification": "node scripts/seed-qualification-page.mjs",
+    "cms:fixvideos": "node scripts/fix-scroll-videos.mjs"
   },
   "dependencies": {
     "@tailwindcss/browser": "^4.3.3",

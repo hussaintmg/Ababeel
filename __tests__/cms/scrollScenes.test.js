@@ -453,3 +453,17 @@ describe("a long sequence is flagged for what it costs on a phone", () => {
     expect(issues.find((i) => /heavy download/.test(i.message))).toBeUndefined();
   });
 });
+
+describe("a video format the browser cannot play", () => {
+  test("a QuickTime source is flagged with what to do about it", () => {
+    const issues = validateScrollVideo({ src: "/uploads/cms/clip.mov", poster: "/p.webp", title: "x" });
+    const mov = issues.find((i) => /QuickTime/.test(i.message));
+    expect(mov).toBeDefined();
+    expect(mov.hint).toMatch(/HEVC/);
+  });
+
+  test("an ordinary MP4 is not flagged", () => {
+    const issues = validateScrollVideo({ src: "/uploads/cms/clip.mp4", poster: "/p.webp", title: "x" });
+    expect(issues.find((i) => /QuickTime/.test(i.message))).toBeUndefined();
+  });
+});

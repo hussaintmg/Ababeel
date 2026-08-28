@@ -535,6 +535,13 @@ export default function ScrollVideoRenderer({ p = {}, builderProgress = null, ra
           different one.
         </div>
       ) : null}
+      {showDiagnostics && videoBroken ? (
+        <div className="absolute inset-x-0 top-0 m-3 rounded-lg bg-red-600/95 px-3 py-2 text-[12px] text-white shadow-lg z-20">
+          <strong>The browser could not play this video.</strong> It is a format it cannot decode —
+          most often an HEVC .mov from a phone. Re-upload the file and it will be converted to MP4,
+          or build a frame sequence from it instead. The section is showing its poster meanwhile.
+        </div>
+      ) : null}
       {showDiagnostics && diagnosis.pinRepaired > 0 ? (
         <div className="absolute inset-x-0 bottom-0 m-3 rounded-lg bg-blue-600/95 px-3 py-2 text-[12px] text-white shadow-lg z-20">
           {diagnosis.pinRepaired} wrapper{diagnosis.pinRepaired > 1 ? "s were" : " was"} clipping this
