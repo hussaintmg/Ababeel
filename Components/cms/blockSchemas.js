@@ -8,6 +8,21 @@ export function newId() {
   return `b_${Date.now().toString(36)}_${_uid}`;
 }
 
+/**
+ * Appearance fields every repeating item gets.
+ *
+ * A card grid, a tile row and a stats band are all "several of the same thing",
+ * and until now the only way to make one of them stand out was to give the
+ * whole block a colour. These sit at the end of each item's fields, empty by
+ * default, and each renderer falls back to the block's own setting when they
+ * are — so an untouched item looks exactly as it did.
+ */
+export const ITEM_STYLE_FIELDS = [
+  { key: "accent", type: "color", label: "Accent (this item only)" },
+  { key: "bgColor", type: "color", label: "Background (this item only)" },
+  { key: "textColor", type: "color", label: "Text colour (this item only)" },
+];
+
 export const BLOCK_TYPES = {
   hero: {
     label: "Hero",
@@ -142,6 +157,7 @@ export const BLOCK_TYPES = {
           { key: "text", type: "textarea", label: "Text" },
           { key: "href", type: "text", label: "Link (optional)" },
           { key: "linkLabel", type: "text", label: "Link text (shown when a link is set)" },
+          ...ITEM_STYLE_FIELDS,
         ],
       },
     ],
@@ -221,6 +237,7 @@ export const BLOCK_TYPES = {
           { key: "title", type: "text", label: "Title" },
           { key: "text", type: "textarea", label: "Text" },
           { key: "href", type: "text", label: "Link (optional)" },
+          ...ITEM_STYLE_FIELDS,
         ],
       },
     ],
@@ -242,6 +259,15 @@ export const BLOCK_TYPES = {
       height: "520",
       accent: "",
       bgColor: "",
+      beforeChipBg: "",
+      beforeChipText: "",
+      afterChipBg: "",
+      afterChipText: "",
+      handleColor: "",
+      dividerColor: "",
+      dividerWidth: "2",
+      radius: "16",
+      showHint: true,
     },
     fields: [
       { key: "eyebrow", type: "text", label: "Eyebrow (small label)" },
@@ -258,7 +284,16 @@ export const BLOCK_TYPES = {
         help: "0 shows the after image, 100 shows the before image.",
       },
       { key: "height", type: "text", label: "Height (px)" },
+      { key: "radius", type: "text", label: "Corner radius (px)" },
       { key: "accent", type: "color", label: "Accent colour" },
+      { key: "beforeChipBg", type: "color", label: "Before label — background" },
+      { key: "beforeChipText", type: "color", label: "Before label — text" },
+      { key: "afterChipBg", type: "color", label: "After label — background" },
+      { key: "afterChipText", type: "color", label: "After label — text" },
+      { key: "handleColor", type: "color", label: "Handle colour" },
+      { key: "dividerColor", type: "color", label: "Divider line colour" },
+      { key: "dividerWidth", type: "text", label: "Divider line width (px)" },
+      { key: "showHint", type: "boolean", label: "Show the \"drag the handle\" hint" },
       { key: "bgColor", type: "color", label: "Background colour" },
     ],
   },
@@ -359,6 +394,7 @@ export const BLOCK_TYPES = {
           { key: "value", type: "text", label: "Value" },
           { key: "suffix", type: "text", label: "Suffix (+, %, …)" },
           { key: "label", type: "text", label: "Label" },
+          ...ITEM_STYLE_FIELDS,
         ],
       },
     ],
@@ -391,6 +427,7 @@ export const BLOCK_TYPES = {
         itemFields: [
           { key: "q", type: "text", label: "Question" },
           { key: "a", type: "textarea", label: "Answer" },
+          ...ITEM_STYLE_FIELDS,
         ],
       },
     ],
@@ -567,6 +604,7 @@ export const BLOCK_TYPES = {
           { key: "role", type: "text", label: "Role" },
           { key: "avatar", type: "image", label: "Avatar" },
           { key: "rating", type: "select", label: "Rating", options: ["5", "4", "3", "2", "1"] },
+          ...ITEM_STYLE_FIELDS,
         ],
       },
     ],

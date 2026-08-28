@@ -60,3 +60,43 @@ describe("the template library", () => {
     }
   });
 });
+
+describe("per-item appearance", () => {
+  test("every repeating item an author styles can be styled", () => {
+    // The lists where one item usefully differs from its neighbours. A card, a
+    // tile, a figure or a question with no colour of its own is the gap this
+    // covers: previously only the whole block could be recoloured.
+    const wants = [
+      ["cardGrid", "items"],
+      ["imageTiles", "items"],
+      ["stats", "items"],
+      ["faq", "items"],
+      ["testimonials", "items"],
+    ];
+    for (const [type, key] of wants) {
+      const field = BLOCK_TYPES[type].fields.find((f) => f.key === key);
+      expect(field).toBeDefined();
+      const keys = field.itemFields.map((f) => f.key);
+      expect(keys).toEqual(expect.arrayContaining(["accent", "bgColor", "textColor"]));
+    }
+  });
+
+  test("a new item starts with no colours, so it inherits the block's", () => {
+    const field = BLOCK_TYPES.cardGrid.fields.find((f) => f.key === "items");
+    for (const f of field.itemFields.filter((x) => ["accent", "bgColor", "textColor"].includes(x.key))) {
+      expect(f.type).toBe("color");
+      // No default: an empty value is what makes the block's setting apply.
+      expect(f.default).toBeUndefined();
+    }
+  });
+
+  test("the before/after slider exposes each of its parts", () => {
+    const keys = BLOCK_TYPES.beforeAfter.fields.map((f) => f.key);
+    expect(keys).toEqual(
+      expect.arrayContaining([
+        "beforeChipBg", "beforeChipText", "afterChipBg", "afterChipText",
+        "handleColor", "dividerColor", "dividerWidth", "radius", "showHint",
+      ])
+    );
+  });
+});

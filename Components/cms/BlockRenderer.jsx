@@ -318,16 +318,21 @@ function CardGridBlock({ p, s }) {
           const inner = (
             <motion.div
               variants={reveal}
-              className="group/card relative h-full bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all p-7 overflow-hidden"
+              // Each card may override the block's colours; an untouched card
+              // inherits them, so nothing changes until an author asks it to.
+              className={`group/card relative h-full rounded-2xl border shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all p-7 overflow-hidden ${
+                it.bgColor ? "" : "bg-white"
+              } ${it.bgColor ? "border-transparent" : "border-gray-100"}`}
+              style={{ backgroundColor: it.bgColor || undefined, color: it.textColor || undefined }}
             >
               {/* A rule in the accent colour that fills out on hover — enough to
                   make a grid of cards feel deliberate rather than generic. */}
               <span
                 className="absolute left-0 top-0 h-1 w-12 group-hover/card:w-full transition-all duration-500"
-                style={{ backgroundColor: accent }}
+                style={{ backgroundColor: it.accent || accent }}
               />
               {numbered ? (
-                <div className="text-3xl font-extrabold tabular-nums mb-4" style={{ color: accent }}>
+                <div className="text-3xl font-extrabold tabular-nums mb-4" style={{ color: it.accent || accent }}>
                   {String(i + 1).padStart(2, "0")}
                 </div>
               ) : it.image ? (
@@ -335,15 +340,19 @@ function CardGridBlock({ p, s }) {
               ) : it.icon ? (
                 <div
                   className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl mb-5"
-                  style={{ backgroundColor: tint(accent, 0.1) }}
+                  style={{ backgroundColor: tint(it.accent || accent, 0.1) }}
                 >
                   {it.icon}
                 </div>
               ) : null}
-              {it.title ? <h3 className="text-lg font-semibold text-gray-900">{it.title}</h3> : null}
-              {it.text ? <p className="mt-2 text-gray-600 text-sm leading-relaxed">{it.text}</p> : null}
+              {it.title ? (
+                <h3 className={`text-lg font-semibold ${it.textColor ? "" : "text-gray-900"}`}>{it.title}</h3>
+              ) : null}
+              {it.text ? (
+                <p className={`mt-2 text-sm leading-relaxed ${it.textColor ? "opacity-80" : "text-gray-600"}`}>{it.text}</p>
+              ) : null}
               {it.href && it.linkLabel ? (
-                <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold" style={{ color: accent }}>
+                <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold" style={{ color: it.accent || accent }}>
                   {it.linkLabel}
                   <ChevronRight size={15} className="group-hover/card:translate-x-1 transition-transform" />
                 </span>
@@ -399,18 +408,26 @@ function StatsBlock({ p, s }) {
               // Hairline dividers turn four numbers into one band instead of
               // four floating figures.
               className={`text-center px-4 ${i > 0 ? "md:border-l" : ""} ${i % 2 === 1 ? "border-l md:border-l" : ""}`}
-              style={{ borderColor: inherit ? "rgba(255,255,255,.18)" : "rgba(15,23,42,.1)" }}
+              style={{
+                borderColor: inherit ? "rgba(255,255,255,.18)" : "rgba(15,23,42,.1)",
+                backgroundColor: it.bgColor || undefined,
+                color: it.textColor || undefined,
+              }}
             >
               <div
                 className={`text-4xl md:text-5xl font-extrabold tracking-tight tabular-nums ${
-                  accent || inherit ? "" : "text-blue-600"
+                  it.accent || accent || inherit ? "" : "text-blue-600"
                 }`}
-                style={accent ? { color: accent } : undefined}
+                style={it.accent || accent ? { color: it.accent || accent } : undefined}
               >
                 {it.value}
                 {it.suffix ? <span className="text-2xl md:text-3xl align-top">{it.suffix}</span> : null}
               </div>
-              <div className={`mt-2 text-sm md:text-base font-medium ${inherit ? "opacity-85" : "text-gray-600"}`}>
+              <div
+                className={`mt-2 text-sm md:text-base font-medium ${
+                  it.textColor ? "opacity-90" : inherit ? "opacity-85" : "text-gray-600"
+                }`}
+              >
                 {it.label}
               </div>
             </motion.div>
@@ -661,8 +678,13 @@ function BeforeAfterBlock({ p, s: st }) {
           <Reveal>
             <div
               ref={frame}
-              className="relative overflow-hidden rounded-2xl shadow-xl select-none"
-              style={{ height, cursor: dragging ? "grabbing" : "ew-resize", touchAction: "pan-y" }}
+              className="relative overflow-hidden shadow-xl select-none"
+              style={{
+                height,
+                borderRadius: `${Math.max(parseInt(p.radius, 10) >= 0 ? parseInt(p.radius, 10) : 16, 0)}px`,
+                cursor: dragging ? "grabbing" : "ew-resize",
+                touchAction: "pan-y",
+              }}
               onPointerDown={(e) => {
                 setDragging(true);
                 moveTo(e.clientX);
@@ -675,20 +697,31 @@ function BeforeAfterBlock({ p, s: st }) {
               </div>
 
               {p.beforeLabel ? (
-                <span className="absolute top-4 left-4 px-3 py-1 rounded-full text-xs font-semibold bg-black/60 text-white backdrop-blur pointer-events-none">
+                <span
+                  className="absolute top-4 left-4 px-3 py-1 rounded-full text-xs font-semibold backdrop-blur pointer-events-none"
+                  style={{ backgroundColor: p.beforeChipBg || "rgba(0,0,0,.6)", color: p.beforeChipText || "#fff" }}
+                >
                   {p.beforeLabel}
                 </span>
               ) : null}
               {p.afterLabel ? (
                 <span
-                  className="absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-semibold text-white backdrop-blur pointer-events-none"
-                  style={{ backgroundColor: accent }}
+                  className="absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-semibold backdrop-blur pointer-events-none"
+                  style={{ backgroundColor: p.afterChipBg || accent, color: p.afterChipText || "#fff" }}
                 >
                   {p.afterLabel}
                 </span>
               ) : null}
 
-              <div className="absolute inset-y-0 pointer-events-none" style={{ left: `${pos}%`, width: 2, backgroundColor: "#fff", boxShadow: "0 0 0 1px rgba(0,0,0,.25)" }} />
+              <div
+                className="absolute inset-y-0 pointer-events-none"
+                style={{
+                  left: `${pos}%`,
+                  width: Math.max(parseInt(p.dividerWidth, 10) || 2, 1),
+                  backgroundColor: p.dividerColor || "#fff",
+                  boxShadow: "0 0 0 1px rgba(0,0,0,.25)",
+                }}
+              />
               <button
                 type="button"
                 role="slider"
@@ -701,13 +734,14 @@ function BeforeAfterBlock({ p, s: st }) {
                   e.stopPropagation();
                   setDragging(true);
                 }}
-                className="absolute top-1/2 w-11 h-11 rounded-full bg-white flex items-center justify-center focus:outline-none focus:ring-4"
+                className="absolute top-1/2 w-11 h-11 rounded-full flex items-center justify-center focus:outline-none focus:ring-4"
                 // Centred on the seam by transform rather than a negative
                 // margin, so it stays on the line at every width.
                 style={{
                   left: `${pos}%`,
                   transform: "translate(-50%, -50%)",
-                  color: accent,
+                  backgroundColor: p.handleColor || "#ffffff",
+                  color: p.handleColor ? "#ffffff" : accent,
                   boxShadow: "0 4px 16px rgba(0,0,0,.3)",
                 }}
               >
@@ -715,9 +749,11 @@ function BeforeAfterBlock({ p, s: st }) {
                 <ChevronRight size={15} />
               </button>
             </div>
-            <p className={`mt-3 text-center text-xs ${inherit ? "opacity-70" : "text-gray-400"}`}>
-              Drag the handle, or focus it and use the arrow keys.
-            </p>
+            {p.showHint === false ? null : (
+              <p className={`mt-3 text-center text-xs ${inherit ? "opacity-70" : "text-gray-400"}`}>
+                Drag the handle, or focus it and use the arrow keys.
+              </p>
+            )}
           </Reveal>
         ) : (
           <div className="rounded-2xl border border-dashed border-gray-300 py-20 text-center text-sm text-gray-400">
@@ -861,11 +897,18 @@ function ImageTilesBlock({ p, s: st }) {
                 ) : (
                   <div className="w-full h-64 bg-gray-100" />
                 )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
-                <div className="absolute inset-x-0 bottom-0 p-5 text-white">
-                  <span className="block h-1 w-9 mb-3 rounded-full" style={{ backgroundColor: accent }} />
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    backgroundImage: it.bgColor
+                      ? `linear-gradient(to top, ${it.bgColor}, transparent)`
+                      : "linear-gradient(to top, rgba(0,0,0,.85), rgba(0,0,0,.25) 45%, transparent)",
+                  }}
+                />
+                <div className="absolute inset-x-0 bottom-0 p-5" style={{ color: it.textColor || "#fff" }}>
+                  <span className="block h-1 w-9 mb-3 rounded-full" style={{ backgroundColor: it.accent || accent }} />
                   {it.title ? <h3 className="text-lg font-semibold">{it.title}</h3> : null}
-                  {it.text ? <p className="mt-1.5 text-sm text-white/80 leading-relaxed">{it.text}</p> : null}
+                  {it.text ? <p className="mt-1.5 text-sm opacity-80 leading-relaxed">{it.text}</p> : null}
                 </div>
               </motion.div>
             );
@@ -901,16 +944,22 @@ function FaqBlock({ p, s: st }) {
         {items.map((it, i) => {
           const isOpen = open === i;
           return (
-            <Reveal key={i} className="border border-gray-200 rounded-xl overflow-hidden bg-white">
+            <Reveal
+              key={i}
+              className={`border rounded-xl overflow-hidden ${it.bgColor ? "border-transparent" : "border-gray-200 bg-white"}`}
+              style={{ backgroundColor: it.bgColor || undefined, color: it.textColor || undefined }}
+            >
               <button
                 onClick={() => setOpen(isOpen ? null : i)}
-                className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left font-semibold text-gray-900 hover:bg-gray-50"
+                className={`w-full flex items-center justify-between gap-4 px-5 py-4 text-left font-semibold ${
+                  it.textColor ? "" : "text-gray-900 hover:bg-gray-50"
+                }`}
               >
                 <span>{it.q}</span>
                 <ChevronDown
                   size={18}
                   className={`shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`}
-                  style={{ color: accent }}
+                  style={{ color: it.accent || accent }}
                 />
               </button>
               <motion.div
@@ -919,7 +968,7 @@ function FaqBlock({ p, s: st }) {
                 transition={{ duration: 0.3 }}
                 className="overflow-hidden"
               >
-                <p className="px-5 pb-5 text-gray-600 leading-relaxed">{it.a}</p>
+                <p className={`px-5 pb-5 leading-relaxed ${it.textColor ? "opacity-80" : "text-gray-600"}`}>{it.a}</p>
               </motion.div>
             </Reveal>
           );
@@ -1148,14 +1197,25 @@ function GalleryBlock({ p }) {
 /* ---------- Testimonials slider / grid ---------- */
 function TestimonialCard({ t }) {
   const rating = parseInt(t.rating, 10) || 5;
+  const star = t.accent || "";
   return (
-    <div className="h-full bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg transition-shadow p-6 text-left flex flex-col">
+    <div
+      className={`h-full rounded-2xl border shadow-sm hover:shadow-lg transition-shadow p-6 text-left flex flex-col ${
+        t.bgColor ? "border-transparent" : "bg-white border-gray-100"
+      }`}
+      style={{ backgroundColor: t.bgColor || undefined, color: t.textColor || undefined }}
+    >
       <div className="flex gap-0.5 mb-3">
         {Array.from({ length: 5 }).map((_, n) => (
-          <Star key={n} size={15} className={n < rating ? "text-amber-400 fill-amber-400" : "text-gray-300"} />
+          <Star
+            key={n}
+            size={15}
+            className={star ? "" : n < rating ? "text-amber-400 fill-amber-400" : "text-gray-300"}
+            style={star ? { color: n < rating ? star : "rgba(0,0,0,.15)", fill: n < rating ? star : "transparent" } : undefined}
+          />
         ))}
       </div>
-      <p className="text-gray-700 leading-relaxed flex-1">“{t.quote}”</p>
+      <p className={`leading-relaxed flex-1 ${t.textColor ? "" : "text-gray-700"}`}>“{t.quote}”</p>
       <div className="mt-4 flex items-center gap-3">
         {t.avatar ? (
           <img src={t.avatar} alt={t.name} className="w-10 h-10 rounded-full object-cover" />
@@ -1165,8 +1225,8 @@ function TestimonialCard({ t }) {
           </div>
         )}
         <div>
-          <div className="font-semibold text-gray-900 text-sm">{t.name}</div>
-          {t.role ? <div className="text-xs text-gray-500">{t.role}</div> : null}
+          <div className={`font-semibold text-sm ${t.textColor ? "" : "text-gray-900"}`}>{t.name}</div>
+          {t.role ? <div className={`text-xs ${t.textColor ? "opacity-70" : "text-gray-500"}`}>{t.role}</div> : null}
         </div>
       </div>
     </div>
