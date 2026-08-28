@@ -20,13 +20,38 @@ import { useEffect, useRef, useState, useCallback } from "react";
 
 export const SCROLL_MODES = [
   { value: "scrub", label: "Frame scrubbing" },
-  { value: "progressive", label: "Progressive playback" },
   { value: "reverse", label: "Reverse playback" },
   { value: "pingpong", label: "Ping pong" },
   { value: "loop", label: "Loop while scrolling" },
 ];
 
 const clamp = (v, lo, hi) => Math.min(Math.max(v, lo), hi);
+
+/**
+ * Scroll progress of the track through its viewport, 0–1.
+ *
+ * `viewTop`/`viewHeight` describe whatever the section scrolls inside: the
+ * browser viewport on a public page, or the builder's preview pane. Keeping
+ * this pure makes the mapping testable without a DOM.
+ */
+export function computeProgress({ rectTop, rectHeight, viewTop = 0, viewHeight }) {
+  const total = rectHeight - viewHeight;
+  if (total <= 0) return 0;
+  return clamp((viewTop - rectTop) / total, 0, 1);
+}
+
+/** Nearest scrollable ancestor, or null when the section scrolls with the page. */
+function findScrollParent(el) {
+  let node = el?.parentElement;
+  while (node && node !== document.body && node !== document.documentElement) {
+    const { overflowY } = getComputedStyle(node);
+    if (/(auto|scroll|overlay)/.test(overflowY) && node.scrollHeight > node.clientHeight + 1) {
+      return node;
+    }
+    node = node.parentElement;
+  }
+  return null;
+}
 
 /** Map raw 0–1 scroll progress onto the configured playback range and mode. */
 export function mapProgress(raw, { mode = "scrub", startOffset = 0, endOffset = 100, speed = 1, reverse = false, loops = 1 } = {}) {
@@ -216,11 +241,20 @@ export default function ScrollVideo({ p = {}, builderProgress = null }) {
     const wrap = wrapRef.current;
     if (!wrap || typeof window === "undefined") return undefined;
 
+    // The section may scroll inside the page or inside the builder's preview
+    // pane; measure against whichever actually scrolls it.
+    const scroller = findScrollParent(wrap);
     const compute = () => {
       const rect = wrap.getBoundingClientRect();
-      const total = rect.height - window.innerHeight;
-      if (total <= 0) return 0;
-      return clamp(-rect.top / total, 0, 1);
+      const view = scroller
+        ? { top: scroller.getBoundingClientRect().top, height: scroller.clientHeight }
+        : { top: 0, height: window.innerHeight };
+      return computeProgress({
+        rectTop: rect.top,
+        rectHeight: rect.height,
+        viewTop: view.top,
+        viewHeight: view.height,
+      });
     };
 
     const onScroll = () => {
@@ -245,18 +279,20 @@ export default function ScrollVideo({ p = {}, builderProgress = null }) {
                 }
               });
             },
-            { rootMargin: "100px 0px" }
+            { root: scroller, rootMargin: "100px 0px" }
           )
         : null;
     if (io) io.observe(wrap);
     else visibleRef.current = true;
 
-    window.addEventListener("scroll", onScroll, { passive: true });
+    // Capture phase: `scroll` does not bubble, so this is what lets a section
+    // inside the builder's preview pane be driven by that pane's scrolling.
+    window.addEventListener("scroll", onScroll, { passive: true, capture: true });
     window.addEventListener("resize", onScroll, { passive: true });
     onScroll();
 
     return () => {
-      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("scroll", onScroll, { capture: true });
       window.removeEventListener("resize", onScroll);
       io?.disconnect();
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
@@ -278,7 +314,10 @@ export default function ScrollVideo({ p = {}, builderProgress = null }) {
   const hasVideo = !!src;
   const reducedFallback = reduced && p.respectReducedMotion !== false;
 
-  /* ---- reduced motion: a static poster, no scroll hijacking at all ---- */
+  /* ---- reduced motion: one still frame, no scroll hijacking, no playback ----
+     The point of this branch is *less* motion. It shows the poster when there
+     is one and otherwise holds the video on a single frame — it must never
+     autoplay or loop, which would be more motion than the scroll version. */
   if (reducedFallback) {
     return (
       <section className="relative w-full overflow-hidden" style={{ minHeight: stageHeight }}>
@@ -286,15 +325,26 @@ export default function ScrollVideo({ p = {}, builderProgress = null }) {
           <img src={p.poster} alt={p.title || ""} className="w-full h-full object-cover" style={{ minHeight: stageHeight }} />
         ) : hasVideo ? (
           <video
+            ref={videoRef}
             src={src}
-            poster={p.poster || undefined}
             className="w-full object-cover"
             style={{ minHeight: stageHeight, objectFit: fit }}
             muted
             playsInline
-            loop
-            autoPlay={p.autoplayReducedMotion !== false}
+            controls={false}
+            disablePictureInPicture
             preload="metadata"
+            onLoadedMetadata={(e) => {
+              // Park on the frame the section is configured to start from, so
+              // the fallback is a real picture rather than a black box.
+              const v = e.currentTarget;
+              const start = clamp((Number(p.startOffset) || 0) / 100, 0, 1);
+              try {
+                v.currentTime = Math.min(start * v.duration, Math.max(v.duration - 0.05, 0));
+              } catch {
+                /* some browsers refuse to seek this early; the poster frame stands */
+              }
+            }}
           />
         ) : null}
         <Overlay p={p} />

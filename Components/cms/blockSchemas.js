@@ -532,7 +532,6 @@ export const BLOCK_TYPES = {
         label: "Playback mode",
         options: [
           { value: "scrub", label: "Frame scrubbing" },
-          { value: "progressive", label: "Progressive playback" },
           { value: "reverse", label: "Reverse playback" },
           { value: "pingpong", label: "Ping pong" },
           { value: "loop", label: "Loop while scrolling" },

@@ -127,9 +127,16 @@ configured name (plus `index`, `number`, `isFirst`, `isLast`, `isEven`, `isOdd`)
   soon as it arrives, so an idle pinned section costs nothing.
 - Range requests are served by `app/uploads/[...path]/route.js`, so seeking
   fetches only the bytes it needs.
-- Modes: frame scrubbing, progressive, reverse, ping-pong, loop-while-scrolling,
-  with start/end offsets, scroll speed, smoothing and an optional mobile source.
-- `prefers-reduced-motion` renders a static poster and releases the scroll.
+- Modes: frame scrubbing, reverse, ping-pong and loop-while-scrolling, with
+  start/end offsets, scroll speed, smoothing and an optional mobile source.
+- The video is **never played**: scroll sets `currentTime` and the element stays
+  paused throughout. Nothing in the section calls `play()`.
+- It is driven by whichever container actually scrolls it — the page on a public
+  page, the preview pane in the builder (`scroll` does not bubble, so the
+  listener is registered in the capture phase).
+- `prefers-reduced-motion` releases the scroll and shows a single still frame:
+  the poster when one is set, otherwise the video parked on its start frame.
+  It never autoplays or loops — that would be *more* motion, not less.
 - The builder shows the real duration, dimensions and (where the browser exposes
   `requestVideoFrameCallback`) the measured frame rate, with a frame scrubber.
 
