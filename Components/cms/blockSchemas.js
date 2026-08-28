@@ -796,7 +796,7 @@ export const BLOCK_TYPES = {
       pauseOutside: true,
       preload: "auto",
       showProgress: false,
-      respectReducedMotion: true,
+      reducedMotion: "scrub",
     },
     fields: [
       { key: "src", type: "video", label: "Video" },
@@ -850,7 +850,18 @@ export const BLOCK_TYPES = {
       { key: "pauseOutside", type: "boolean", label: "Pause outside the section" },
       { key: "preload", type: "select", label: "Preload", options: ["auto", "metadata", "none"] },
       { key: "showProgress", type: "boolean", label: "Show a progress bar" },
-      { key: "respectReducedMotion", type: "boolean", label: "Respect reduced motion (static fallback)" },
+      {
+        key: "reducedMotion",
+        type: "select",
+        label: "If the visitor has reduced motion switched on",
+        help:
+          "Windows and macOS both offer this, and it is commonly on. A single still frame is what the section used to fall back to — it looks broken, because the picture never changes.",
+        options: [
+          { value: "scrub", label: "Follow the scroll, without the hold (recommended)" },
+          { value: "still", label: "Show a single still frame" },
+          { value: "full", label: "Play exactly as normal" },
+        ],
+      },
       { key: "title", type: "text", label: "Overlay title (optional)" },
       { key: "subtitle", type: "textarea", label: "Overlay subtitle (optional)" },
       { key: "textColor", type: "color", label: "Overlay text color" },

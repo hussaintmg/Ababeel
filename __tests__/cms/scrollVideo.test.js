@@ -1,4 +1,4 @@
-import { mapProgress, computeProgress, loadOrder, lockStep, trackTravel, SCROLL_MODES } from "@/Components/cms/ScrollVideo";
+import { mapProgress, computeProgress, loadOrder, lockStep, trackTravel, reducedMotionMode, SCROLL_MODES } from "@/Components/cms/ScrollVideo";
 
 describe("scroll → playback mapping", () => {
   test("frame scrubbing maps scroll linearly onto the clip", () => {
@@ -176,5 +176,31 @@ describe("how much scroll a sequence gets", () => {
   test("the author's own pxPerFrame is respected above the floor", () => {
     expect(trackTravel(100, 30)).toBe(3000);
     expect(trackTravel(10, 30)).toBeGreaterThanOrEqual(900);
+  });
+});
+
+describe("what a visitor with reduced motion gets", () => {
+  test("a block that never chose gets the scroll-following fallback", () => {
+    expect(reducedMotionMode({})).toBe("scrub");
+    expect(reducedMotionMode({ reducedMotion: "" })).toBe("scrub");
+  });
+
+  test("the old boolean still means what it meant", () => {
+    // false always meant "ignore the setting".
+    expect(reducedMotionMode({ respectReducedMotion: false })).toBe("full");
+    // true meant a frozen frame; it now maps to the gentler option, because a
+    // picture that never changes is what made the section look broken.
+    expect(reducedMotionMode({ respectReducedMotion: true })).toBe("scrub");
+  });
+
+  test("an explicit choice always wins", () => {
+    expect(reducedMotionMode({ reducedMotion: "still", respectReducedMotion: false })).toBe("still");
+    expect(reducedMotionMode({ reducedMotion: "full", respectReducedMotion: true })).toBe("full");
+    expect(reducedMotionMode({ reducedMotion: "scrub" })).toBe("scrub");
+  });
+
+  test("an unknown value falls back rather than breaking the section", () => {
+    expect(reducedMotionMode({ reducedMotion: "nonsense" })).toBe("scrub");
+    expect(reducedMotionMode(null)).toBe("scrub");
   });
 });

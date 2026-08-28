@@ -13,6 +13,7 @@ import AnimationPicker from "@/Components/owner/cms/scroll/AnimationPicker";
 import { SlidersHorizontal, Palette, Database, Code2 } from "lucide-react";
 import CodeTab from "@/Components/owner/cms/CodeTab";
 import DecorationEditor from "@/Components/owner/cms/DecorationEditor";
+import ReducedMotionNotice from "@/Components/owner/cms/ReducedMotionNotice";
 import { scopeCss } from "@/lib/cms/scopeCss";
 
 export default function BlockEditor({ block, onChange, features = {}, scopeHint = "", previewDoc = null }) {
@@ -136,6 +137,7 @@ export default function BlockEditor({ block, onChange, features = {}, scopeHint 
                   </p>
                 )}
               </div>
+              <ReducedMotionNotice props={props} />
               <ScrollVideoStudio props={props} />
               <FrameGenerator
                 props={props}

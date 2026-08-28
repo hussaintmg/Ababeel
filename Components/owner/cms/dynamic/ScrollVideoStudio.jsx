@@ -79,7 +79,7 @@ export default function ScrollVideoStudio({ props }) {
 
       <div className="relative bg-black" style={{ height: 220 }}>
         <div className="absolute inset-0 [&_section]:!h-full [&_section>div]:!h-full [&_section>div]:!static">
-          <ScrollVideo p={{ ...props, stageHeight: "220px", height: "220px", sticky: false, respectReducedMotion: false }} builderProgress={mapped} />
+          <ScrollVideo p={{ ...props, stageHeight: "220px", height: "220px", sticky: false, reducedMotion: "full" }} builderProgress={mapped} />
         </div>
       </div>
 

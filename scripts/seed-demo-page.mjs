@@ -89,7 +89,7 @@ const listingBlocks = [
       pauseOutside: true,
       preload: "auto",
       showProgress: true,
-      respectReducedMotion: true,
+      reducedMotion: "scrub",
     },
     _style: {},
   },

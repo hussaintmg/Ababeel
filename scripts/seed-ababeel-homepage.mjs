@@ -347,7 +347,10 @@ const practical = (animation) =>
     speed: "1",
     smoothing: "0.18",
     showProgress: true,
-    respectReducedMotion: true,
+    // A visitor with "reduce motion" on still gets the frames, just without the
+    // eased catch-up and the scroll hold. A single still frame — what this used
+    // to fall back to — is indistinguishable from a broken section.
+    reducedMotion: "scrub",
   });
 
 /* ------------------------------------------------------------------ *

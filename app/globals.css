@@ -242,11 +242,17 @@ button{cursor: pointer;}
   display: none !important;
 }
 
+/* Reduced motion collapses the track only where the block asked for a still
+   frame. This used to apply to every scroll-video section, and with
+   !important it overrode the component's own choice: a section set to keep
+   following the scroll still had its track flattened to one screen and its
+   stage un-stuck, so the picture never changed and the section looked broken.
+   The component marks its chosen mode on the element; this follows it. */
 @media (prefers-reduced-motion: reduce) {
-  [data-cms-scroll-video] {
+  [data-cms-scroll-video="still"] {
     height: auto !important;
   }
-  [data-cms-scroll-video] > div {
+  [data-cms-scroll-video="still"] > div {
     position: static !important;
   }
 }

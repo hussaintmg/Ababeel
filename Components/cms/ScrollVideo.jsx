@@ -418,6 +418,39 @@ export function useScrollLock({ wrapRef, scroller, progressRef, enabled }) {
   }, [wrapRef, scroller, progressRef, enabled]);
 }
 
+/**
+ * What a visitor with "reduce motion" turned on gets.
+ *
+ * Windows hides this under Accessibility → Visual effects → Animation effects,
+ * and it is commonly off — for performance, or by policy — so this is not a
+ * rare setting. The old behaviour was a single frozen frame, which looks
+ * exactly like a broken section: the picture never changes however far you
+ * scroll, and nothing says why.
+ *
+ * "scrub" is the default because a scroll-driven sequence is not the kind of
+ * motion the setting is aimed at: nothing moves on its own, the visitor drives
+ * every frame, and it stops the instant they stop. What it does drop is the
+ * part that is imposed on them — the eased catch-up and the scroll hold.
+ *
+ *   full   play exactly as normal
+ *   scrub  frames still follow the scroll, with no easing and no scroll hold
+ *   still  one frame, no track (what this used to always do)
+ */
+export const REDUCED_MOTION_MODES = [
+  { value: "scrub", label: "Follow the scroll, without the hold (recommended)" },
+  { value: "still", label: "Show a single still frame" },
+  { value: "full", label: "Play exactly as normal" },
+];
+
+export function reducedMotionMode(p) {
+  const explicit = String(p?.reducedMotion || "");
+  if (explicit === "full" || explicit === "still" || explicit === "scrub") return explicit;
+  // Older blocks carry a boolean. `false` always meant "ignore the setting";
+  // `true` meant a still frame, which is the behaviour being replaced, so it
+  // maps to the gentler option rather than the one that looked broken.
+  return p?.respectReducedMotion === false ? "full" : "scrub";
+}
+
 function prefersReducedMotion() {
   if (typeof window === "undefined" || !window.matchMedia) return false;
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -479,7 +512,13 @@ export default function ScrollVideo({ p = {}, builderProgress = null, radius = "
   const travel = trackTravel(frameCount, pxPerFrame);
   const trackHeight = p.height || (usesFrames ? `calc(${stageHeight} + ${travel}px)` : "300vh");
   const fit = p.fit === "contain" ? "contain" : "cover";
-  const smoothing = clamp(Number(p.smoothing ?? 0.18) || 0.18, 0.02, 1);
+
+  // What a visitor with "reduce motion" on gets. Only "still" abandons the
+  // scroll behaviour; "scrub" keeps the frames following the scroll and drops
+  // the eased catch-up and the hold, which are the parts they did not ask for.
+  const motionMode = reducedMotionMode(p);
+  const gentle = reduced && motionMode === "scrub";
+  const smoothing = gentle ? 1 : clamp(Number(p.smoothing ?? 0.18) || 0.18, 0.02, 1);
 
   /* ---- responsive + reduced motion ---- */
   useEffect(() => {
@@ -682,7 +721,8 @@ export default function ScrollVideo({ p = {}, builderProgress = null, radius = "
       p.lockScroll !== false &&
       sticky &&
       builderProgress === null &&
-      !(reduced && p.respectReducedMotion !== false) &&
+      !gentle &&
+      !reduced &&
       (usesFrames || hasVideoSrc),
   });
 
@@ -708,7 +748,7 @@ export default function ScrollVideo({ p = {}, builderProgress = null, radius = "
   const shownProgress = builderProgress === null ? progress : builderProgress;
 
   const hasVideo = hasVideoSrc;
-  const reducedFallback = reduced && p.respectReducedMotion !== false;
+  const reducedFallback = reduced && motionMode === "still";
   const hasSource = hasVideo || usesFrames;
 
   /* ---- reduced motion: one still frame, no scroll hijacking, no playback ----
@@ -761,7 +801,10 @@ export default function ScrollVideo({ p = {}, builderProgress = null, radius = "
       ref={wrapRef}
       className="relative w-full"
       style={{ height: hasVideo || usesFrames ? trackHeight : stageHeight }}
-      data-cms-scroll-video=""
+      // The chosen reduced-motion mode rides on the attribute, so the
+      // stylesheet can collapse the track for "still" without flattening the
+      // sections that still follow the scroll.
+      data-cms-scroll-video={motionMode}
     >
       <div
         className="overflow-hidden"
