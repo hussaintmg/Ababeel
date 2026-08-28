@@ -6,6 +6,31 @@ import { safeErrorResponse, successResponse, notFoundResponse, badRequestRespons
 import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit";
 import { getCmsDoc, getGlobalSettings, deepMerge } from "@/lib/cms";
 import { MANAGED_PAGES, DEFAULT_GLOBAL_SETTINGS } from "@/lib/cmsDefaults";
+import { isAllowedModel } from "@/lib/cms/dataQuery";
+import { isQueryableField } from "@/lib/cms/schemaRegistry";
+
+// Keep only the fields the query engine understands, with hard caps applied.
+function sanitizeDataSource(src, key) {
+  return {
+    key,
+    label: String(src?.label || key).slice(0, 120),
+    model: src.model,
+    mode: src?.mode === "single" ? "single" : "list",
+    match: src?.match === "any" ? "any" : "all",
+    filters: (Array.isArray(src?.filters) ? src.filters : []).slice(0, 20).map((f) => ({
+      field: String(f?.field || "").slice(0, 120),
+      op: String(f?.op || "equals").slice(0, 20),
+      value: typeof f?.value === "object" ? "" : f?.value ?? "",
+      dynamic: !!f?.dynamic,
+    })),
+    sortField: String(src?.sortField || "createdAt").slice(0, 120),
+    sortDir: src?.sortDir === "asc" ? "asc" : "desc",
+    limit: Math.min(Math.max(parseInt(src?.limit, 10) || 12, 1), 200),
+    skip: Math.max(parseInt(src?.skip, 10) || 0, 0),
+    paginate: !!src?.paginate,
+    populate: (Array.isArray(src?.populate) ? src.populate : []).slice(0, 10).map((p) => String(p).slice(0, 120)),
+  };
+}
 
 // Full editable doc for the owner editor (global settings are merged over
 // defaults so every field is present in the form).
@@ -93,6 +118,44 @@ export async function PUT(request, { params }) {
       update.blocks = body.blocks;
     }
 
+    // ----- dynamic CMS: data sources + dynamic route -----
+    // Both are sanitised here and validated again at query time, so a page can
+    // never persist a query that reaches a blocked model or field.
+    if (Array.isArray(body.dataSources)) {
+      if (body.dataSources.length > 20) return badRequestResponse("Too many data sources (max 20)");
+      const cleaned = [];
+      for (const src of body.dataSources) {
+        const key = String(src?.key || "").trim();
+        if (!/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(key)) {
+          return badRequestResponse(`"${key || "(empty)"}" is not a valid data source name`);
+        }
+        if (!isAllowedModel(src?.model)) {
+          return badRequestResponse(`Data source "${key}" uses an unavailable model`);
+        }
+        cleaned.push(sanitizeDataSource(src, key));
+      }
+      update.dataSources = cleaned;
+    }
+
+    if (body.dynamicRoute !== undefined) {
+      const dr = body.dynamicRoute;
+      if (!dr || !dr.enabled) {
+        update.dynamicRoute = dr ? { ...dr, enabled: false } : null;
+      } else {
+        if (!isAllowedModel(dr.model)) return badRequestResponse("Dynamic route uses an unavailable model");
+        const lookupField = String(dr.lookupField || "slug");
+        if (!isQueryableField(dr.model, lookupField)) {
+          return badRequestResponse(`"${lookupField}" is not a field of ${dr.model}`);
+        }
+        const paramName = String(dr.paramName || "slug");
+        const itemKey = String(dr.itemKey || "item");
+        if (!/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(paramName) || !/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(itemKey)) {
+          return badRequestResponse("Route parameter and item names must be simple variable names");
+        }
+        update.dynamicRoute = { enabled: true, model: dr.model, lookupField, paramName, itemKey };
+      }
+    }
+
     if (body.settings && typeof body.settings === "object") {
       // For global, store settings merged over defaults so nothing is lost.
       update.settings =
@@ -121,6 +184,8 @@ export async function PUT(request, { params }) {
         isCustom: !!doc.isCustom,
         showInNav: !!doc.showInNav,
         navLabel: doc.navLabel || "",
+        dataSources: Array.isArray(doc.dataSources) ? doc.dataSources : [],
+        dynamicRoute: doc.dynamicRoute || null,
         updatedAt: doc.updatedAt ? new Date(doc.updatedAt).toISOString() : null,
       },
       message: "Saved",

@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, ChevronLeft, ChevronRight, Star, Check, Quote } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, Star, Check, Quote, AlertTriangle } from "lucide-react";
+import ScrollVideo from "@/Components/cms/ScrollVideo";
+import { expandBlocks } from "@/lib/cms/binding";
 
 /* ---------- Tailwind runtime (for Custom HTML blocks) ---------- */
 // Loads the Tailwind browser build once so arbitrary Tailwind utility classes
@@ -787,6 +789,49 @@ function CustomCodeBlock({ p }) {
   return <div ref={ref} className="cms-custom-html" dangerouslySetInnerHTML={{ __html: p.html || "" }} />;
 }
 
+/* ---------- Repeat (collection) ---------- */
+// The binding engine has already unrolled the collection into
+// `props._items = [{ key, blocks }]`; this only lays the results out.
+function RepeaterBlock({ p }) {
+  const items = Array.isArray(p._items) ? p._items : [];
+
+  if (!items.length) {
+    if (p.showEmpty === false) return null;
+    return (
+      <section className="px-6 py-10 text-center text-gray-400 text-sm">
+        {p.emptyText || "Nothing to show yet."}
+      </section>
+    );
+  }
+
+  const gap = parseInt(p.gap, 10);
+  const style = { gap: Number.isNaN(gap) ? 20 : gap };
+  const cols = { 1: "grid-cols-1", 2: "grid-cols-1 sm:grid-cols-2", 3: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3", 4: "grid-cols-2 lg:grid-cols-4" };
+  const layout =
+    p.layout === "list"
+      ? "flex flex-col"
+      : `grid ${cols[String(p.columns || "3")] || cols[3]}`;
+
+  return (
+    <section className="px-6 py-10">
+      <div className={`max-w-6xl mx-auto ${layout}`} style={style}>
+        {items.map((item) => (
+          <div key={item.key} className="min-w-0">
+            {item.blocks.map((b, i) => (
+              <BlockView key={b.id || `${item.key}-${i}`} block={b} />
+            ))}
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/* ---------- Scroll Video ---------- */
+function ScrollVideoBlock({ p }) {
+  return <ScrollVideo p={p} />;
+}
+
 const RENDERERS = {
   hero: HeroBlock,
   heading: HeadingBlock,
@@ -806,6 +851,8 @@ const RENDERERS = {
   logos: LogosBlock,
   team: TeamBlock,
   video: VideoBlock,
+  repeater: RepeaterBlock,
+  scrollVideo: ScrollVideoBlock,
   customCode: CustomCodeBlock,
 };
 
@@ -975,12 +1022,17 @@ function AnimatedBlock({ animation, animDuration, animDelay, id, className, styl
   );
 }
 
-export function BlockView({ block }) {
+export function BlockView({ block, showWarnings = false }) {
   const Cmp = RENDERERS[block?.type];
   if (!Cmp) return null;
   const { style, maxWidth, className, anchorId, animation, animDuration, animDelay } = buildWrapper(block);
 
-  const content = <Cmp p={block.props || {}} />;
+  const content = (
+    <>
+      {showWarnings && block._missing?.length ? <MissingVariableWarning missing={block._missing} /> : null}
+      <Cmp p={block.props || {}} />
+    </>
+  );
   const inner = maxWidth ? (
     <div style={{ maxWidth, marginLeft: "auto", marginRight: "auto" }}>{content}</div>
   ) : (
@@ -1001,12 +1053,54 @@ export function BlockView({ block }) {
   );
 }
 
-export default function BlockRenderer({ blocks }) {
-  if (!Array.isArray(blocks) || blocks.length === 0) return null;
+// Builder-only notice. Public pages never render this: an unresolved variable
+// simply falls back to its configured fallback (or an empty string) so the page
+// degrades gracefully instead of breaking.
+function MissingVariableWarning({ missing }) {
+  const unique = [...new Map(missing.map((m) => [`${m.prop}:${m.path}`, m])).values()];
+  return (
+    <div className="mx-6 my-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+      <span className="inline-flex items-center gap-1.5 font-semibold">
+        <AlertTriangle size={13} /> Variable unavailable
+      </span>
+      <ul className="mt-1 space-y-0.5">
+        {unique.map((m) => (
+          <li key={`${m.prop}:${m.path}`}>
+            <code className="font-mono">{m.path}</code>
+            <span className="opacity-70"> — {m.error || "not found in the current data"}</span>
+            {m.prop ? <span className="opacity-50"> (property: {m.prop})</span> : null}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/**
+ * Render a page's blocks.
+ *
+ * `data` is the resolved data context. When it is provided the blocks go
+ * through the binding engine first (conditions → repeaters → variables); when
+ * it is omitted the blocks render exactly as stored, which is what keeps every
+ * pre-existing static page working untouched.
+ */
+export default function BlockRenderer({ blocks, data = null, showWarnings = false }) {
+  const rendered = useMemo(() => {
+    if (!Array.isArray(blocks) || blocks.length === 0) return [];
+    if (!data) return blocks;
+    try {
+      return expandBlocks(blocks, data);
+    } catch (err) {
+      console.error("CMS binding failed, falling back to raw blocks:", err?.message);
+      return blocks;
+    }
+  }, [blocks, data]);
+
+  if (!rendered.length) return null;
   return (
     <>
-      {blocks.map((b, i) => (
-        <BlockView key={b.id || `block-${i}`} block={b} />
+      {rendered.map((b, i) => (
+        <BlockView key={b.id || `block-${i}`} block={b} showWarnings={showWarnings} />
       ))}
     </>
   );

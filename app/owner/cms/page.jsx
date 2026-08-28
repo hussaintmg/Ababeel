@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Settings, Home, Info, Mail, Award, Briefcase, HelpCircle, BookOpen,
   Image as ImageIcon, Shield, Receipt, FileText, ExternalLink, Loader2,
-  Eye, EyeOff, LayoutTemplate, Plus, Trash2, X, Globe, KeyRound,
+  Eye, EyeOff, LayoutTemplate, Plus, Trash2, X, Globe, KeyRound, Layers,
 } from "lucide-react";
 import { slugify } from "@/lib/cmsDefaults";
 
@@ -90,12 +90,21 @@ export default function CmsDashboardPage() {
             Manage every page, the global branding, navigation and footer — no code required.
           </p>
         </div>
-        <button
-          onClick={() => setShowCreate(true)}
-          className="shrink-0 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 text-white text-sm font-medium shadow-sm hover:shadow-md hover:scale-[1.02] transition-all"
-        >
-          <Plus size={17} /> Add Page
-        </button>
+        <div className="shrink-0 flex items-center gap-2">
+          <Link
+            href="/owner/cms/variables"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-700 hover:border-blue-400 hover:text-blue-600 transition-colors"
+            title="Every field discovered from your database, ready to bind into pages"
+          >
+            <Layers size={17} /> Variables &amp; Data
+          </Link>
+          <button
+            onClick={() => setShowCreate(true)}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 text-white text-sm font-medium shadow-sm hover:shadow-md hover:scale-[1.02] transition-all"
+          >
+            <Plus size={17} /> Add Page
+          </button>
+        </div>
       </div>
 
       {loading ? (

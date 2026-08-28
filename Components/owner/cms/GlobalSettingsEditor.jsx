@@ -6,8 +6,9 @@ import Link from "next/link";
 import { toast } from "react-toastify";
 import {
   Save, Loader2, ArrowLeft, Palette, Phone, ImageIcon, Search, Menu,
-  PanelBottom, Share2, Code2, LayoutDashboard, Wrench,
+  PanelBottom, Share2, Code2, LayoutDashboard, Wrench, ToggleLeft,
 } from "lucide-react";
+import { FEATURE_KEYS, getFeatures } from "@/lib/cms/features";
 import {
   Label, TextInput, TextArea, ImagePicker, Toggle, ListEditor, ColorInput, SelectInput,
 } from "@/Components/owner/cms/fields";
@@ -23,6 +24,7 @@ const TABS = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { id: "maintenance", label: "Maintenance", icon: Wrench },
   { id: "social", label: "Social", icon: Share2 },
+  { id: "features", label: "Dynamic CMS", icon: ToggleLeft },
   { id: "css", label: "Global CSS", icon: Code2 },
 ];
 
@@ -426,6 +428,35 @@ export default function GlobalSettingsEditor({ meta }) {
                 <F label="Instagram"><TextInput value={s.social?.instagram} onChange={(v) => set(["social", "instagram"], v)} /></F>
                 <F label="YouTube"><TextInput value={s.social?.youtube} onChange={(v) => set(["social", "youtube"], v)} /></F>
               </Grid2>
+            </Section>
+          ) : null}
+
+          {tab === "features" ? (
+            <Section
+              title="Dynamic CMS"
+              desc="Developer controls for the data-driven layer. Every switch is on by default; turning one off hides it in the builder and disables it on published pages."
+            >
+              <div className="rounded-xl border border-gray-200 divide-y divide-gray-100">
+                {FEATURE_KEYS.map((f) => {
+                  const features = getFeatures(s);
+                  const master = f.key !== "dynamicCms" && !features.dynamicCms;
+                  return (
+                    <div key={f.key} className={`flex items-start gap-3 p-3.5 ${master ? "opacity-50" : ""}`}>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-gray-800">{f.label}</p>
+                        <p className="text-xs text-gray-500">{f.hint}</p>
+                      </div>
+                      <Toggle
+                        value={features[f.key]}
+                        onChange={(v) => set(["features", f.key], v)}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="text-xs text-gray-400">
+                Switching the master off leaves every existing page exactly as it renders today — static content is unaffected.
+              </p>
             </Section>
           ) : null}
 

@@ -195,3 +195,33 @@ button{cursor: pointer;}
 @media (prefers-reduced-motion: reduce) {
   .cms-kenburns { animation: none; }
 }
+
+/* ---------------------------------------------------------------------------
+   Scroll Video section
+   The stage is pinned with position: sticky, so nothing in the ancestor chain
+   may clip or hide overflow — these rules keep the pin working inside the CMS
+   page wrappers. Motion is opted out of entirely for reduced-motion users,
+   which the component also handles in JS by rendering a static poster.
+--------------------------------------------------------------------------- */
+[data-cms-scroll-video] {
+  /* A sticky child needs a scrollable, non-clipping ancestor. */
+  overflow: visible;
+}
+[data-cms-scroll-video] video {
+  /* Never let the browser show controls or a play badge — scroll is the only
+     control surface. */
+  pointer-events: none;
+  background: #000;
+}
+[data-cms-scroll-video] video::-webkit-media-controls {
+  display: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-cms-scroll-video] {
+    height: auto !important;
+  }
+  [data-cms-scroll-video] > div {
+    position: static !important;
+  }
+}

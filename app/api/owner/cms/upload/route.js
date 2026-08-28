@@ -4,7 +4,8 @@ import { uploadFile } from "@/utils/upload";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit";
 import { safeErrorResponse, successResponse, badRequestResponse } from "@/lib/errors";
 
-// Owner-only asset upload for the CMS (logos, favicon, block images).
+// Owner-only asset upload for the CMS (logos, favicon, block images, and the
+// videos used by the Scroll Video section).
 // Saves into /public/uploads/cms and returns the public URL.
 export async function POST(request) {
   try {
@@ -19,11 +20,17 @@ export async function POST(request) {
     if (!file || typeof file === "string") {
       return badRequestResponse("No file provided");
     }
-    if (file.size > 50 * 1024 * 1024) {
-      return badRequestResponse("File must be 50MB or smaller");
+    const isVideo = typeof file.type === "string" && file.type.startsWith("video/");
+    // Scroll-video sources are legitimately larger than a logo, but still
+    // bounded so an upload cannot fill the disk.
+    const maxBytes = (isVideo ? 200 : 50) * 1024 * 1024;
+    if (file.size > maxBytes) {
+      return badRequestResponse(`File must be ${isVideo ? 200 : 50}MB or smaller`);
     }
 
-    const allowed = ["image/png", "image/jpeg", "image/jpg", "image/gif", "image/webp", "image/x-icon", "image/vnd.microsoft.icon", "image/svg+xml"];
+    const allowedImages = ["image/png", "image/jpeg", "image/jpg", "image/gif", "image/webp", "image/x-icon", "image/vnd.microsoft.icon", "image/svg+xml"];
+    const allowedVideos = ["video/mp4", "video/webm", "video/ogg", "video/quicktime"];
+    const allowed = [...allowedImages, ...allowedVideos];
     if (file.type && !allowed.includes(file.type)) {
       return badRequestResponse("Unsupported file type");
     }

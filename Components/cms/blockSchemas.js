@@ -457,6 +457,107 @@ export const BLOCK_TYPES = {
     ],
   },
 
+  repeater: {
+    label: "Repeat (Collection)",
+    icon: "Repeat",
+    dynamic: true,
+    description: "Render the blocks inside once for every record in a collection",
+    defaults: {
+      source: "",
+      item: "item",
+      layout: "grid",
+      columns: "3",
+      gap: "20",
+      limit: "",
+      offset: "",
+      emptyText: "Nothing to show yet.",
+      showEmpty: true,
+    },
+    fields: [
+      { key: "source", type: "collection", label: "Collection", help: "An Array variable, e.g. courses" },
+      { key: "item", type: "text", label: "Item variable name", placeholder: "course" },
+      { key: "layout", type: "select", label: "Layout", options: ["grid", "list"] },
+      { key: "columns", type: "select", label: "Columns", options: ["1", "2", "3", "4"] },
+      { key: "gap", type: "text", label: "Gap (px)" },
+      { key: "limit", type: "text", label: "Max items (blank = all)" },
+      { key: "offset", type: "text", label: "Skip first N items" },
+      { key: "emptyText", type: "text", label: "Empty state text" },
+      { key: "showEmpty", type: "boolean", label: "Show the empty state when there are no records" },
+    ],
+  },
+
+  scrollVideo: {
+    label: "Scroll Video",
+    icon: "Film",
+    badge: "🔥",
+    description: "Sticky section whose video frames advance as the visitor scrolls",
+    defaults: {
+      src: "",
+      mobileSrc: "",
+      poster: "",
+      title: "",
+      subtitle: "",
+      textColor: "#ffffff",
+      textAlign: "center",
+      fadeText: false,
+      overlay: "20",
+      bgColor: "#000000",
+      height: "300vh",
+      stageHeight: "100vh",
+      sticky: true,
+      fit: "cover",
+      mode: "scrub",
+      startOffset: "0",
+      endOffset: "100",
+      speed: "1",
+      loops: "1",
+      reverse: false,
+      smoothing: "0.18",
+      pauseOutside: true,
+      preload: "auto",
+      showProgress: false,
+      respectReducedMotion: true,
+    },
+    fields: [
+      { key: "src", type: "video", label: "Video" },
+      { key: "mobileSrc", type: "video", label: "Mobile video (optional)" },
+      { key: "poster", type: "image", label: "Poster frame (first frame / reduced-motion fallback)" },
+      { key: "height", type: "text", label: "Scroll distance", placeholder: "300vh" },
+      { key: "stageHeight", type: "text", label: "Stage height", placeholder: "100vh" },
+      { key: "sticky", type: "boolean", label: "Sticky (pin while scrolling)" },
+      { key: "fit", type: "select", label: "Video fit", options: ["cover", "contain"] },
+      {
+        key: "mode",
+        type: "select",
+        label: "Playback mode",
+        options: [
+          { value: "scrub", label: "Frame scrubbing" },
+          { value: "progressive", label: "Progressive playback" },
+          { value: "reverse", label: "Reverse playback" },
+          { value: "pingpong", label: "Ping pong" },
+          { value: "loop", label: "Loop while scrolling" },
+        ],
+      },
+      { key: "startOffset", type: "text", label: "Start offset (%)" },
+      { key: "endOffset", type: "text", label: "End offset (%)" },
+      { key: "speed", type: "text", label: "Scroll speed (1 = 1:1)" },
+      { key: "loops", type: "text", label: "Loops (loop mode only)" },
+      { key: "reverse", type: "boolean", label: "Reverse" },
+      { key: "smoothing", type: "text", label: "Smoothing (0.02–1, lower = smoother)" },
+      { key: "pauseOutside", type: "boolean", label: "Pause outside the section" },
+      { key: "preload", type: "select", label: "Preload", options: ["auto", "metadata", "none"] },
+      { key: "showProgress", type: "boolean", label: "Show a progress bar" },
+      { key: "respectReducedMotion", type: "boolean", label: "Respect reduced motion (static fallback)" },
+      { key: "title", type: "text", label: "Overlay title (optional)" },
+      { key: "subtitle", type: "textarea", label: "Overlay subtitle (optional)" },
+      { key: "textColor", type: "color", label: "Overlay text color" },
+      { key: "textAlign", type: "select", label: "Overlay alignment", options: ["left", "center", "right"] },
+      { key: "fadeText", type: "boolean", label: "Fade the overlay text with scroll" },
+      { key: "overlay", type: "text", label: "Dark overlay (0–100)" },
+      { key: "bgColor", type: "color", label: "Stage background" },
+    ],
+  },
+
   customCode: {
     label: "Custom HTML + Tailwind",
     icon: "Code2",
@@ -518,13 +619,22 @@ export function defaultStyle() {
   };
 }
 
+// Blocks that hold other blocks (currently just the repeater).
+export const CONTAINER_TYPES = new Set(["repeater"]);
+
+export function isContainer(type) {
+  return CONTAINER_TYPES.has(type);
+}
+
 export function createBlock(type) {
   const def = BLOCK_TYPES[type];
   if (!def) return null;
-  return {
+  const block = {
     id: newId(),
     type,
     props: structuredClone(def.defaults),
     _style: defaultStyle(),
   };
+  if (isContainer(type)) block.children = [];
+  return block;
 }

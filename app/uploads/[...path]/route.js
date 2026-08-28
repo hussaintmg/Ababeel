@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import { Readable } from "stream";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
@@ -17,7 +18,35 @@ const CONTENT_TYPES = {
   ".png": "image/png",
   ".svg": "image/svg+xml; charset=utf-8",
   ".webp": "image/webp",
+  // Video, for the Scroll Video section.
+  ".mp4": "video/mp4",
+  ".mov": "video/quicktime",
+  ".webm": "video/webm",
+  ".ogv": "video/ogg",
 };
+
+const RANGE_TYPES = new Set([".mp4", ".mov", ".webm", ".ogv"]);
+
+// "bytes=1000-" / "bytes=1000-2000" → { start, end }, or null when unusable.
+function parseRange(header, size) {
+  const m = /^bytes=(\d*)-(\d*)$/.exec(String(header || "").trim());
+  if (!m) return null;
+  const [, rawStart, rawEnd] = m;
+  if (rawStart === "" && rawEnd === "") return null;
+  let start;
+  let end;
+  if (rawStart === "") {
+    const suffix = parseInt(rawEnd, 10);
+    if (!Number.isFinite(suffix) || suffix <= 0) return null;
+    start = Math.max(size - suffix, 0);
+    end = size - 1;
+  } else {
+    start = parseInt(rawStart, 10);
+    end = rawEnd === "" ? size - 1 : parseInt(rawEnd, 10);
+  }
+  if (!Number.isFinite(start) || !Number.isFinite(end) || start > end || start >= size) return null;
+  return { start, end: Math.min(end, size - 1) };
+}
 
 function resolveUploadPath(segments) {
   if (!Array.isArray(segments) || segments.length === 0) return null;
@@ -58,8 +87,31 @@ async function serveUpload(request, context, includeBody) {
     headers.set("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; sandbox");
   }
 
+  // Scroll-driven video seeks constantly, so byte ranges are essential: the
+  // browser fetches only the segment it needs instead of the whole file.
+  const ext = path.extname(filePath).toLowerCase();
+  if (RANGE_TYPES.has(ext)) {
+    headers.set("Accept-Ranges", "bytes");
+    const range = parseRange(request.headers.get("range"), stat.size);
+    if (range) {
+      const length = range.end - range.start + 1;
+      headers.set("Content-Length", String(length));
+      headers.set("Content-Range", `bytes ${range.start}-${range.end}/${stat.size}`);
+      if (!includeBody || request.method === "HEAD") {
+        return new NextResponse(null, { status: 206, headers });
+      }
+      const stream = fs.createReadStream(filePath, { start: range.start, end: range.end });
+      return new NextResponse(Readable.toWeb(stream), { status: 206, headers });
+    }
+  }
+
   if (!includeBody || request.method === "HEAD") {
     return new NextResponse(null, { status: 200, headers });
+  }
+
+  if (RANGE_TYPES.has(ext)) {
+    // Stream large media rather than buffering the whole file in memory.
+    return new NextResponse(Readable.toWeb(fs.createReadStream(filePath)), { status: 200, headers });
   }
 
   const file = await fs.promises.readFile(filePath);

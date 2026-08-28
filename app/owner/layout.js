@@ -119,8 +119,11 @@ export default function OwnerLayout({ children }) {
       id: "cms",
       name: "Website CMS",
       icon: <LayoutTemplate size={20} />,
-      url: "/owner/cms",
-      dropdown: null,
+      url: null,
+      dropdown: [
+        { name: "Pages & Sections", url: "/owner/cms" },
+        { name: "Variables & Data", url: "/owner/cms/variables" },
+      ],
     },
     {
       id: "pdf-template",

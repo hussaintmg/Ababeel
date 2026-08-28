@@ -10,13 +10,23 @@ import PageSkeleton from "@/Components/cms/PageSkeleton";
  * loaded: if the owner has published CMS blocks for this page they are shown,
  * otherwise the page's built-in `children` (the default content) is shown.
  * Per-page custom CSS is injected when present.
+ *
+ * Pages that bind to database variables get their resolved data context in the
+ * same response, so blocks, styles, repeats and conditions are all resolved in
+ * one round-trip — no flash of raw `{{ }}` tokens.
  */
 export default function CmsPageContent({ pageKey, children }) {
-  const [state, setState] = useState({ loaded: false, enabled: false, blocks: [], css: "" });
+  const [state, setState] = useState({ loaded: false, enabled: false, blocks: [], css: "", data: null });
 
   useEffect(() => {
     let alive = true;
-    fetch(`/api/cms/${pageKey}`, { cache: "no-store" })
+    // Query-string values are forwarded so a page's data sources can filter on
+    // them (e.g. /qualification?category=safety). Read from `location` rather
+    // than useSearchParams so this component needs no Suspense boundary and
+    // pages keep their current rendering mode.
+    const query = typeof window !== "undefined" ? window.location.search.replace(/^\?/, "") : "";
+    const url = query ? `/api/cms/${pageKey}?${query}` : `/api/cms/${pageKey}`;
+    fetch(url, { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (!alive) return;
@@ -29,6 +39,7 @@ export default function CmsPageContent({ pageKey, children }) {
           enabled: !!data.enabled && Array.isArray(data.blocks) && data.blocks.length > 0,
           blocks: data.blocks || [],
           css: data.customCss || "",
+          data: data.dynamic ? data.context || {} : null,
         });
       })
       .catch(() => alive && setState((s) => ({ ...s, loaded: true })));
@@ -45,7 +56,7 @@ export default function CmsPageContent({ pageKey, children }) {
   return (
     <div className="cms-fade-in">
       {state.css ? <style dangerouslySetInnerHTML={{ __html: state.css }} /> : null}
-      {override ? <BlockRenderer blocks={state.blocks} /> : children}
+      {override ? <BlockRenderer blocks={state.blocks} data={state.data} /> : children}
     </div>
   );
 }

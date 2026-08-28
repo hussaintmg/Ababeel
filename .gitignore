@@ -61,7 +61,10 @@ public/safetech-*.json
 /public/uploads/
 /uploads/
 
-docs
-__tests__
 .claude
 .swc
+
+# `docs/` and `__tests__/` were previously ignored, so no tests or docs were
+# tracked. jest.config.js already points at `__tests__`, and the dynamic-CMS
+# work ships both a suite and an architecture note, so they are tracked now.
+# Re-add the two lines above this comment if that was deliberate.

@@ -1,0 +1,374 @@
+"use client";
+
+/**
+ * Scroll Video section.
+ *
+ * The section reserves a tall scroll track; inside it a sticky viewport-height
+ * stage pins the video while the page scrolls past. Scroll progress is mapped
+ * onto `video.currentTime`, so the frames advance as you scroll and the section
+ * releases once the last frame is reached.
+ *
+ * Performance notes (this is the whole reason it does not use a frame-image
+ * sequence): one HTML5 <video> element is downloaded, nothing is rasterised,
+ * scroll listeners are passive, all seeking happens inside a single
+ * requestAnimationFrame loop that only runs while the section is on screen
+ * (IntersectionObserver), and the loop exits as soon as the target time is
+ * reached so an idle sticky section costs nothing.
+ */
+
+import { useEffect, useRef, useState, useCallback } from "react";
+
+export const SCROLL_MODES = [
+  { value: "scrub", label: "Frame scrubbing" },
+  { value: "progressive", label: "Progressive playback" },
+  { value: "reverse", label: "Reverse playback" },
+  { value: "pingpong", label: "Ping pong" },
+  { value: "loop", label: "Loop while scrolling" },
+];
+
+const clamp = (v, lo, hi) => Math.min(Math.max(v, lo), hi);
+
+/** Map raw 0–1 scroll progress onto the configured playback range and mode. */
+export function mapProgress(raw, { mode = "scrub", startOffset = 0, endOffset = 100, speed = 1, reverse = false, loops = 1 } = {}) {
+  let p = clamp(raw, 0, 1);
+  const sp = Number(speed) || 1;
+  if (sp !== 1) p = clamp(p * sp, 0, 1);
+
+  if (mode === "pingpong") p = p <= 0.5 ? p * 2 : (1 - p) * 2;
+  if (mode === "loop") {
+    const n = Math.max(parseInt(loops, 10) || 1, 1);
+    p = (p * n) % 1;
+  }
+  if (reverse || mode === "reverse") p = 1 - p;
+
+  const start = clamp((Number(startOffset) || 0) / 100, 0, 1);
+  const end = clamp(endOffset === "" || endOffset === undefined ? 1 : Number(endOffset) / 100, 0, 1);
+  const lo = Math.min(start, end);
+  const hi = Math.max(start, end);
+  return lo + p * (hi - lo);
+}
+
+/**
+ * Video metadata read straight off the element: duration, dimensions, aspect
+ * ratio and — where the browser exposes per-frame callbacks — the real frame
+ * rate and frame count, so the builder timeline reflects the actual file.
+ */
+export function useVideoMeta(videoRef, src) {
+  const [meta, setMeta] = useState({ duration: 0, width: 0, height: 0, aspect: 0, fps: 0, frames: 0, ready: false });
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return undefined;
+    let cancelled = false;
+    let rvfcHandle = null;
+
+    const measureFps = () => {
+      if (typeof video.requestVideoFrameCallback !== "function") return;
+      let first = null;
+      const step = (now, info) => {
+        if (cancelled) return;
+        if (!first) {
+          first = info;
+          rvfcHandle = video.requestVideoFrameCallback(step);
+          return;
+        }
+        const dt = info.mediaTime - first.mediaTime;
+        const df = info.presentedFrames - first.presentedFrames;
+        if (dt > 0.2 && df > 3) {
+          const fps = Math.round(df / dt);
+          setMeta((m) => ({ ...m, fps, frames: Math.round(m.duration * fps) }));
+          return;
+        }
+        rvfcHandle = video.requestVideoFrameCallback(step);
+      };
+      rvfcHandle = video.requestVideoFrameCallback(step);
+    };
+
+    const onLoaded = () => {
+      if (cancelled) return;
+      const duration = Number.isFinite(video.duration) ? video.duration : 0;
+      const width = video.videoWidth || 0;
+      const height = video.videoHeight || 0;
+      setMeta((m) => ({
+        ...m,
+        duration,
+        width,
+        height,
+        aspect: height ? width / height : 0,
+        // Until a real measurement arrives, 30fps is the safe assumption used
+        // only to draw the timeline ticks.
+        fps: m.fps || 30,
+        frames: Math.round(duration * (m.fps || 30)),
+        ready: duration > 0,
+      }));
+      measureFps();
+    };
+
+    if (video.readyState >= 1) onLoaded();
+    video.addEventListener("loadedmetadata", onLoaded);
+    return () => {
+      cancelled = true;
+      video.removeEventListener("loadedmetadata", onLoaded);
+      if (rvfcHandle && typeof video.cancelVideoFrameCallback === "function") {
+        video.cancelVideoFrameCallback(rvfcHandle);
+      }
+    };
+  }, [videoRef, src]);
+
+  return meta;
+}
+
+function prefersReducedMotion() {
+  if (typeof window === "undefined" || !window.matchMedia) return false;
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+export default function ScrollVideo({ p = {}, builderProgress = null }) {
+  const wrapRef = useRef(null);
+  const videoRef = useRef(null);
+  const rafRef = useRef(0);
+  const targetRef = useRef(0);
+  const currentRef = useRef(0);
+  const visibleRef = useRef(false);
+
+  const [isMobile, setIsMobile] = useState(false);
+  const [reduced, setReduced] = useState(false);
+  const [progress, setProgress] = useState(0);
+
+  const meta = useVideoMeta(videoRef, p.src);
+
+  const desktopSrc = p.src || "";
+  const mobileSrc = p.mobileSrc || "";
+  const src = isMobile && mobileSrc ? mobileSrc : desktopSrc;
+
+  const trackHeight = p.height || "300vh";
+  const stageHeight = p.stageHeight || "100vh";
+  const sticky = p.sticky !== false;
+  const fit = p.fit === "contain" ? "contain" : "cover";
+  const smoothing = clamp(Number(p.smoothing ?? 0.18) || 0.18, 0.02, 1);
+
+  /* ---- responsive + reduced motion ---- */
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    const mqMobile = window.matchMedia("(max-width: 768px)");
+    const mqMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const sync = () => {
+      setIsMobile(mqMobile.matches);
+      setReduced(mqMotion.matches);
+    };
+    sync();
+    mqMobile.addEventListener?.("change", sync);
+    mqMotion.addEventListener?.("change", sync);
+    return () => {
+      mqMobile.removeEventListener?.("change", sync);
+      mqMotion.removeEventListener?.("change", sync);
+    };
+  }, []);
+
+  /* ---- the seek loop ---- */
+  // One rAF loop, started only when the target moves and stopped the moment it
+  // is reached — an idle sticky section costs nothing.
+  const tick = useCallback(() => {
+    const step = () => {
+      rafRef.current = 0;
+      const video = videoRef.current;
+      if (!video || !Number.isFinite(video.duration) || video.duration <= 0) return;
+
+      // Ease towards the target so a fast flick does not produce a hard jump.
+      const diff = targetRef.current - currentRef.current;
+      currentRef.current += diff * smoothing;
+      if (Math.abs(diff) < 0.0008) currentRef.current = targetRef.current;
+
+      const time = clamp(currentRef.current * video.duration, 0, Math.max(video.duration - 0.02, 0));
+      if (video.readyState >= 1 && Math.abs(video.currentTime - time) > 0.008) {
+        try {
+          video.currentTime = time;
+        } catch {
+          /* seeking before the browser is ready — the next frame retries */
+        }
+      }
+      if (currentRef.current !== targetRef.current && visibleRef.current) {
+        rafRef.current = requestAnimationFrame(step);
+      }
+    };
+    step();
+  }, [smoothing]);
+
+  const schedule = useCallback(
+    (raw) => {
+      const mapped = mapProgress(raw, {
+        mode: p.mode,
+        startOffset: p.startOffset,
+        endOffset: p.endOffset,
+        speed: p.speed,
+        reverse: p.reverse,
+        loops: p.loops,
+      });
+      targetRef.current = mapped;
+      if (!rafRef.current) rafRef.current = requestAnimationFrame(tick);
+    },
+    [p.mode, p.startOffset, p.endOffset, p.speed, p.reverse, p.loops, tick]
+  );
+
+  /* ---- scroll driving ---- */
+  useEffect(() => {
+    if (builderProgress !== null) return undefined; // builder scrubber owns it
+    const wrap = wrapRef.current;
+    if (!wrap || typeof window === "undefined") return undefined;
+
+    const compute = () => {
+      const rect = wrap.getBoundingClientRect();
+      const total = rect.height - window.innerHeight;
+      if (total <= 0) return 0;
+      return clamp(-rect.top / total, 0, 1);
+    };
+
+    const onScroll = () => {
+      if (!visibleRef.current) return;
+      const raw = compute();
+      setProgress(raw);
+      schedule(raw);
+    };
+
+    // Only run while the section is on screen.
+    const io =
+      typeof IntersectionObserver !== "undefined"
+        ? new IntersectionObserver(
+            (entries) => {
+              entries.forEach((e) => {
+                visibleRef.current = e.isIntersecting;
+                const video = videoRef.current;
+                if (e.isIntersecting) {
+                  onScroll();
+                } else if (video && p.pauseOutside !== false && !video.paused) {
+                  video.pause();
+                }
+              });
+            },
+            { rootMargin: "100px 0px" }
+          )
+        : null;
+    if (io) io.observe(wrap);
+    else visibleRef.current = true;
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll, { passive: true });
+    onScroll();
+
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      io?.disconnect();
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      rafRef.current = 0;
+    };
+  }, [schedule, builderProgress, p.pauseOutside]);
+
+  /* ---- builder scrubber ---- */
+  // The scrubber owns the value, so it drives the video directly rather than
+  // being mirrored into state.
+  useEffect(() => {
+    if (builderProgress === null) return;
+    visibleRef.current = true;
+    schedule(builderProgress);
+  }, [builderProgress, schedule]);
+
+  const shownProgress = builderProgress === null ? progress : builderProgress;
+
+  const hasVideo = !!src;
+  const reducedFallback = reduced && p.respectReducedMotion !== false;
+
+  /* ---- reduced motion: a static poster, no scroll hijacking at all ---- */
+  if (reducedFallback) {
+    return (
+      <section className="relative w-full overflow-hidden" style={{ minHeight: stageHeight }}>
+        {p.poster ? (
+          <img src={p.poster} alt={p.title || ""} className="w-full h-full object-cover" style={{ minHeight: stageHeight }} />
+        ) : hasVideo ? (
+          <video
+            src={src}
+            poster={p.poster || undefined}
+            className="w-full object-cover"
+            style={{ minHeight: stageHeight, objectFit: fit }}
+            muted
+            playsInline
+            loop
+            autoPlay={p.autoplayReducedMotion !== false}
+            preload="metadata"
+          />
+        ) : null}
+        <Overlay p={p} />
+      </section>
+    );
+  }
+
+  return (
+    <section
+      ref={wrapRef}
+      className="relative w-full"
+      style={{ height: hasVideo ? trackHeight : stageHeight }}
+      data-cms-scroll-video=""
+    >
+      <div
+        className="overflow-hidden"
+        style={{
+          position: sticky ? "sticky" : "relative",
+          top: 0,
+          height: stageHeight,
+          backgroundColor: p.bgColor || "#000",
+        }}
+      >
+        {hasVideo ? (
+          <video
+            ref={videoRef}
+            key={src}
+            src={src}
+            poster={p.poster || undefined}
+            className="w-full h-full"
+            style={{ objectFit: fit }}
+            muted
+            playsInline
+            preload={p.preload || "auto"}
+            // Scroll drives currentTime; the element itself never plays.
+            autoPlay={false}
+            controls={false}
+            disablePictureInPicture
+            aria-label={p.title || "Scroll-driven video"}
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-white/60 text-sm">
+            Select a video for this section
+          </div>
+        )}
+        <Overlay p={p} progress={shownProgress} />
+        {p.showProgress ? (
+          <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/15">
+            <div className="h-full bg-white/80 transition-[width] duration-75" style={{ width: `${Math.round(shownProgress * 100)}%` }} />
+          </div>
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
+/** Optional caption/heading layer pinned over the video. */
+function Overlay({ p, progress = 0 }) {
+  if (!p.title && !p.subtitle && !p.overlay) return null;
+  const dim = p.overlay ? clamp(parseInt(p.overlay, 10) || 0, 0, 100) / 100 : 0;
+  const align = p.textAlign === "left" ? "items-start text-left" : p.textAlign === "right" ? "items-end text-right" : "items-center text-center";
+  const fade = p.fadeText ? clamp(1 - Math.abs(progress - 0.5) * 2.2, 0, 1) : 1;
+  return (
+    <>
+      {dim > 0 ? <div className="absolute inset-0 pointer-events-none" style={{ backgroundColor: `rgba(0,0,0,${dim})` }} /> : null}
+      {p.title || p.subtitle ? (
+        <div
+          className={`absolute inset-0 flex flex-col justify-center px-6 pointer-events-none ${align}`}
+          style={{ color: p.textColor || "#fff", opacity: fade }}
+        >
+          {p.title ? <h2 className="text-3xl md:text-5xl font-bold max-w-3xl drop-shadow">{p.title}</h2> : null}
+          {p.subtitle ? <p className="mt-4 text-base md:text-xl opacity-90 max-w-2xl drop-shadow">{p.subtitle}</p> : null}
+        </div>
+      ) : null}
+    </>
+  );
+}
