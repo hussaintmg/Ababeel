@@ -226,6 +226,43 @@ export const BLOCK_TYPES = {
     ],
   },
 
+  beforeAfter: {
+    label: "Before / After Slider",
+    icon: "SlidersHorizontal",
+    description: "Two photos with a handle that wipes between them",
+    defaults: {
+      eyebrow: "",
+      title: "",
+      subtitle: "",
+      beforeImage: "",
+      afterImage: "",
+      beforeLabel: "Before",
+      afterLabel: "After",
+      startAt: "50",
+      height: "520",
+      accent: "",
+      bgColor: "",
+    },
+    fields: [
+      { key: "eyebrow", type: "text", label: "Eyebrow (small label)" },
+      { key: "title", type: "text", label: "Section title" },
+      { key: "subtitle", type: "textarea", label: "Section subtitle" },
+      { key: "beforeImage", type: "image", label: "Before image" },
+      { key: "afterImage", type: "image", label: "After image" },
+      { key: "beforeLabel", type: "text", label: "Before label" },
+      { key: "afterLabel", type: "text", label: "After label" },
+      {
+        key: "startAt",
+        type: "text",
+        label: "Handle starts at (%)",
+        help: "0 shows the after image, 100 shows the before image.",
+      },
+      { key: "height", type: "text", label: "Height (px)" },
+      { key: "accent", type: "color", label: "Accent colour" },
+      { key: "bgColor", type: "color", label: "Background colour" },
+    ],
+  },
+
   stats: {
     label: "Stats / Numbers",
     icon: "BarChart3",

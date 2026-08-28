@@ -19,6 +19,7 @@ export const TEMPLATE_CATEGORIES = [
   "Pricing",
   "Team",
   "Gallery",
+  "Before / After",
   "Logos",
   "Content",
   "FAQ",
@@ -183,6 +184,25 @@ export const TEMPLATES = [
   { id: "hero-glass", name: "Hero — Glass (Tailwind)", category: "Heroes", desc: "Gradient + glass card, fully editable HTML", blocks: [b("customCode", { tailwind: true, html: '<section class="relative overflow-hidden bg-gradient-to-br from-slate-900 via-indigo-900 to-blue-900 text-white">\n  <div class="max-w-5xl mx-auto px-6 py-28 text-center">\n    <div class="inline-block rounded-3xl bg-white/10 backdrop-blur-md border border-white/15 px-8 py-12 shadow-2xl">\n      <span class="inline-block mb-4 px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide bg-white/15">Premium</span>\n      <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight">A hero that stands out</h1>\n      <p class="mt-5 text-lg text-blue-100 max-w-2xl mx-auto">Glassmorphism card over a rich gradient. Edit every class to taste.</p>\n      <a href="/contact-us" class="inline-block mt-8 px-8 py-3.5 rounded-xl bg-white text-indigo-700 font-semibold shadow-lg hover:scale-105 transition">Get Started</a>\n    </div>\n  </div>\n</section>' })] },
 
   /* ===== SLIDERS ===== */
+  {
+    id: "before-after-basic",
+    name: "Before / After — Comparison",
+    category: "Before / After",
+    desc: "Two photos with a drag handle. Add your own pair.",
+    blocks: [
+      b("beforeAfter", {
+        eyebrow: "Before and after",
+        title: "See the difference",
+        subtitle: "Drag the handle to compare. Use two photographs taken from the same position.",
+        beforeImage: "",
+        afterImage: "",
+        beforeLabel: "Before",
+        afterLabel: "After",
+        startAt: "50",
+        height: "520",
+      }),
+    ],
+  },
   { id: "slider-fade", name: "Slider — Fade", category: "Sliders", desc: "Smooth cross-fade, 3 slides", blocks: [b("carousel", { height: "460", variant: "fade", contentAlign: "bottom", autoplay: true, interval: "4", showArrows: true, showDots: true, rounded: true, slides: [slide("Slide One", "Add your caption"), slide("Slide Two", "Add your caption"), slide("Slide Three", "Add your caption")] })] },
   { id: "slider-slide", name: "Slider — Horizontal Slide", category: "Sliders", desc: "Slides move left/right", blocks: [b("carousel", { height: "460", variant: "slide", contentAlign: "bottom", autoplay: true, interval: "4", showArrows: true, showDots: true, rounded: true, slides: [slide("First", "Sliding transition"), slide("Second", "Sliding transition"), slide("Third", "Sliding transition")] })] },
   { id: "slider-zoom", name: "Slider — Zoom", category: "Sliders", desc: "Zoom-in transition + Ken Burns", blocks: [b("carousel", { height: "480", variant: "zoom", contentAlign: "center", overlay: "45", kenBurns: true, autoplay: true, interval: "5", showArrows: true, showDots: true, rounded: true, slides: [slide("Cinematic", "Zoom + slow pan"), slide("Immersive", "Great for photos"), slide("Bold", "Center captions")] })] },

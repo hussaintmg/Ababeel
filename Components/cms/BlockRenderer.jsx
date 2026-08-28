@@ -399,6 +399,167 @@ function StatsBlock({ p, s }) {
   );
 }
 
+/** A 0–100 setting, with a fallback for anything unparseable. */
+function clampPct(value, fallback) {
+  const n = parseInt(value, 10);
+  if (Number.isNaN(n)) return fallback;
+  return Math.min(Math.max(n, 0), 100);
+}
+
+/**
+ * Two photographs, one over the other, with a handle that wipes between them.
+ *
+ * The upper image is clipped rather than faded, so both are at full opacity at
+ * the seam and the comparison stays honest — a cross-fade makes the "after"
+ * look better simply by being brighter partway through.
+ *
+ * Draggable with a pointer, and focusable with arrow-key control, because a
+ * comparison nobody can operate from the keyboard is a picture of one image.
+ */
+function BeforeAfterBlock({ p, s: st }) {
+  const accent = accentOf(p);
+  const inherit = !!st?.textColor;
+  const start = clampPct(p.startAt, 50);
+  const [pos, setPos] = useState(start);
+  const [dragging, setDragging] = useState(false);
+  const frame = useRef(null);
+
+  // The author can move the starting point while editing, and the handle should
+  // follow — but not while a visitor is dragging it. Derived during render
+  // rather than in an effect, so there is no extra pass and no flash of the
+  // old position.
+  const [appliedStart, setAppliedStart] = useState(start);
+  if (!dragging && appliedStart !== start) {
+    setAppliedStart(start);
+    setPos(start);
+  }
+
+  const moveTo = (clientX) => {
+    const el = frame.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    if (!rect.width) return;
+    setPos(Math.min(Math.max(((clientX - rect.left) / rect.width) * 100, 0), 100));
+  };
+
+  useEffect(() => {
+    if (!dragging) return undefined;
+    const onMove = (e) => moveTo(e.touches ? e.touches[0].clientX : e.clientX);
+    const stop = () => setDragging(false);
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", stop);
+    window.addEventListener("touchmove", onMove, { passive: true });
+    window.addEventListener("touchend", stop);
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", stop);
+      window.removeEventListener("touchmove", onMove);
+      window.removeEventListener("touchend", stop);
+    };
+  }, [dragging]);
+
+  const onKeyDown = (e) => {
+    const step = e.shiftKey ? 10 : 2;
+    if (e.key === "ArrowLeft") setPos((v) => Math.max(v - step, 0));
+    else if (e.key === "ArrowRight") setPos((v) => Math.min(v + step, 100));
+    else if (e.key === "Home") setPos(0);
+    else if (e.key === "End") setPos(100);
+    else return;
+    e.preventDefault();
+  };
+
+  const height = parseInt(p.height, 10) || 520;
+  const hasPair = !!p.beforeImage && !!p.afterImage;
+
+  return (
+    <section style={p.bgColor ? { backgroundColor: p.bgColor } : undefined}>
+      <div className="max-w-5xl mx-auto px-6 py-14">
+        {p.title || p.eyebrow ? (
+          <Reveal className="text-center mb-8">
+            {p.eyebrow ? (
+              <div className="text-xs font-bold uppercase tracking-[0.18em] mb-3" style={{ color: accent }}>
+                {p.eyebrow}
+              </div>
+            ) : null}
+            {p.title ? <h2 className={`text-2xl md:text-4xl font-bold ${inherit ? "" : "text-gray-900"}`}>{p.title}</h2> : null}
+            {p.subtitle ? (
+              <p className={`mt-3 max-w-2xl mx-auto ${inherit ? "opacity-80" : "text-gray-600"}`}>{p.subtitle}</p>
+            ) : null}
+          </Reveal>
+        ) : null}
+
+        {hasPair ? (
+          <Reveal>
+            <div
+              ref={frame}
+              className="relative overflow-hidden rounded-2xl shadow-xl select-none"
+              style={{ height, cursor: dragging ? "grabbing" : "ew-resize", touchAction: "pan-y" }}
+              onPointerDown={(e) => {
+                setDragging(true);
+                moveTo(e.clientX);
+              }}
+            >
+              {/* After sits underneath and is revealed as the clip narrows. */}
+              <img src={p.afterImage} alt={p.afterLabel || "After"} className="absolute inset-0 w-full h-full object-cover" draggable={false} />
+              <div className="absolute inset-0" style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }}>
+                <img src={p.beforeImage} alt={p.beforeLabel || "Before"} className="w-full h-full object-cover" draggable={false} />
+              </div>
+
+              {p.beforeLabel ? (
+                <span className="absolute top-4 left-4 px-3 py-1 rounded-full text-xs font-semibold bg-black/60 text-white backdrop-blur pointer-events-none">
+                  {p.beforeLabel}
+                </span>
+              ) : null}
+              {p.afterLabel ? (
+                <span
+                  className="absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-semibold text-white backdrop-blur pointer-events-none"
+                  style={{ backgroundColor: accent }}
+                >
+                  {p.afterLabel}
+                </span>
+              ) : null}
+
+              <div className="absolute inset-y-0 pointer-events-none" style={{ left: `${pos}%`, width: 2, backgroundColor: "#fff", boxShadow: "0 0 0 1px rgba(0,0,0,.25)" }} />
+              <button
+                type="button"
+                role="slider"
+                aria-label={`Reveal ${p.afterLabel || "after"}`}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={Math.round(pos)}
+                onKeyDown={onKeyDown}
+                onPointerDown={(e) => {
+                  e.stopPropagation();
+                  setDragging(true);
+                }}
+                className="absolute top-1/2 w-11 h-11 rounded-full bg-white flex items-center justify-center focus:outline-none focus:ring-4"
+                // Centred on the seam by transform rather than a negative
+                // margin, so it stays on the line at every width.
+                style={{
+                  left: `${pos}%`,
+                  transform: "translate(-50%, -50%)",
+                  color: accent,
+                  boxShadow: "0 4px 16px rgba(0,0,0,.3)",
+                }}
+              >
+                <ChevronLeft size={15} />
+                <ChevronRight size={15} />
+              </button>
+            </div>
+            <p className={`mt-3 text-center text-xs ${inherit ? "opacity-70" : "text-gray-400"}`}>
+              Drag the handle, or focus it and use the arrow keys.
+            </p>
+          </Reveal>
+        ) : (
+          <div className="rounded-2xl border border-dashed border-gray-300 py-20 text-center text-sm text-gray-400">
+            Choose a before and an after image for this section.
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
 /**
  * Picture on one side, a claim and a checklist on the other.
  *
@@ -1117,6 +1278,7 @@ const RENDERERS = {
   cardGrid: CardGridBlock,
   split: SplitBlock,
   imageTiles: ImageTilesBlock,
+  beforeAfter: BeforeAfterBlock,
   stats: StatsBlock,
   faq: FaqBlock,
   columns: ColumnsBlock,

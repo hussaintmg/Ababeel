@@ -1,5 +1,5 @@
 /**
- * Derive the homepage's web images from the full-size originals in public/.
+ * Derive the site's web images from the full-size originals in public/.
  *
  * The originals are 1.5–2.4 MB PNGs at 1920×700 — fine as source material,
  * ruinous on a page that shows a dozen of them. This crops each one to the
@@ -28,6 +28,12 @@ const IMAGES = [
   ["8.png", "consultancy", 1200, 900],
   ["12.png", "career", 1600, 900],
   ["11.png", "practical", 1600, 900],
+
+  // About page
+  ["4.png", "about-hero", 2000, 1100],
+  ["3.png", "about-approach", 1200, 900],
+  ["6.png", "about-before", 1400, 900],
+  ["7.png", "about-after", 1400, 900],
 
   // Industry tiles
   ["1.png", "industry-construction", 800, 600],

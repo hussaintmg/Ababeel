@@ -11,7 +11,8 @@
     "test:coverage": "jest --coverage",
     "cms:images": "node scripts/build-home-images.mjs",
     "cms:animation": "node scripts/build-scroll-sequence.mjs",
-    "cms:home": "node scripts/seed-ababeel-homepage.mjs"
+    "cms:home": "node scripts/seed-ababeel-homepage.mjs",
+    "cms:about": "node scripts/seed-about-page.mjs"
   },
   "dependencies": {
     "@tailwindcss/browser": "^4.3.3",
