@@ -123,6 +123,7 @@ export default function OwnerLayout({ children }) {
       dropdown: [
         { name: "Pages & Sections", url: "/owner/cms" },
         { name: "Variables & Data", url: "/owner/cms/variables" },
+        { name: "Scroll Animations", url: "/owner/scroll-animations" },
       ],
     },
     {

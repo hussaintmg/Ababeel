@@ -499,6 +499,10 @@ export const BLOCK_TYPES = {
       // sequence, which scrubs instantly because no decoding happens while
       // scrolling. Generated from the video in the block editor.
       renderMode: "video",
+      // A saved Scroll Animation (Owner → Scroll Animations). Its ordered frame
+      // URLs are copied in on save, so the public page needs no extra lookup.
+      animationId: "",
+      frames: [],
       framesId: "",
       frameCount: "",
       frameExt: "webp",
@@ -540,6 +544,7 @@ export const BLOCK_TYPES = {
           { value: "frames", label: "Frame sequence (smoothest)" },
         ],
       },
+      { key: "animationId", type: "animation", label: "Scroll animation" },
       { key: "height", type: "text", label: "Scroll distance", placeholder: "300vh" },
       { key: "stageHeight", type: "text", label: "Stage height", placeholder: "100vh" },
       { key: "sticky", type: "boolean", label: "Sticky (pin while scrolling)" },

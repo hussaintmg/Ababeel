@@ -12,6 +12,7 @@ import ActivationToken from "@/models/ActivationToken";
 import AuditLog from "@/models/AuditLog";
 import Candidate from "@/models/Candidate";
 import CmsDataSource from "@/models/CmsDataSource";
+import CmsFrameSequence from "@/models/CmsFrameSequence";
 import CmsRegistryState from "@/models/CmsRegistryState";
 import CmsVariable from "@/models/CmsVariable";
 import Contact from "@/models/Contact";
@@ -31,6 +32,7 @@ export {
   AuditLog,
   Candidate,
   CmsDataSource,
+  CmsFrameSequence,
   CmsRegistryState,
   CmsVariable,
   Contact,
@@ -51,6 +53,7 @@ export const ALL_MODELS = {
   AuditLog,
   Candidate,
   CmsDataSource,
+  CmsFrameSequence,
   CmsRegistryState,
   CmsVariable,
   Contact,

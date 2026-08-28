@@ -9,6 +9,7 @@ import DynamicField from "@/Components/owner/cms/dynamic/DynamicField";
 import BlockDataTab from "@/Components/owner/cms/dynamic/BlockDataTab";
 import ScrollVideoStudio from "@/Components/owner/cms/dynamic/ScrollVideoStudio";
 import FrameGenerator from "@/Components/owner/cms/dynamic/FrameGenerator";
+import AnimationPicker from "@/Components/owner/cms/scroll/AnimationPicker";
 import { SlidersHorizontal, Palette, Database } from "lucide-react";
 
 export default function BlockEditor({ block, onChange, features = {}, scopeHint = "" }) {
@@ -41,6 +42,14 @@ export default function BlockEditor({ block, onChange, features = {}, scopeHint 
   // Every leaf property gets the Static/Dynamic/Formula control; list fields
   // recurse so items inside a Card Grid can be bound too.
   const renderLeaf = (field, value, onValue, pathKey) => {
+    if (field.type === "animation") {
+      return (
+        <AnimationPicker
+          value={value}
+          onApply={(patch) => onChange({ ...block, props: { ...props, ...patch } })}
+        />
+      );
+    }
     if (field.type === "list") {
       return <FieldRenderer field={field} value={value} onChange={onValue} renderField={renderLeaf} />;
     }

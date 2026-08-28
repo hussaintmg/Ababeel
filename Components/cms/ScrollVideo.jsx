@@ -155,7 +155,36 @@ export function frameUrl(id, index, ext = "webp") {
  * screen almost immediately and the rest fill in while the visitor reads the
  * section above. Nothing here re-renders React — the draw loop reads the ref.
  */
-function useFrameSequence({ id, count, ext, enabled, onFirstFrame }) {
+/**
+ * Order frames should be fetched in, given where the viewer currently is.
+ *
+ *   current frame → the window around it → outward → everything else
+ *
+ * Loading 1..N in order is wrong for a visitor who lands mid-section: they wait
+ * for frames they have already scrolled past. Exported for testing.
+ */
+export function loadOrder(count, current = 0, window = 20) {
+  const order = [];
+  const seen = new Set();
+  const push = (i) => {
+    if (i >= 0 && i < count && !seen.has(i)) {
+      seen.add(i);
+      order.push(i);
+    }
+  };
+  push(current);
+  for (let d = 1; d <= window; d++) {
+    push(current + d);
+    push(current - d);
+  }
+  // The first frame matters even when the viewer starts elsewhere: it is what
+  // anyone scrolling back up sees.
+  push(0);
+  for (let i = 0; i < count; i++) push(i);
+  return order;
+}
+
+function useFrameSequence({ id, count, ext, enabled, onFirstFrame, urls }) {
   const imagesRef = useRef([]);
   const [loaded, setLoaded] = useState(0);
   const [ready, setReady] = useState(false);
@@ -171,17 +200,25 @@ function useFrameSequence({ id, count, ext, enabled, onFirstFrame }) {
   }
 
   useEffect(() => {
-    if (!enabled || !id || !count) return undefined;
+    // A sequence is addressed either by id (frames generated into a known
+    // directory) or by an explicit URL list (a saved scroll animation). Either
+    // is enough; requiring the id silently disabled the URL-list case.
+    if (!enabled || !count || (!id && !urls?.length)) return undefined;
     let cancelled = false;
     const images = new Array(count).fill(null);
     imagesRef.current = images;
 
     let done = 0;
-    let next = 0;
-    const CONCURRENCY = 6;
+    // A phone has far less headroom than a laptop; fetch fewer at once there.
+    const mobile = typeof window !== "undefined" && window.matchMedia("(max-width: 768px)").matches;
+    const memoryGb = typeof navigator !== "undefined" ? navigator.deviceMemory || 4 : 4;
+    const CONCURRENCY = mobile || memoryGb <= 2 ? 3 : 6;
+
+    const srcFor = (index) => (urls?.length ? urls[index] : frameUrl(id, index, ext));
 
     const loadOne = (index) =>
       new Promise((resolve) => {
+        if (cancelled || images[index]) return resolve();
         const img = new Image();
         img.decoding = "async";
         img.onload = () => {
@@ -189,7 +226,8 @@ function useFrameSequence({ id, count, ext, enabled, onFirstFrame }) {
           images[index] = img;
           done += 1;
           setLoaded(done);
-          if (index === 0) {
+          if (!images.__firstReported) {
+            images.__firstReported = true;
             setReady(true);
             onFirstFrame?.();
           }
@@ -198,28 +236,38 @@ function useFrameSequence({ id, count, ext, enabled, onFirstFrame }) {
         // A missing frame must not stall the sequence; the draw step falls
         // back to the nearest frame it does have.
         img.onerror = () => resolve();
-        img.src = frameUrl(id, index, ext);
+        img.src = srcFor(index);
       });
 
+    // Re-planned whenever the viewer moves far from where the queue was built,
+    // so the frames nearest the current position always come first.
+    let queue = loadOrder(count, 0);
+    let cursor = 0;
     const pump = async () => {
-      while (!cancelled && next < count) {
-        const index = next;
-        next += 1;
+      while (!cancelled && cursor < queue.length) {
+        const index = queue[cursor];
+        cursor += 1;
         await loadOne(index);
       }
     };
 
-    // Frame 0 first so the section is never blank, then the rest in parallel.
     loadOne(0).then(() => {
-      next = 1;
       for (let i = 0; i < CONCURRENCY; i++) pump();
     });
 
+    // The draw loop calls this as the viewer scrolls.
+    imagesRef.reprioritize = (current) => {
+      if (cancelled || cursor >= queue.length) return;
+      queue = loadOrder(count, current).filter((i) => !images[i]);
+      cursor = 0;
+    };
+
     return () => {
       cancelled = true;
+      imagesRef.reprioritize = null;
       imagesRef.current = [];
     };
-  }, [id, count, ext, enabled, onFirstFrame]);
+  }, [id, count, ext, enabled, onFirstFrame, urls]);
 
   return { imagesRef, loaded, ready };
 }
@@ -242,6 +290,7 @@ export default function ScrollVideo({ p = {}, builderProgress = null, radius = "
   const [progress, setProgress] = useState(0);
 
   const canvasRef = useRef(null);
+  const lastIndexRef = useRef(-1);
   const meta = useVideoMeta(videoRef, p.src);
 
   const desktopSrc = p.src || "";
@@ -251,13 +300,17 @@ export default function ScrollVideo({ p = {}, builderProgress = null, radius = "
   // Frame-sequence mode: the decoder is out of the scroll path entirely, so
   // scrubbing is instant instead of waiting on a seek.
   const framesId = p.framesId || "";
-  const frameCount = parseInt(p.frameCount, 10) || 0;
-  const usesFrames = p.renderMode === "frames" && !!framesId && frameCount > 1;
+  // A saved scroll animation supplies its ordered URLs directly; the older
+  // in-block sequences are addressed by id + count. Both land here.
+  const frameUrls = Array.isArray(p.frames) && p.frames.length > 1 ? p.frames : null;
+  const frameCount = frameUrls ? frameUrls.length : parseInt(p.frameCount, 10) || 0;
+  const usesFrames = p.renderMode === "frames" && frameCount > 1 && (!!framesId || !!frameUrls);
   const { imagesRef, loaded: framesLoaded, ready: framesReady } = useFrameSequence({
     id: framesId,
     count: frameCount,
     ext: p.frameExt || "webp",
     enabled: usesFrames,
+    urls: frameUrls,
   });
 
   const trackHeight = p.height || "300vh";
@@ -292,6 +345,11 @@ export default function ScrollVideo({ p = {}, builderProgress = null, radius = "
       if (!canvas || !images?.length) return;
 
       const index = clamp(Math.round(position * (frameCount - 1)), 0, frameCount - 1);
+      // Keep the download queue centred on where the viewer actually is.
+      if (index !== lastIndexRef.current) {
+        lastIndexRef.current = index;
+        imagesRef.reprioritize?.(index);
+      }
       let img = images[index];
       // Not downloaded yet → show the nearest earlier frame rather than a gap.
       if (!img) {
@@ -477,7 +535,7 @@ export default function ScrollVideo({ p = {}, builderProgress = null, radius = "
           <img src={p.poster} alt={p.title || ""} className="w-full h-full object-cover" style={{ minHeight: stageHeight }} />
         ) : usesFrames ? (
           <img
-            src={frameUrl(framesId, 0, p.frameExt || "webp")}
+            src={frameUrls ? frameUrls[0] : frameUrl(framesId, 0, p.frameExt || "webp")}
             alt={p.title || ""}
             className="w-full h-full object-cover"
             style={{ minHeight: stageHeight }}

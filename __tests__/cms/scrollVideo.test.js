@@ -1,4 +1,4 @@
-import { mapProgress, computeProgress, SCROLL_MODES } from "@/Components/cms/ScrollVideo";
+import { mapProgress, computeProgress, loadOrder, SCROLL_MODES } from "@/Components/cms/ScrollVideo";
 
 describe("scroll → playback mapping", () => {
   test("frame scrubbing maps scroll linearly onto the clip", () => {
@@ -90,5 +90,38 @@ describe("scroll progress", () => {
     expect(mapProgress(raw, { mode: "scrub" })).toBe(0);
     const end = computeProgress({ rectTop: -1800, rectHeight: 2700, viewHeight: VIEW });
     expect(mapProgress(end, { mode: "scrub" })).toBe(1);
+  });
+});
+
+describe("frame download priority", () => {
+  test("the current frame comes first", () => {
+    expect(loadOrder(100, 40)[0]).toBe(40);
+  });
+
+  test("the window around the viewer is fetched before anything distant", () => {
+    const order = loadOrder(200, 100, 20);
+    const near = order.slice(0, 41);
+    expect(near.every((i) => Math.abs(i - 100) <= 20)).toBe(true);
+    // frame 0 matters for anyone scrolling back up, so it follows the window
+    expect(order.indexOf(0)).toBeLessThan(order.indexOf(150));
+  });
+
+  test("every frame is queued exactly once", () => {
+    const order = loadOrder(60, 25);
+    expect(order).toHaveLength(60);
+    expect(new Set(order).size).toBe(60);
+    expect([...order].sort((a, b) => a - b)).toEqual([...Array(60).keys()]);
+  });
+
+  test("clamps at the ends without producing out-of-range indices", () => {
+    for (const current of [0, 59]) {
+      const order = loadOrder(60, current);
+      expect(Math.min(...order)).toBe(0);
+      expect(Math.max(...order)).toBe(59);
+    }
+  });
+
+  test("a single-frame sequence is handled", () => {
+    expect(loadOrder(1, 0)).toEqual([0]);
   });
 });
