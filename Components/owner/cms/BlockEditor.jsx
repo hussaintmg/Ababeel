@@ -10,10 +10,11 @@ import BlockDataTab from "@/Components/owner/cms/dynamic/BlockDataTab";
 import ScrollVideoStudio from "@/Components/owner/cms/dynamic/ScrollVideoStudio";
 import FrameGenerator from "@/Components/owner/cms/dynamic/FrameGenerator";
 import AnimationPicker from "@/Components/owner/cms/scroll/AnimationPicker";
-import { SlidersHorizontal, Palette, Database } from "lucide-react";
+import { SlidersHorizontal, Palette, Database, Code2 } from "lucide-react";
+import CodeTab from "@/Components/owner/cms/CodeTab";
 import { scopeCss } from "@/lib/cms/scopeCss";
 
-export default function BlockEditor({ block, onChange, features = {}, scopeHint = "" }) {
+export default function BlockEditor({ block, onChange, features = {}, scopeHint = "", previewDoc = null }) {
   const def = BLOCK_TYPES[block.type];
   const [tab, setTab] = useState("content");
   if (!def) return <p className="text-sm text-red-500">Unknown block type: {block.type}</p>;
@@ -97,6 +98,13 @@ export default function BlockEditor({ block, onChange, features = {}, scopeHint 
             <Database size={14} /> Data
           </button>
         ) : null}
+        <button
+          type="button"
+          onClick={() => setTab("code")}
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${tab === "code" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+        >
+          <Code2 size={14} /> HTML
+        </button>
       </div>
 
       {tab === "content" ? (
@@ -123,6 +131,8 @@ export default function BlockEditor({ block, onChange, features = {}, scopeHint 
             </div>
           ))}
         </div>
+      ) : tab === "code" ? (
+        <CodeTab block={block} onChange={onChange} previewDoc={previewDoc} />
       ) : tab === "data" ? (
         <BlockDataTab block={block} onChange={onChange} features={features} />
       ) : (

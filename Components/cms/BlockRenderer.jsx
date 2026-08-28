@@ -1272,12 +1272,18 @@ function AnimatedBlock({ animation, animDuration, animDelay, id, blockType = "",
     if (!animation) return;
     const el = ref.current;
     if (!el) return;
+    // The element may live in another document — the builder previews the page
+    // inside an iframe so its media queries answer to the device width. An
+    // observer built from *this* window would watch the wrong viewport and
+    // never fire, leaving every animated section stuck at opacity 0. Take the
+    // constructor from whichever window actually owns the element.
+    const view = el.ownerDocument?.defaultView || window;
     // Fallback: no IntersectionObserver → just reveal immediately.
-    if (typeof IntersectionObserver === "undefined") {
+    if (typeof view.IntersectionObserver === "undefined") {
       el.classList.add("is-visible");
       return;
     }
-    const io = new IntersectionObserver(
+    const io = new view.IntersectionObserver(
       (entries) => {
         entries.forEach((e) => {
           if (e.isIntersecting) {

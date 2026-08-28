@@ -21,6 +21,8 @@ import BlockRenderer from "@/Components/cms/BlockRenderer";
 import { CmsVariablesProvider, useCmsVariables } from "@/context/CmsVariablesContext";
 import DataSourcesPanel from "@/Components/owner/cms/dynamic/DataSourcesPanel";
 import DataInspector from "@/Components/owner/cms/dynamic/DataInspector";
+import PreviewFrame, { DEVICES } from "@/Components/owner/cms/PreviewFrame";
+import { formatHtml } from "@/lib/cms/formatHtml";
 import VariablesFloatingPanel from "@/Components/owner/cms/dynamic/VariablesFloatingPanel";
 import { getFeatures } from "@/lib/cms/features";
 import { buildSampleContext } from "@/lib/cms/sampleData";
@@ -33,7 +35,7 @@ const ICONS = {
 };
 
 /* ---------------- nested children (Repeat containers) ---------------- */
-function ChildBlocks({ block, onChange, features, scopeHint }) {
+function ChildBlocks({ block, onChange, features, scopeHint, previewDoc }) {
   const children = Array.isArray(block.children) ? block.children : [];
   const [expandedId, setExpandedId] = useState(null);
   const [showPalette, setShowPalette] = useState(false);
@@ -88,7 +90,7 @@ function ChildBlocks({ block, onChange, features, scopeHint }) {
               </div>
               {open ? (
                 <div className="p-3">
-                  <BlockEditor block={child} onChange={(next) => update(child.id, next)} features={features} scopeHint={scopeHint} />
+                  <BlockEditor block={child} onChange={(next) => update(child.id, next)} features={features} scopeHint={scopeHint} previewDoc={previewDoc} />
                 </div>
               ) : null}
             </div>
@@ -126,7 +128,7 @@ function ChildBlocks({ block, onChange, features, scopeHint }) {
 }
 
 /* ---------------- single draggable block card ---------------- */
-function BlockCard({ block, index, total, expanded, onToggle, onChange, onMove, onDuplicate, onRemove, features }) {
+function BlockCard({ block, index, total, expanded, onToggle, onChange, onMove, onDuplicate, onRemove, features, previewDoc }) {
   const controls = useDragControls();
   const def = BLOCK_TYPES[block.type] || {};
   const Icon = ICONS[def.icon] || Type;
@@ -183,9 +185,9 @@ function BlockCard({ block, index, total, expanded, onToggle, onChange, onMove, 
         {expanded ? (
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} className="overflow-hidden">
             <div className="p-4 space-y-4">
-              <BlockEditor block={block} onChange={onChange} features={features} />
+              <BlockEditor block={block} onChange={onChange} features={features} previewDoc={previewDoc} />
               {container ? (
-                <ChildBlocks block={block} onChange={onChange} features={features} scopeHint={scopeHint} />
+                <ChildBlocks block={block} onChange={onChange} features={features} scopeHint={scopeHint} previewDoc={previewDoc} />
               ) : null}
             </div>
           </motion.div>
@@ -217,6 +219,8 @@ function PageBuilderInner({ pageKey, meta }) {
   const [showPalette, setShowPalette] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
   const [showCss, setShowCss] = useState(false);
+  const [showHtml, setShowHtml] = useState(false);
+  const [pageHtml, setPageHtml] = useState("");
   const [customTemplates, setCustomTemplates] = useState([]);
   const route = meta?.route || "/";
 
@@ -228,6 +232,19 @@ function PageBuilderInner({ pageKey, meta }) {
   const [previewData, setPreviewData] = useState(null);
   const [previewMeta, setPreviewMeta] = useState({});
   const [previewLoading, setPreviewLoading] = useState(false);
+  // Which viewport the preview is rendered at. "fluid" fills the panel.
+  const [device, setDevice] = useState("fluid");
+  // The preview's own document, so the HTML tab can read a section's real
+  // markup back out of it rather than guessing at what it renders.
+  const [previewDoc, setPreviewDoc] = useState(null);
+  // The frame needs a pixel height; max-h-[70vh] means nothing to an iframe.
+  const [vh, setVh] = useState(900);
+  useEffect(() => {
+    const sync = () => setVh(window.innerHeight);
+    sync();
+    window.addEventListener("resize", sync);
+    return () => window.removeEventListener("resize", sync);
+  }, []);
   const [showData, setShowData] = useState(false);
   const [showInspector, setShowInspector] = useState(false);
   const [showVariables, setShowVariables] = useState(false);
@@ -529,6 +546,7 @@ function PageBuilderInner({ pageKey, meta }) {
                   onDuplicate={() => duplicateBlock(block.id)}
                   onRemove={() => removeBlock(block.id)}
                   features={features}
+                  previewDoc={previewDoc}
                 />
               ))}
             </Reorder.Group>
@@ -543,7 +561,57 @@ function PageBuilderInner({ pageKey, meta }) {
             {showCss ? (
               <div className="px-4 pb-4">
                 <textarea value={customCss} onChange={(e) => setCustomCss(e.target.value)} rows={8} spellCheck={false} placeholder={`.my-section h2 { color: #2563eb; }`} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono outline-none focus:ring-2 focus:ring-blue-500" />
-                <p className="mt-1.5 text-xs text-gray-400">Target blocks with the CSS class / anchor id set in each block&apos;s Design tab.</p>
+                <p className="mt-1.5 text-xs text-gray-400">
+                  Applies to the whole page. For one section only, use its Design tab — it has a CSS
+                  box scoped to that section.
+                </p>
+              </div>
+            ) : null}
+          </div>
+
+          {/* The whole page as HTML, read back out of the preview. */}
+          <div className="mt-3 rounded-xl border border-gray-200 bg-white overflow-hidden">
+            <button onClick={() => {
+              setShowHtml((v) => {
+                if (!v) setPageHtml(formatHtml(previewDoc?.body?.innerHTML || ""));
+                return !v;
+              });
+            }} className="w-full flex items-center gap-2 px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50">
+              <Code2 size={16} className="text-gray-400" /> Page HTML
+              <span className="text-[11px] text-gray-400 font-normal">everything the page renders</span>
+              <ChevronDown size={16} className={`ml-auto text-gray-400 transition-transform ${showHtml ? "rotate-180" : ""}`} />
+            </button>
+            {showHtml ? (
+              <div className="px-4 pb-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <p className="text-xs text-gray-500 flex-1">
+                    Read from the preview, so it is exactly what a visitor gets — variables filled in.
+                    To edit a section&apos;s markup, open that section and use its HTML tab.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setPageHtml(formatHtml(previewDoc?.body?.innerHTML || ""))}
+                    className="px-3 py-1.5 rounded-lg border border-gray-300 text-xs font-medium hover:bg-gray-50"
+                  >
+                    Refresh
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigator.clipboard?.writeText(pageHtml).catch(() => {})}
+                    disabled={!pageHtml}
+                    className="px-3 py-1.5 rounded-lg border border-gray-300 text-xs font-medium hover:bg-gray-50 disabled:opacity-40"
+                  >
+                    Copy
+                  </button>
+                </div>
+                <textarea
+                  value={pageHtml}
+                  readOnly
+                  rows={16}
+                  spellCheck={false}
+                  placeholder="Press Refresh to read the page's current markup."
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[11px] leading-relaxed font-mono bg-gray-50 text-gray-700 outline-none"
+                />
               </div>
             ) : null}
           </div>
@@ -598,14 +666,39 @@ function PageBuilderInner({ pageKey, meta }) {
               </div>
             ) : null}
 
-            <div className="max-h-[70vh] overflow-y-auto bg-white">
+            <div className="flex flex-wrap items-center gap-1 px-3 py-2 border-b border-gray-100 bg-white">
+              <span className="text-[11px] text-gray-400 mr-1">Screen</span>
+              {DEVICES.map((d) => (
+                <button
+                  key={d.id}
+                  onClick={() => setDevice(d.id)}
+                  title={d.title}
+                  className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-colors ${device === d.id ? "bg-gray-900 text-white" : "text-gray-500 hover:bg-gray-100"}`}
+                >
+                  {d.label}
+                </button>
+              ))}
+              <span className="ml-auto text-[11px] text-gray-400 tabular-nums">
+                {DEVICES.find((d) => d.id === device)?.width || "auto"}
+                {DEVICES.find((d) => d.id === device)?.width ? "px" : ""}
+              </span>
+            </div>
+
+            {/* Rendered in an iframe so the section's own media queries answer
+                to the chosen width — a narrowed div would still lay out as
+                desktop. */}
+            <PreviewFrame
+              width={DEVICES.find((d) => d.id === device)?.width || 0}
+              height={Math.round(vh * 0.7)}
+              onDocument={setPreviewDoc}
+            >
               {customCss ? <style dangerouslySetInnerHTML={{ __html: customCss }} /> : null}
               {blocks.length ? (
                 <BlockRenderer blocks={blocks} data={previewData} showWarnings />
               ) : (
                 <div className="py-24 text-center text-gray-300 text-sm">Preview appears here</div>
               )}
-            </div>
+            </PreviewFrame>
           </div>
 
           {showInspector && features.dataInspector ? (
