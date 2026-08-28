@@ -6,8 +6,49 @@
  * that accepts one writes a whole homepage into a database nothing reads, and
  * the only symptom is "nothing changed on the site". So: refuse it, say what
  * is wrong, and show how to find the right name.
+ *
+ * It also reads MONGO_URI out of the project's own .env, because the surest
+ * way to end up connected to the wrong database is to retype the connection
+ * string on the command line.
  */
+import fs from "node:fs";
+import path from "node:path";
 import { MongoClient } from "mongodb";
+
+const ROOT = path.resolve(import.meta.dirname, "..", "..");
+
+/**
+ * One value from the project's env files.
+ *
+ * Deliberately minimal: `KEY=value`, optionally quoted, `#` comments and blank
+ * lines skipped. It is only ever asked for MONGO_URI, and the real environment
+ * still wins so a one-off override works.
+ */
+export function envValue(key, files = [".env.local", ".env", ".env.production"]) {
+  if (process.env[key]) return { value: process.env[key], from: "the environment" };
+  for (const file of files) {
+    const full = path.join(ROOT, file);
+    let text;
+    try {
+      text = fs.readFileSync(full, "utf8");
+    } catch {
+      continue;
+    }
+    for (const line of text.split(/\r?\n/)) {
+      const m = /^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/.exec(line);
+      if (!m || m[1] !== key) continue;
+      let v = m[2].trim();
+      // Strip one matching pair of quotes; an unquoted value ends at a comment.
+      if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
+        v = v.slice(1, -1);
+      } else {
+        v = v.split(" #")[0].trim();
+      }
+      if (v) return { value: v, from: file };
+    }
+  }
+  return { value: "", from: "" };
+}
 
 /** The database named in a connection string, or "" when it names none. */
 export function databaseFromUri(uri) {
@@ -31,16 +72,24 @@ function fail(lines) {
  * @returns {Promise<{client: MongoClient, db: import("mongodb").Db, name: string}>}
  */
 export async function connectSeed({ uri, db: dbOverride = "", force = false, script = "the seed script" }) {
+  let source = "the environment";
+  if (!uri) {
+    const found = envValue("MONGO_URI");
+    uri = found.value;
+    source = found.from;
+  }
   if (!uri) {
     fail([
-      "MONGO_URI is not set.",
+      "MONGO_URI is not set, and no .env file in this directory names one.",
       "",
-      "Use the same value the application itself uses — on the server that is normally in",
-      "the app's .env or .env.local file:",
+      "The application reads it from .env — check that file exists and holds the line:",
       "",
-      "  grep MONGO_URI .env .env.local",
+      "  MONGO_URI=mongodb://127.0.0.1:27017/YourDatabase",
+      "",
+      "  grep MONGO_URI .env .env.local .env.production",
     ]);
   }
+  console.log(`MONGO_URI:   read from ${source}`);
 
   const inUri = databaseFromUri(uri);
   const name = dbOverride || inUri;
