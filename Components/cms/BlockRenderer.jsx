@@ -1632,8 +1632,8 @@ function RepeaterBlock({ p, s }) {
 /* ---------- Scroll Video ---------- */
 // The wrapper deliberately does not clip (see STICKY_BLOCK_TYPES), so a corner
 // radius is applied to the pinned stage instead — same look, sticky intact.
-function ScrollVideoBlock({ p, s }) {
-  return <ScrollVideo p={p} radius={s?.radius} />;
+function ScrollVideoBlock({ p, s, showWarnings }) {
+  return <ScrollVideo p={p} radius={s?.radius} showDiagnostics={showWarnings} />;
 }
 
 const RENDERERS = {
@@ -1871,7 +1871,7 @@ export function BlockView({ block, showWarnings = false }) {
   const content = (
     <>
       {showWarnings && block._missing?.length ? <MissingVariableWarning missing={block._missing} /> : null}
-      <Cmp p={block.props || {}} s={block._style || {}} />
+      <Cmp p={block.props || {}} s={block._style || {}} showWarnings={showWarnings} />
     </>
   );
   const inner = maxWidth ? (

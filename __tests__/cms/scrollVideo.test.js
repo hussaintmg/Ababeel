@@ -1,4 +1,4 @@
-import { mapProgress, computeProgress, loadOrder, lockStep, SCROLL_MODES } from "@/Components/cms/ScrollVideo";
+import { mapProgress, computeProgress, loadOrder, lockStep, trackTravel, SCROLL_MODES } from "@/Components/cms/ScrollVideo";
 
 describe("scroll → playback mapping", () => {
   test("frame scrubbing maps scroll linearly onto the clip", () => {
@@ -157,5 +157,24 @@ describe("scroll lock", () => {
 
   test("scrolling up through the animation is clamped too", () => {
     expect(step({ delta: -1200 }).step).toBeGreaterThanOrEqual(-90);
+  });
+});
+
+describe("how much scroll a sequence gets", () => {
+  test("a short sequence still gets about a screen to play in", () => {
+    // 26 frames at 12px each is 312px — a third of a screen, which is why a
+    // short sequence looked like it never played.
+    expect(trackTravel(26, 12)).toBeGreaterThanOrEqual(900);
+    expect(trackTravel(6, 12)).toBeGreaterThanOrEqual(900);
+  });
+
+  test("a long sequence keeps its per-frame distance", () => {
+    expect(trackTravel(240, 12)).toBe(2880);
+    expect(trackTravel(120, 12)).toBe(1440);
+  });
+
+  test("the author's own pxPerFrame is respected above the floor", () => {
+    expect(trackTravel(100, 30)).toBe(3000);
+    expect(trackTravel(10, 30)).toBeGreaterThanOrEqual(900);
   });
 });

@@ -45,6 +45,22 @@ const clamp = (v, lo, hi) => Math.min(Math.max(v, lo), hi);
 const MAX_STEP_PX = 90;
 
 /**
+ * Least scroll a frame sequence gets to play through, whatever its length.
+ * Roughly one screen: enough that the animation reads as an animation rather
+ * than a flash between two sections.
+ */
+const MIN_TRAVEL_PX = 900;
+
+/**
+ * Scroll distance a frame sequence is given, in pixels. Exported so the sizing
+ * rule can be tested without a DOM.
+ */
+export function trackTravel(frameCount, pxPerFrame) {
+  const per = clamp(Number(pxPerFrame) || 12, 2, 80);
+  return Math.max(Math.round((Number(frameCount) || 0) * per), MIN_TRAVEL_PX);
+}
+
+/**
  * Scroll progress of the track through its viewport, 0–1.
  *
  * `viewTop`/`viewHeight` describe whatever the section scrolls inside: the
@@ -205,6 +221,9 @@ function useFrameSequence({ id, count, ext, enabled, onFirstFrame, urls }) {
   const imagesRef = useRef([]);
   const [loaded, setLoaded] = useState(0);
   const [ready, setReady] = useState(false);
+  // Frames that could not be fetched. A sequence whose files are missing used
+  // to show a black stage and say nothing, leaving the owner to guess.
+  const [failed, setFailed] = useState(0);
 
   // Reset counters when the sequence itself changes, derived during render
   // rather than from the effect so there is no extra render pass.
@@ -214,6 +233,7 @@ function useFrameSequence({ id, count, ext, enabled, onFirstFrame, urls }) {
     setSeqKey(key);
     setLoaded(0);
     setReady(false);
+    setFailed(0);
   }
 
   useEffect(() => {
@@ -226,6 +246,9 @@ function useFrameSequence({ id, count, ext, enabled, onFirstFrame, urls }) {
     imagesRef.current = images;
 
     let done = 0;
+    // Distinct frames, not failed attempts: the loader may retry one when the
+    // queue is re-planned, and "11 of 26" for ten missing files is a lie.
+    const missing = new Set();
     // A phone has far less headroom than a laptop; fetch fewer at once there.
     const mobile = typeof window !== "undefined" && window.matchMedia("(max-width: 768px)").matches;
     const memoryGb = typeof navigator !== "undefined" ? navigator.deviceMemory || 4 : 4;
@@ -251,8 +274,15 @@ function useFrameSequence({ id, count, ext, enabled, onFirstFrame, urls }) {
           resolve();
         };
         // A missing frame must not stall the sequence; the draw step falls
-        // back to the nearest frame it does have.
-        img.onerror = () => resolve();
+        // back to the nearest frame it does have. It is counted, though, so the
+        // builder can say what is wrong instead of showing a black rectangle.
+        img.onerror = () => {
+          if (!cancelled) {
+            missing.add(index);
+            setFailed(missing.size);
+          }
+          resolve();
+        };
         img.src = srcFor(index);
       });
 
@@ -286,7 +316,7 @@ function useFrameSequence({ id, count, ext, enabled, onFirstFrame, urls }) {
     };
   }, [id, count, ext, enabled, onFirstFrame, urls]);
 
-  return { imagesRef, loaded, ready };
+  return { imagesRef, loaded, ready, failed };
 }
 
 /**
@@ -393,7 +423,7 @@ function prefersReducedMotion() {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
-export default function ScrollVideo({ p = {}, builderProgress = null, radius = "" }) {
+export default function ScrollVideo({ p = {}, builderProgress = null, radius = "", showDiagnostics = false }) {
   const wrapRef = useRef(null);
   const videoRef = useRef(null);
   const rafRef = useRef(0);
@@ -426,7 +456,7 @@ export default function ScrollVideo({ p = {}, builderProgress = null, radius = "
   const frameUrls = Array.isArray(p.frames) && p.frames.length > 1 ? p.frames : null;
   const frameCount = frameUrls ? frameUrls.length : parseInt(p.frameCount, 10) || 0;
   const usesFrames = p.renderMode === "frames" && frameCount > 1 && (!!framesId || !!frameUrls);
-  const { imagesRef, loaded: framesLoaded, ready: framesReady } = useFrameSequence({
+  const { imagesRef, loaded: framesLoaded, ready: framesReady, failed: framesFailed } = useFrameSequence({
     id: framesId,
     count: frameCount,
     ext: p.frameExt || "webp",
@@ -441,9 +471,13 @@ export default function ScrollVideo({ p = {}, builderProgress = null, radius = "
   // amount of scroll per frame on top of the pinned stage, so every frame is
   // actually seen however many there are.
   const pxPerFrame = clamp(Number(p.pxPerFrame) || 12, 2, 80);
-  const trackHeight =
-    p.height ||
-    (usesFrames ? `calc(${stageHeight} + ${Math.round(frameCount * pxPerFrame)}px)` : "300vh");
+  // Frame count alone is not enough to size the track. A 26-frame sequence at
+  // 12px a frame gets 312px of travel — about a third of a screen, so the whole
+  // animation is over in one flick and reads as "it didn't play". The floor
+  // gives every sequence roughly a screen of scroll to run in; a long one still
+  // gets its per-frame distance on top.
+  const travel = trackTravel(frameCount, pxPerFrame);
+  const trackHeight = p.height || (usesFrames ? `calc(${stageHeight} + ${travel}px)` : "300vh");
   const fit = p.fit === "contain" ? "contain" : "cover";
   const smoothing = clamp(Number(p.smoothing ?? 0.18) || 0.18, 0.02, 1);
 
@@ -751,6 +785,15 @@ export default function ScrollVideo({ p = {}, builderProgress = null, radius = "
                 the section never shows an empty box on a slow connection. */}
             {!framesReady && p.poster ? (
               <img src={p.poster} alt="" className="absolute inset-0 w-full h-full" style={{ objectFit: fit }} />
+            ) : null}
+            {/* Said plainly, and only to the person editing: a visitor cannot
+                act on it, and it must never cover the picture on a live page. */}
+            {showDiagnostics && framesFailed > 0 ? (
+              <div className="absolute inset-x-0 top-0 m-3 rounded-lg bg-amber-500/95 px-3 py-2 text-[12px] text-white shadow-lg">
+                <strong>{framesFailed} of {frameCount} frames could not be loaded.</strong>{" "}
+                The files are missing from the server. Re-create this animation under Scroll
+                Animations, or pick a different one.
+              </div>
             ) : null}
             {p.showProgress && framesLoaded < frameCount ? (
               <div className="absolute top-0 left-0 right-0 h-0.5 bg-white/10">

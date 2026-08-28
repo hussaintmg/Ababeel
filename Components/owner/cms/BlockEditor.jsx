@@ -52,14 +52,9 @@ export default function BlockEditor({ block, onChange, features = {}, scopeHint 
   // Every leaf property gets the Static/Dynamic/Formula control; list fields
   // recurse so items inside a Card Grid can be bound too.
   const renderLeaf = (field, value, onValue, pathKey) => {
-    if (field.type === "animation") {
-      return (
-        <AnimationPicker
-          value={value}
-          onApply={(patch) => onChange({ ...block, props: { ...props, ...patch } })}
-        />
-      );
-    }
+    // Rendered at the top of the panel instead, where it is the first thing an
+    // author sees rather than the seventh.
+    if (field.type === "animation") return null;
     if (field.type === "list") {
       return <FieldRenderer field={field} value={value} onChange={onValue} renderField={renderLeaf} />;
     }
@@ -117,6 +112,30 @@ export default function BlockEditor({ block, onChange, features = {}, scopeHint 
           ) : null}
           {block.type === "scrollVideo" ? (
             <>
+              {/* The picker comes first. Someone who has already built a
+                  sequence under Scroll Animations only needs to choose it, and
+                  it used to sit seventh in the list, below the video upload and
+                  a "generate frames" panel that needs a video to do anything —
+                  so the finished sequence looked unreachable. */}
+              <div className="rounded-xl border border-fuchsia-200 bg-fuchsia-50/40 p-3">
+                <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-fuchsia-700">
+                  Start here — choose a ready-made animation
+                </p>
+                <AnimationPicker
+                  value={props.animationId}
+                  onApply={(patch) => onChange({ ...block, props: { ...props, ...patch } })}
+                />
+                {props.animationId ? (
+                  <p className="mt-2 text-[11px] text-green-700">
+                    {props.frameCount || 0} frames attached. Save the page, then scroll the live page
+                    to play it.
+                  </p>
+                ) : (
+                  <p className="mt-2 text-[11px] text-gray-500">
+                    Or build one from a video below — that needs ffmpeg on the server.
+                  </p>
+                )}
+              </div>
               <ScrollVideoStudio props={props} />
               <FrameGenerator
                 props={props}
@@ -126,7 +145,7 @@ export default function BlockEditor({ block, onChange, features = {}, scopeHint 
           ) : null}
           {def.fields.map((field) => (
             <div key={field.key}>
-              {field.type !== "boolean" ? <Label>{field.label}</Label> : null}
+              {field.type !== "boolean" && field.type !== "animation" ? <Label>{field.label}</Label> : null}
               {renderLeaf(field, props[field.key], (v) => setProp(field.key, v), field.key)}
               {field.help ? <p className="mt-1 text-[11px] text-gray-400">{field.help}</p> : null}
             </div>
