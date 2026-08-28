@@ -740,6 +740,8 @@ export function defaultStyle() {
     bgImage: "",
     bgOverlay: "", // dark overlay % over the bg image (0-100)
     textColor: "",
+    // The section's own CSS, rewritten to apply only inside it (lib/cms/scopeCss)
+    css: "",
     // Spacing (paddingY/X are the simple controls; the four sides override them)
     paddingY: "",
     paddingX: "",

@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, ChevronLeft, ChevronRight, Star, Check, Quote, AlertTriangle } from "lucide-react";
 import ScrollVideo from "@/Components/cms/ScrollVideo";
 import { expandBlocks } from "@/lib/cms/binding";
+import { scopeCss, blockScopeId } from "@/lib/cms/scopeCss";
 
 /* ---------- Tailwind runtime (for Custom HTML blocks) ---------- */
 // Loads the Tailwind browser build once so arbitrary Tailwind utility classes
@@ -1264,7 +1265,7 @@ function buildWrapper(block) {
 // added directly to the DOM node in an effect (never via React state), so the
 // server and client render identical markup — no hydration mismatch — and the
 // animation is purely CSS-driven and cheap. No-op when no animation is set.
-function AnimatedBlock({ animation, animDuration, animDelay, id, className, style, children }) {
+function AnimatedBlock({ animation, animDuration, animDelay, id, blockType = "", blockId = "", className, style, children }) {
   const ref = useRef(null);
 
   useEffect(() => {
@@ -1303,6 +1304,8 @@ function AnimatedBlock({ animation, animDuration, animDelay, id, className, styl
     <div
       ref={ref}
       id={id || undefined}
+      data-cms-block={blockType || undefined}
+      data-cms-id={blockId || undefined}
       className={className || undefined}
       style={animStyle}
       data-cms-anim={animation || undefined}
@@ -1317,6 +1320,12 @@ export function BlockView({ block, showWarnings = false }) {
   if (!Cmp) return null;
   const { style, maxWidth, className, anchorId, animation, animDuration, animDelay } = buildWrapper(block);
 
+  // A block's own CSS is rewritten to apply only inside that block, so an
+  // author can style what they are looking at without inventing a class name
+  // and without a rule leaking across the rest of the page.
+  const scopeId = blockScopeId(block.id);
+  const css = scopeCss(block._style?.css, block.id);
+
   const content = (
     <>
       {showWarnings && block._missing?.length ? <MissingVariableWarning missing={block._missing} /> : null}
@@ -1330,16 +1339,23 @@ export function BlockView({ block, showWarnings = false }) {
   );
 
   return (
-    <AnimatedBlock
-      id={anchorId}
-      className={className}
-      style={style}
-      animation={animation}
-      animDuration={animDuration}
-      animDelay={animDelay}
-    >
-      {inner}
-    </AnimatedBlock>
+    <>
+      {css ? <style dangerouslySetInnerHTML={{ __html: css }} /> : null}
+      <AnimatedBlock
+        // The anchor id stays the author's own, for linking. The scope rides
+        // along as a class so the two never collide.
+        id={anchorId}
+        className={[className, scopeId].filter(Boolean).join(" ")}
+        style={style}
+        animation={animation}
+        animDuration={animDuration}
+        animDelay={animDelay}
+        blockType={block.type}
+        blockId={block.id}
+      >
+        {inner}
+      </AnimatedBlock>
+    </>
   );
 }
 

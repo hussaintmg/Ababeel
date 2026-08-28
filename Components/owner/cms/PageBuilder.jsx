@@ -231,7 +231,14 @@ function PageBuilderInner({ pageKey, meta }) {
   const [showData, setShowData] = useState(false);
   const [showInspector, setShowInspector] = useState(false);
   const [showVariables, setShowVariables] = useState(false);
-  const { tree } = useCmsVariables();
+  const { tree, setPageSources } = useCmsVariables();
+
+  // Publish this page's own data sources into the variable registry, so the
+  // pickers offer `{{programmeCount}}` and friends rather than leaving an
+  // author to remember the names they defined on the Data panel.
+  useEffect(() => {
+    setPageSources(dataSources, dynamicRoute);
+  }, [dataSources, dynamicRoute, setPageSources]);
 
   useEffect(() => {
     setCustomTemplates(loadCustomTemplates());

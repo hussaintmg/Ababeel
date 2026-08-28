@@ -11,6 +11,7 @@ import ScrollVideoStudio from "@/Components/owner/cms/dynamic/ScrollVideoStudio"
 import FrameGenerator from "@/Components/owner/cms/dynamic/FrameGenerator";
 import AnimationPicker from "@/Components/owner/cms/scroll/AnimationPicker";
 import { SlidersHorizontal, Palette, Database } from "lucide-react";
+import { scopeCss } from "@/lib/cms/scopeCss";
 
 export default function BlockEditor({ block, onChange, features = {}, scopeHint = "" }) {
   const def = BLOCK_TYPES[block.type];
@@ -24,6 +25,13 @@ export default function BlockEditor({ block, onChange, features = {}, scopeHint 
   const showDataTab =
     dynamicEnabled &&
     (features.conditions !== false || features.repeater !== false || features.liveData !== false);
+
+  // Anything the scoper cannot make sense of is dropped rather than emitted, so
+  // say so instead of leaving the author wondering why nothing changed.
+  const cssError =
+    style.css && !scopeCss(style.css, block.id)
+      ? "Nothing applied yet — check for a missing } or : ."
+      : "";
 
   const setProp = (key, v) => onChange({ ...block, props: { ...props, [key]: v } });
   const setStyle = (key, v) => onChange({ ...block, _style: { ...style, [key]: v } });
@@ -273,8 +281,32 @@ export default function BlockEditor({ block, onChange, features = {}, scopeHint 
             </div>
           </Section>
 
+          {/* ---------- This section's own CSS ---------- */}
+          <Section title="Custom CSS for this section">
+            <p className="text-[11px] text-gray-500 mb-2">
+              Applies to this section only — no class name needed, and nothing leaks onto the rest of
+              the page. Write <code className="font-mono">&amp;</code> for the section itself, or any
+              selector to match inside it. Media queries work.
+            </p>
+            <textarea
+              value={style.css || ""}
+              onChange={(e) => setStyle("css", e.target.value)}
+              rows={7}
+              spellCheck={false}
+              placeholder={"h2 { letter-spacing: -.02em }\n& { border-top: 4px solid #f26722 }\n@media (max-width: 640px) {\n  h2 { font-size: 24px }\n}"}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs font-mono outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            {cssError ? (
+              <p className="mt-1.5 text-[11px] text-amber-600">{cssError}</p>
+            ) : style.css ? (
+              <p className="mt-1.5 text-[11px] text-green-600">
+                {scopeCss(style.css, block.id).split("\n").filter(Boolean).length} rule(s) applied to this section.
+              </p>
+            ) : null}
+          </Section>
+
           {/* ---------- Advanced ---------- */}
-          <Section title="Advanced (target with Custom CSS)">
+          <Section title="Advanced">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label>CSS class</Label>
