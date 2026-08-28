@@ -10,7 +10,6 @@
  *   scrollVideo/engine.js               all the maths — no DOM, no React
  *   scrollVideo/useScrollController.js  measures the track, drives progress,
  *                                       and repairs ancestors that break the pin
- *   scrollVideo/useScrollLock.js        holds the page until the last frame
  *   scrollVideo/useFrameSequence.js     loads and frees the frame images
  *   scrollVideo/useVideoMeta.js         reads a file's duration/fps
  *   scrollVideo/VideoScene.jsx          one scene — a slice of the scroll
@@ -24,7 +23,6 @@
 import ScrollVideoRenderer from "./scrollVideo/ScrollVideoRenderer";
 import useVideoMetaHook from "./scrollVideo/useVideoMeta";
 import useFrameSequenceHook from "./scrollVideo/useFrameSequence";
-import useScrollLockHook from "./scrollVideo/useScrollLock";
 import useScrollControllerHook from "./scrollVideo/useScrollController";
 
 export {
@@ -38,8 +36,7 @@ export {
   EASES,
   TRIGGER_STARTS,
   TRIGGER_ENDS,
-  MIN_TRAVEL_PX,
-  MAX_STEP_PX,
+  MIN_TRAVEL_VH,
   applyEase,
   computeProgress,
   mapProgress,
@@ -50,7 +47,6 @@ export {
   scenePlacement,
   overlayStyle,
   snapTarget,
-  lockStep,
   loadOrder,
   frameUrl,
   reducedMotionMode,
@@ -60,7 +56,6 @@ export {
 
 export const useVideoMeta = useVideoMetaHook;
 export const useFrameSequence = useFrameSequenceHook;
-export const useScrollLock = useScrollLockHook;
 export const useScrollController = useScrollControllerHook;
 
 export default ScrollVideoRenderer;

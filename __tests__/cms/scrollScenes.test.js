@@ -89,9 +89,9 @@ describe("track height", () => {
     expect(trackHeightCss({ height: "450vh", scrollDuration: "3" })).toBe("450vh");
   });
 
-  test("a frame sequence with nothing set sizes itself from its frames", () => {
+  test("a frame sequence with nothing set sizes itself from its frames, with a floor in screens", () => {
     expect(trackHeightCss({ usesFrames: true, frameCount: 120, pxPerFrame: "14", stageHeight: "100vh" }))
-      .toBe("calc(100vh + 1680px)");
+      .toBe("calc(100vh + max(1680px, 250vh))");
   });
 
   test("a video with nothing set gets three screens", () => {
@@ -426,5 +426,30 @@ describe("scenes and overlays go through the existing variable system", () => {
     const out = resolveProps({ renderMode: "frames", frames, frameCount: "2" }, ctx);
     expect(out.frames).toEqual(frames);
     expect(resolveSource(out).frameCount).toBe(2);
+  });
+});
+
+describe("a long sequence is flagged for what it costs on a phone", () => {
+  const many = Array.from({ length: 120 }, (_, i) => `/uploads/scroll-frames/x/frame-${i}.webp`);
+
+  test("120 frames with no mobile plan is a warning, not an error", () => {
+    const issues = validateScrollVideo({ renderMode: "frames", frames: many, poster: "/p.webp", title: "x" });
+    const weight = issues.find((i) => /heavy download/.test(i.message));
+    expect(weight).toBeDefined();
+    expect(weight.level).toBe("warning");
+    expect(weight.hint).toMatch(/poster/i);
+  });
+
+  test("choosing a lighter mobile option clears it", () => {
+    const issues = validateScrollVideo({
+      renderMode: "frames", frames: many, poster: "/p.webp", title: "x", mobileMode: "poster",
+    });
+    expect(issues.find((i) => /heavy download/.test(i.message))).toBeUndefined();
+  });
+
+  test("a short sequence is never flagged", () => {
+    const few = many.slice(0, 26);
+    const issues = validateScrollVideo({ renderMode: "frames", frames: few, poster: "/p.webp", title: "x" });
+    expect(issues.find((i) => /heavy download/.test(i.message))).toBeUndefined();
   });
 });

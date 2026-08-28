@@ -167,19 +167,27 @@ export function mapProgress(
  * ------------------------------------------------------------------ */
 
 /**
- * Least scroll a sequence gets to play through, whatever its length. Roughly
- * one screen: enough that the animation reads as an animation rather than a
- * flash between two sections.
+ * Least scroll a sequence gets to play through, whatever its length — as a
+ * share of the screen, not a fixed number of pixels.
+ *
+ * This used to be a flat 900px, which was the reason a perfectly good
+ * animation looked like it did nothing. A 26-frame sequence at 12px a frame
+ * wants 312px, so the floor decided it, and 900px on an 800px-tall window is
+ * 1.1 screens: the entire animation was over inside one flick of a trackpad,
+ * before the visitor had registered that anything was moving. Worse, the floor
+ * was the same 900px on a phone, a laptop and a 4K monitor, so the taller the
+ * screen the less of the animation anyone saw.
+ *
+ * 250vh is two and a half screens of scrolling past the pinned stage. It reads
+ * as a sequence on every size of screen, and a long sequence still gets its
+ * own per-frame distance on top.
  */
-export const MIN_TRAVEL_PX = 900;
+export const MIN_TRAVEL_VH = 250;
 
-/** Most scroll a single wheel notch or touch move may cover while pinned. */
-export const MAX_STEP_PX = 90;
-
-/** Scroll distance a frame sequence is given, in pixels. */
+/** Per-frame scroll distance a sequence asks for, in pixels. */
 export function trackTravel(frameCount, pxPerFrame) {
   const per = clamp(num(pxPerFrame, 12) || 12, 2, 80);
-  return Math.max(Math.round(num(frameCount, 0) * per), MIN_TRAVEL_PX);
+  return Math.round(num(frameCount, 0) * per);
 }
 
 /**
@@ -195,7 +203,9 @@ export function trackHeightCss({ scrollDuration, height, stageHeight = "100vh", 
   if (height) return String(height);
   const screens = num(scrollDuration, 0);
   if (screens > 0) return `calc(${stageHeight} + ${clamp(screens, 0.2, 20) * 100}vh)`;
-  if (usesFrames) return `calc(${stageHeight} + ${trackTravel(frameCount, pxPerFrame)}px)`;
+  // CSS max() picks whichever is longer at the size the visitor is actually
+  // using, so the floor follows the screen instead of a number chosen on one.
+  if (usesFrames) return `calc(${stageHeight} + max(${trackTravel(frameCount, pxPerFrame)}px, ${MIN_TRAVEL_VH}vh))`;
   return "300vh";
 }
 
@@ -442,12 +452,32 @@ export function frameUrl(id, index, ext = "webp") {
 }
 
 /**
+ * Frames to fetch first for a usable animation across the whole scroll range,
+ * however few have arrived. Twelve is enough that the picture visibly changes
+ * from one end of the section to the other.
+ */
+const COARSE_PASS = 12;
+
+/**
  * Order frames should be fetched in, given where the viewer currently is.
  *
- *   current frame → the window around it → outward → everything else
+ *   current frame → a coarse spread over the whole sequence → the window
+ *   around the viewer → everything else
  *
- * Loading 1..N in order is wrong for a visitor who lands mid-section: they wait
- * for frames they have already scrolled past.
+ * The coarse pass is what makes this work on a real connection, and leaving it
+ * out was a bug people would describe as "the animation stops". Fetching
+ * outward from the viewer means that after the first second you hold frames
+ * 0–20 of 120 and nothing beyond, so scrolling past a fifth of the section
+ * leaves the last loaded frame frozen on screen for the rest of it — the
+ * section looks broken precisely when someone scrolls it straight away, which
+ * is when most people do.
+ *
+ * Fetching a dozen frames spread across the whole sequence first costs the same
+ * dozen requests and means the animation moves through its entire range
+ * immediately, coarsely, and then sharpens as the gaps fill in.
+ *
+ * Loading 1..N in order is wrong for a different reason: a visitor who lands
+ * mid-section waits for frames they have already scrolled past.
  */
 export function loadOrder(count, current = 0, window = 20) {
   const order = [];
@@ -458,35 +488,27 @@ export function loadOrder(count, current = 0, window = 20) {
       order.push(i);
     }
   };
+
+  // What is on screen right now.
   push(current);
+
+  // A coarse spread over the whole sequence, so every part of the scroll has
+  // something to show almost at once. The first and last frames are in here by
+  // construction: the first is what anyone scrolling back up sees, and the last
+  // is what the section releases on.
+  const stride = Math.max(Math.floor(count / COARSE_PASS), 1);
+  for (let i = 0; i < count; i += stride) push(i);
+  push(count - 1);
+
+  // Then sharpen around the viewer.
   for (let d = 1; d <= window; d++) {
     push(current + d);
     push(current - d);
   }
-  // The first frame matters even when the viewer starts elsewhere: it is what
-  // anyone scrolling back up sees.
-  push(0);
+
+  // Then everything else.
   for (let i = 0; i < count; i++) push(i);
   return order;
-}
-
-/* ------------------------------------------------------------------ *
- * The scroll hold
- * ------------------------------------------------------------------ */
-
-/**
- * Should this scroll gesture be held back, and by how much?
- *
- *   handled === false → leave the gesture alone entirely. That covers a stage
- *   that is not pinned, and — the important one — an animation already at the
- *   end it is being scrolled towards, which is what releases the page onward
- *   once the last frame has been reached (or back up from the first).
- */
-export function lockStep({ delta, progress, pinned }) {
-  if (!pinned || !delta) return { handled: false, step: 0 };
-  if (delta > 0 && progress >= 0.999) return { handled: false, step: 0 };
-  if (delta < 0 && progress <= 0.001) return { handled: false, step: 0 };
-  return { handled: true, step: clamp(delta, -MAX_STEP_PX, MAX_STEP_PX) };
 }
 
 /* ------------------------------------------------------------------ *
@@ -563,6 +585,19 @@ export function validateScrollVideo(p = {}) {
 
   if (source.kind === "frames" && source.frameCount < 2) {
     err("A frame sequence needs at least two frames.", "Re-create it under Scroll Animations.");
+  }
+
+  // A frame sequence is one image per frame, and all of them have to arrive
+  // before the animation is sharp all the way through. The loader fetches a
+  // coarse spread first so the picture moves across the whole section
+  // immediately, but on a phone connection a long sequence still means the
+  // first pass through is rough — and it is the author, not the visitor, who
+  // can decide whether that trade is worth making.
+  if (source.kind === "frames" && source.frameCount > 90 && String(p.mobileMode || "same") === "same") {
+    warn(
+      `${source.frameCount} frames is a heavy download on a phone.`,
+      "The animation still plays — it fetches a spread across the whole sequence first and sharpens as the rest arrive — but consider setting “On a phone” to the poster image, or rebuilding the animation with fewer frames."
+    );
   }
 
   if (p.src && !looksLikeUrl(p.src)) {

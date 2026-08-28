@@ -285,7 +285,7 @@ export const TEMPLATES = [
         title: "Scroll to see it play", subtitle: "Attach a scroll animation or a video under “Start here”.",
         textColor: "#ffffff", textAlign: "center", accent: ORANGE,
         overlayType: "solid", overlay: "30", bgColor: "#081f38",
-        sticky: true, lockScroll: true, scrollStart: "top top", scrollEnd: "bottom bottom",
+        sticky: true, scrollStart: "top top", scrollEnd: "bottom bottom",
         reducedMotion: "scrub", mobileMode: "same", mobileStageHeight: "100svh",
       }),
     ],
@@ -299,7 +299,7 @@ export const TEMPLATES = [
       b("scrollVideo", {
         renderMode: "video", src: "", poster: "", scrollDuration: "3",
         accent: ORANGE, overlayType: "gradient", overlayFrom: "rgba(8,31,56,0.25)", overlayTo: "rgba(8,31,56,0.85)", overlayAngle: "180",
-        bgColor: "#081f38", sticky: true, lockScroll: true, snap: false,
+        bgColor: "#081f38", sticky: true, snap: false,
         scrollStart: "top top", scrollEnd: "bottom bottom", reducedMotion: "scrub",
         mobileMode: "same", mobileStageHeight: "100svh",
         scenes: [
@@ -319,7 +319,7 @@ export const TEMPLATES = [
       b("scrollVideo", {
         renderMode: "video", src: "", poster: "", scrollDuration: "3", direction: "horizontal",
         accent: ORANGE, overlayType: "solid", overlay: "40", bgColor: "#0b2a4a",
-        sticky: true, lockScroll: true, scrollStart: "top top", scrollEnd: "bottom bottom",
+        sticky: true, scrollStart: "top top", scrollEnd: "bottom bottom",
         reducedMotion: "scrub", mobileMode: "same", mobileStageHeight: "100svh",
         scenes: [
           { heading: "First panel", text: "Panels move sideways while the page scrolls downward.", position: "center", align: "center", headingLevel: "h2", visibility: "both", textColor: "#ffffff" },

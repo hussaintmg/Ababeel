@@ -1,4 +1,4 @@
-import { mapProgress, computeProgress, loadOrder, lockStep, trackTravel, reducedMotionMode, SCROLL_MODES } from "@/Components/cms/ScrollVideo";
+import { mapProgress, computeProgress, loadOrder, trackTravel, trackHeightCss, reducedMotionMode, SCROLL_MODES } from "@/Components/cms/ScrollVideo";
 
 describe("scroll → playback mapping", () => {
   test("frame scrubbing maps scroll linearly onto the clip", () => {
@@ -98,12 +98,33 @@ describe("frame download priority", () => {
     expect(loadOrder(100, 40)[0]).toBe(40);
   });
 
+  test("a coarse spread over the whole sequence comes before the detail", () => {
+    // This is what stops the animation freezing part-way while it loads. After
+    // a dozen images the picture must already change from one end of the
+    // section to the other, so those dozen have to be spread across the whole
+    // sequence rather than bunched around wherever the viewer happens to be.
+    const order = loadOrder(120, 0);
+    const first = order.slice(0, 14);
+    expect(Math.max(...first)).toBeGreaterThanOrEqual(110);
+    expect(first).toContain(0);
+    expect(first).toContain(119);
+    // and they are spread, not clustered
+    const gaps = first.slice(1).map((v, i) => Math.abs(v - first[i]));
+    expect(Math.max(...gaps)).toBeGreaterThan(5);
+  });
+
   test("the window around the viewer is fetched before anything distant", () => {
     const order = loadOrder(200, 100, 20);
-    const near = order.slice(0, 41);
-    expect(near.every((i) => Math.abs(i - 100) <= 20)).toBe(true);
-    // frame 0 matters for anyone scrolling back up, so it follows the window
-    expect(order.indexOf(0)).toBeLessThan(order.indexOf(150));
+    // after the coarse pass, the next frames are the viewer's neighbourhood
+    const afterCoarse = order.slice(0, 60);
+    const nearby = afterCoarse.filter((i) => Math.abs(i - 100) <= 20);
+    expect(nearby.length).toBeGreaterThanOrEqual(40);
+    // frame 0 matters for anyone scrolling back up, and is in the coarse pass
+    expect(order.indexOf(0)).toBeLessThan(30);
+  });
+
+  test("the last frame is fetched early, because the section releases on it", () => {
+    expect(loadOrder(120, 0).indexOf(119)).toBeLessThan(20);
   });
 
   test("every frame is queued exactly once", () => {
@@ -126,56 +147,41 @@ describe("frame download priority", () => {
   });
 });
 
-describe("scroll lock", () => {
-  const step = (o) => lockStep({ delta: 0, progress: 0.5, pinned: true, ...o });
-
-  test("does nothing while the stage is not pinned", () => {
-    expect(step({ delta: 500, pinned: false })).toEqual({ handled: false, step: 0 });
-  });
-
-  test("holds a fast flick to one small step so no frame is skipped", () => {
-    const { handled, step: px } = step({ delta: 1200 });
-    expect(handled).toBe(true);
-    expect(px).toBeLessThanOrEqual(90);
-    expect(px).toBeGreaterThan(0);
-  });
-
-  test("a small gesture is passed through unchanged", () => {
-    expect(step({ delta: 40 })).toEqual({ handled: true, step: 40 });
-  });
-
-  test("releases the page once the last frame is reached", () => {
-    expect(step({ delta: 300, progress: 1 }).handled).toBe(false);
-    // …but scrolling back up from the last frame is still locked.
-    expect(step({ delta: -300, progress: 1 }).handled).toBe(true);
-  });
-
-  test("releases upward out of the section at the first frame", () => {
-    expect(step({ delta: -300, progress: 0 }).handled).toBe(false);
-    expect(step({ delta: 300, progress: 0 }).handled).toBe(true);
-  });
-
-  test("scrolling up through the animation is clamped too", () => {
-    expect(step({ delta: -1200 }).step).toBeGreaterThanOrEqual(-90);
-  });
-});
-
 describe("how much scroll a sequence gets", () => {
-  test("a short sequence still gets about a screen to play in", () => {
-    // 26 frames at 12px each is 312px — a third of a screen, which is why a
-    // short sequence looked like it never played.
-    expect(trackTravel(26, 12)).toBeGreaterThanOrEqual(900);
-    expect(trackTravel(6, 12)).toBeGreaterThanOrEqual(900);
-  });
+  const travelOf = (css) => /max\((\d+)px, (\d+)vh\)/.exec(css);
 
-  test("a long sequence keeps its per-frame distance", () => {
+  test("a sequence asks for its own per-frame distance", () => {
     expect(trackTravel(240, 12)).toBe(2880);
     expect(trackTravel(120, 12)).toBe(1440);
+    expect(trackTravel(26, 12)).toBe(312);
   });
 
-  test("the author's own pxPerFrame is respected above the floor", () => {
+  test("the author's own pxPerFrame is respected", () => {
     expect(trackTravel(100, 30)).toBe(3000);
-    expect(trackTravel(10, 30)).toBeGreaterThanOrEqual(900);
+  });
+
+  test("a short sequence is given screens, not a fixed number of pixels", () => {
+    // This is the bug that made a working animation look like it did nothing.
+    // 26 frames at 12px is 312px, and the old floor of 900px is 1.1 screens on
+    // an 800px window — the whole animation was over inside one flick, and the
+    // taller the screen the less of it anyone saw. The floor is now measured in
+    // screens, so it holds on a phone and on a 4K monitor alike.
+    const css = trackHeightCss({ usesFrames: true, frameCount: 26, pxPerFrame: "12", stageHeight: "100vh" });
+    const m = travelOf(css);
+    expect(m).not.toBeNull();
+    expect(Number(m[1])).toBe(312);
+    expect(Number(m[2])).toBeGreaterThanOrEqual(250);
+  });
+
+  test("a long sequence still gets its per-frame distance on top", () => {
+    const m = travelOf(trackHeightCss({ usesFrames: true, frameCount: 400, pxPerFrame: "12", stageHeight: "100vh" }));
+    // 4800px beats 250vh on any ordinary screen, and CSS max() picks it there.
+    expect(Number(m[1])).toBe(4800);
+  });
+
+  test("an explicit scroll distance still wins over both", () => {
+    expect(trackHeightCss({ scrollDuration: "4", usesFrames: true, frameCount: 26, pxPerFrame: "12", stageHeight: "100vh" }))
+      .toBe("calc(100vh + 400vh)");
   });
 });
 

@@ -8,15 +8,13 @@
  * three things at once: the frame the video is showing, which scene is on
  * screen, and how far through its own animation each overlay is.
  *
- * Two things make the pin a real lock rather than a hope. The track is pinned
- * by `position: sticky`, so the page physically cannot reach the next section
- * before it has scrolled the whole track — every frame gets its own scroll
- * distance. And a single flick of a trackpad can otherwise cover that whole
- * track in one event, so while the stage is pinned each gesture is clamped to a
- * small step (see useScrollLock): the animation plays through from the first
- * frame to the last instead of being skipped. The clamp releases the moment the
- * animation reaches either end, and gives up entirely if the page stops
- * responding to it, so a visitor can never be trapped in the section.
+ * The pin is what makes the animation unskippable, and it is enough on its
+ * own: `position: sticky` means the page physically cannot reach the next
+ * section before it has scrolled the whole track, so every frame has scroll
+ * distance of its own. The section never interferes with the visitor's
+ * scrolling to achieve that — an earlier version clamped each wheel and touch
+ * gesture to a small step, which made the page feel like it was resisting and
+ * solved nothing the track length does not already solve.
  *
  * Performance: one <video> or one image sequence, nothing rasterised ahead of
  * time, passive scroll listeners coalesced into a single rAF, the loop exits as
@@ -41,7 +39,6 @@ import {
 } from "./engine";
 import useFrameSequence from "./useFrameSequence";
 import useScrollController from "./useScrollController";
-import useScrollLock from "./useScrollLock";
 import VideoScene from "./VideoScene";
 import VideoOverlay from "./VideoOverlay";
 
@@ -84,6 +81,7 @@ export default function ScrollVideoRenderer({ p = {}, builderProgress = null, ra
   const currentRef = useRef(0);
   const lastIndexRef = useRef(-1);
   const rawRef = useRef(0);
+  const paintedRef = useRef(false);
 
   const [isMobile, setIsMobile] = useState(false);
   const [reduced, setReduced] = useState(false);
@@ -91,6 +89,11 @@ export default function ScrollVideoRenderer({ p = {}, builderProgress = null, ra
   // A source that turns out not to be playable at all. The section falls back
   // rather than showing a dead <video>.
   const [videoBroken, setVideoBroken] = useState(false);
+  // Whether the canvas has drawn a frame yet. Not the same as "a frame has
+  // downloaded": on a cold cache there is a window where the element exists,
+  // the scroll is already driving it, and it has painted nothing — a blank
+  // rectangle where the section should be.
+  const [painted, setPainted] = useState(false);
 
   /* ---- responsive + reduced motion ----
      `forceDevice` is the builder's Desktop/Mobile preview switch: it makes the
@@ -120,7 +123,7 @@ export default function ScrollVideoRenderer({ p = {}, builderProgress = null, ra
 
   const frameCount = usesFrames ? source.frameCount : 0;
   const frameUrls = usesFrames ? source.frameUrls : null;
-  const { imagesRef, loaded: framesLoaded, ready: framesReady, failed: framesFailed } = useFrameSequence({
+  const { imagesRef, loaded: framesLoaded, failed: framesFailed } = useFrameSequence({
     id: usesFrames ? source.framesId : "",
     count: frameCount,
     ext: usesFrames ? source.ext : "webp",
@@ -195,9 +198,20 @@ export default function ScrollVideoRenderer({ p = {}, builderProgress = null, ra
       const h = img.height * scale;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(img, (canvas.width - w) / 2, (canvas.height - h) / 2, w, h);
+      paintedRef.current = true;
     },
     [imagesRef, frameCount, fit]
   );
+
+  // Promoted out of the draw loop, which runs inside requestAnimationFrame and
+  // must not touch React state on every frame.
+  useEffect(() => {
+    if (painted || !usesFrames) return undefined;
+    const id = setInterval(() => {
+      if (paintedRef.current) setPainted(true);
+    }, 120);
+    return () => clearInterval(id);
+  }, [painted, usesFrames]);
 
   /* ---- the seek loop ----
      One rAF loop, started only when the target moves and stopped the moment it
@@ -277,27 +291,11 @@ export default function ScrollVideoRenderer({ p = {}, builderProgress = null, ra
     [p.scrollStart, p.scrollEnd, p.snap, p.snapDuration, scenes, reduced]
   );
 
-  const { scroller, progressRef, diagnosis } = useScrollController({
+  const { diagnosis } = useScrollController({
     wrapRef,
     onProgress: schedule,
     enabled: builderProgress === null && p.scrollEnabled !== false && !reducedFallback,
     settings: controllerSettings,
-  });
-
-  /* ---- keep the page inside the section until the last frame ----
-     Off under reduced motion and in the builder, where the scrubber owns the
-     position and hijacking the preview pane's scroll would fight the author. */
-  useScrollLock({
-    wrapRef,
-    scroller,
-    progressRef: rawRef,
-    enabled:
-      p.lockScroll !== false &&
-      sticky &&
-      builderProgress === null &&
-      !gentle &&
-      !reduced &&
-      (usesFrames || hasVideoSrc),
   });
 
   /* ---- builder scrubber ----
@@ -461,10 +459,20 @@ export default function ScrollVideoRenderer({ p = {}, builderProgress = null, ra
             aria-label={p.title || "Scroll-driven animation"}
             role="img"
           />
-          {/* Poster stays underneath until the first frame has decoded, so the
-              section never shows an empty box on a slow connection. */}
-          {!framesReady && p.poster ? (
-            <img src={p.poster} alt="" className="absolute inset-0 w-full h-full" style={{ objectFit: fit, filter }} />
+          {/* A real picture stays underneath until the canvas has actually
+              painted. The poster if there is one, otherwise the sequence's own
+              first frame — which is always a URL we have, needs no
+              configuration, and is exactly what the animation starts on.
+              Without this the section is a blank rectangle for the whole time
+              the first frames are downloading, which on a cold cache is when
+              most people see it. */}
+          {!painted ? (
+            <img
+              src={p.poster || (frameUrls ? frameUrls[0] : frameUrl(source.framesId, 0, source.ext))}
+              alt=""
+              className="absolute inset-0 w-full h-full"
+              style={{ objectFit: fit, filter }}
+            />
           ) : null}
           {p.showProgress && framesLoaded < frameCount ? (
             <div className="absolute top-0 left-0 right-0 h-0.5 bg-white/10 z-10">

@@ -340,7 +340,6 @@ const practical = (animation) =>
     pxPerFrame: "14",
     stageHeight: "100vh",
     sticky: true,
-    lockScroll: true,
     fit: "cover",
     mode: "scrub",
     startOffset: "0",

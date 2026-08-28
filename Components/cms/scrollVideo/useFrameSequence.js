@@ -97,9 +97,26 @@ export default function useFrameSequence({ id, count, ext, enabled, onFirstFrame
       for (let i = 0; i < CONCURRENCY; i++) pump();
     });
 
-    // The draw loop calls this as the viewer scrolls.
+    // The draw loop calls this as the viewer scrolls, which during a scroll is
+    // many times a second. Re-planning on every call was actively harmful: each
+    // one threw the queue away and reset the cursor, so the six workers kept
+    // restarting at the head of a queue that had just changed again and the
+    // download never worked systematically through the sequence. On a slow
+    // connection that showed as the picture freezing part-way through the
+    // section. Re-plan only when the viewer has actually moved somewhere else,
+    // and not more than a few times a second.
+    let plannedAt = 0;
+    let plannedFor = 0;
+    const REPLAN_MS = 400;
+    const REPLAN_DISTANCE = Math.max(Math.floor(count / 8), 4);
+
     imagesRef.reprioritize = (current) => {
       if (cancelled || cursor >= queue.length) return;
+      const now = Date.now();
+      if (now - plannedAt < REPLAN_MS) return;
+      if (Math.abs(current - plannedFor) < REPLAN_DISTANCE) return;
+      plannedAt = now;
+      plannedFor = current;
       queue = loadOrder(count, current).filter((i) => !images[i]);
       cursor = 0;
     };
