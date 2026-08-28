@@ -1116,15 +1116,33 @@ function CarouselBlock({ p }) {
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-slate-700 to-slate-900" />
             )}
-            {overlay != null ? (
+            {/* A slide may set its own scrim, text colour and button colour;
+                without them it uses the block's, so untouched slides are
+                unchanged. */}
+            {slides[i].bgColor ? (
+              <div className="absolute inset-0" style={{ backgroundColor: slides[i].bgColor }} />
+            ) : overlay != null ? (
               <div className="absolute inset-0" style={{ backgroundColor: `rgba(0,0,0,${overlay})` }} />
             ) : null}
             {(slides[i].title || slides[i].caption) && (
-              <div className={`absolute inset-0 flex flex-col p-6 md:p-12 text-white ${contentPos} ${overlay == null ? "bg-gradient-to-t from-black/70 via-black/10 to-transparent" : ""}`}>
+              <div
+                className={`absolute inset-0 flex flex-col p-6 md:p-12 ${contentPos} ${
+                  overlay == null && !slides[i].bgColor ? "bg-gradient-to-t from-black/70 via-black/10 to-transparent" : ""
+                }`}
+                style={{ color: slides[i].textColor || "#fff" }}
+              >
                 {slides[i].title ? <h3 className="text-2xl md:text-4xl font-bold drop-shadow max-w-2xl">{slides[i].title}</h3> : null}
                 {slides[i].caption ? <p className="mt-2 max-w-xl opacity-90 drop-shadow">{slides[i].caption}</p> : null}
                 {slides[i].href ? (
-                  <SmartLink href={slides[i].href} className="mt-4 inline-block w-fit px-5 py-2.5 rounded-lg bg-white text-gray-900 font-semibold hover:scale-105 transition-transform">
+                  <SmartLink
+                    href={slides[i].href}
+                    className="mt-4 inline-block w-fit px-5 py-2.5 rounded-lg font-semibold hover:scale-105 transition-transform"
+                    style={
+                      slides[i].accent
+                        ? { backgroundColor: slides[i].accent, color: "#fff" }
+                        : { backgroundColor: "#fff", color: "#111827" }
+                    }
+                  >
                     {slides[i].ctaLabel || "Learn more"}
                   </SmartLink>
                 ) : null}
@@ -1177,7 +1195,7 @@ function GalleryBlock({ p }) {
         variants={{ show: { transition: { staggerChildren: 0.05 } } }}
       >
         {images.map((im, n) => (
-          <motion.figure key={n} variants={reveal} className="overflow-hidden group">
+          <motion.figure key={n} variants={reveal} className="relative overflow-hidden group">
             {im.src ? (
               <img
                 src={im.src}
@@ -1187,6 +1205,28 @@ function GalleryBlock({ p }) {
             ) : (
               <div className={`w-full h-56 bg-gray-100 ${p.rounded ? "rounded-xl" : ""}`} />
             )}
+            {/* A tint or a caption, per image — an image with neither is
+                exactly the plain tile it was. */}
+            {im.bgColor ? (
+              <span
+                className={`pointer-events-none absolute inset-0 ${p.rounded ? "rounded-xl" : ""}`}
+                style={{ backgroundColor: im.bgColor }}
+              />
+            ) : null}
+            {im.alt && im.textColor ? (
+              <figcaption
+                className={`absolute inset-x-0 bottom-0 p-3 text-sm font-medium ${p.rounded ? "rounded-b-xl" : ""}`}
+                style={{ color: im.textColor, background: "linear-gradient(to top, rgba(0,0,0,.65), transparent)" }}
+              >
+                {im.alt}
+              </figcaption>
+            ) : null}
+            {im.accent ? (
+              <span
+                className="pointer-events-none absolute left-3 bottom-3 h-1 w-8 rounded-full"
+                style={{ backgroundColor: im.accent }}
+              />
+            ) : null}
           </motion.figure>
         ))}
       </motion.div>
@@ -1323,27 +1363,55 @@ function PricingBlock({ p }) {
               initial="hidden"
               whileInView="show"
               viewport={{ once: true }}
-              className={`rounded-2xl border p-7 flex flex-col ${t.highlighted ? "border-blue-500 shadow-xl ring-1 ring-blue-200 relative" : "border-gray-200 shadow-sm"}`}
+              // A tier may carry its own accent, background and text colour;
+              // with none set it looks exactly as it always did, highlight
+              // included.
+              className={`rounded-2xl border p-7 flex flex-col relative ${
+                t.bgColor ? "border-transparent" : t.highlighted ? "border-blue-500 shadow-xl ring-1 ring-blue-200" : "border-gray-200 shadow-sm"
+              }`}
+              style={{
+                backgroundColor: t.bgColor || undefined,
+                color: t.textColor || undefined,
+                borderColor: t.accent && t.highlighted ? t.accent : undefined,
+              }}
             >
               {t.highlighted ? (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-blue-600 text-white text-xs font-semibold">Popular</span>
+                <span
+                  className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-white text-xs font-semibold"
+                  style={{ backgroundColor: t.accent || "#2563eb" }}
+                >
+                  Popular
+                </span>
               ) : null}
-              <h3 className="text-lg font-semibold text-gray-900">{t.name}</h3>
+              <h3 className={`text-lg font-semibold ${t.textColor ? "" : "text-gray-900"}`}>{t.name}</h3>
               <div className="mt-3 flex items-end gap-1">
-                <span className="text-4xl font-extrabold text-gray-900">{t.price}</span>
-                {t.period ? <span className="text-gray-500 mb-1">{t.period}</span> : null}
+                <span
+                  className={`text-4xl font-extrabold ${t.accent || t.textColor ? "" : "text-gray-900"}`}
+                  style={t.accent ? { color: t.accent } : undefined}
+                >
+                  {t.price}
+                </span>
+                {t.period ? <span className={`mb-1 ${t.textColor ? "opacity-70" : "text-gray-500"}`}>{t.period}</span> : null}
               </div>
               <ul className="mt-6 space-y-2.5 flex-1">
                 {feats.map((f, fi) => (
-                  <li key={fi} className="flex items-start gap-2 text-sm text-gray-600">
-                    <Check size={16} className="text-green-500 mt-0.5 shrink-0" /> {f}
+                  <li key={fi} className={`flex items-start gap-2 text-sm ${t.textColor ? "opacity-85" : "text-gray-600"}`}>
+                    <Check
+                      size={16}
+                      className={`mt-0.5 shrink-0 ${t.accent ? "" : "text-green-500"}`}
+                      style={t.accent ? { color: t.accent } : undefined}
+                    />{" "}
+                    {f}
                   </li>
                 ))}
               </ul>
               {t.cta?.label ? (
                 <SmartLink
                   href={t.cta.href}
-                  className={`mt-7 text-center px-5 py-3 rounded-xl font-semibold transition-colors ${t.highlighted ? "bg-blue-600 text-white hover:bg-blue-700" : "bg-gray-100 text-gray-900 hover:bg-gray-200"}`}
+                  className={`mt-7 text-center px-5 py-3 rounded-xl font-semibold transition-colors ${
+                    t.accent ? "text-white" : t.highlighted ? "bg-blue-600 text-white hover:bg-blue-700" : "bg-gray-100 text-gray-900 hover:bg-gray-200"
+                  }`}
+                  style={t.accent ? { backgroundColor: t.accent } : undefined}
                 >
                   {t.cta.label}
                 </SmartLink>
@@ -1365,9 +1433,19 @@ function LogosBlock({ p }) {
       <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-6">
         {items.map((it, n) =>
           it.image ? (
-            <img key={n} src={it.image} alt={it.alt || ""} className="h-9 md:h-11 object-contain opacity-70 hover:opacity-100 grayscale hover:grayscale-0 transition" />
+            // A logo may opt out of the grey treatment, or sit on its own
+            // plate — some brand marks are unreadable desaturated.
+            <img
+              key={n}
+              src={it.image}
+              alt={it.alt || ""}
+              className={`h-9 md:h-11 object-contain transition ${
+                it.accent || it.bgColor ? "opacity-100" : "opacity-70 hover:opacity-100 grayscale hover:grayscale-0"
+              } ${it.bgColor ? "rounded-lg p-2" : ""}`}
+              style={{ backgroundColor: it.bgColor || undefined }}
+            />
           ) : (
-            <div key={n} className="h-9 w-28 bg-gray-100 rounded" />
+            <div key={n} className="h-9 w-28 rounded" style={{ backgroundColor: it.bgColor || "#f3f4f6" }} />
           )
         )}
       </div>
@@ -1384,17 +1462,44 @@ function TeamBlock({ p }) {
       {p.title ? <h2 className="text-center text-2xl md:text-4xl font-bold text-gray-900 mb-10">{p.title}</h2> : null}
       <motion.div className={`grid grid-cols-1 ${cols} gap-6`} initial="hidden" whileInView="show" viewport={{ once: true, amount: 0.1 }} variants={{ show: { transition: { staggerChildren: 0.08 } } }}>
         {members.map((m, n) => (
-          <motion.div key={n} variants={reveal} className="text-center bg-white rounded-2xl border border-gray-100 shadow-sm p-6 hover:shadow-lg transition-shadow">
+          <motion.div
+            key={n}
+            variants={reveal}
+            // Per-member colours; without them the card is unchanged.
+            className={`text-center rounded-2xl border shadow-sm p-6 hover:shadow-lg transition-shadow ${
+              m.bgColor ? "border-transparent" : "bg-white border-gray-100"
+            }`}
+            style={{ backgroundColor: m.bgColor || undefined, color: m.textColor || undefined }}
+          >
             {m.photo ? (
-              <img src={m.photo} alt={m.name} className="w-24 h-24 rounded-full object-cover mx-auto" />
+              <img
+                src={m.photo}
+                alt={m.name}
+                className="w-24 h-24 rounded-full object-cover mx-auto"
+                style={m.accent ? { boxShadow: `0 0 0 3px ${m.accent}` } : undefined}
+              />
             ) : (
-              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 mx-auto flex items-center justify-center text-2xl font-bold text-blue-500">
+              <div
+                className={`w-24 h-24 rounded-full mx-auto flex items-center justify-center text-2xl font-bold ${
+                  m.accent ? "text-white" : "bg-gradient-to-br from-blue-100 to-indigo-100 text-blue-500"
+                }`}
+                style={m.accent ? { backgroundColor: m.accent } : undefined}
+              >
                 {(m.name || "?").charAt(0)}
               </div>
             )}
-            <h3 className="mt-4 font-semibold text-gray-900">{m.name}</h3>
-            {m.role ? <p className="text-sm text-blue-600">{m.role}</p> : null}
-            {m.bio ? <p className="mt-2 text-sm text-gray-500">{m.bio}</p> : null}
+            <h3 className={`mt-4 font-semibold ${m.textColor ? "" : "text-gray-900"}`}>{m.name}</h3>
+            {m.role ? (
+              // The built-in blue is unreadable on a dark card, so a member who
+              // set a text colour but no accent gets the role in that colour.
+              <p
+                className={`text-sm ${m.accent || m.textColor ? "" : "text-blue-600"}`}
+                style={m.accent ? { color: m.accent } : m.textColor ? { opacity: 0.85 } : undefined}
+              >
+                {m.role}
+              </p>
+            ) : null}
+            {m.bio ? <p className={`mt-2 text-sm ${m.textColor ? "opacity-75" : "text-gray-500"}`}>{m.bio}</p> : null}
           </motion.div>
         ))}
       </motion.div>

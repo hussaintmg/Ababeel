@@ -72,6 +72,11 @@ describe("per-item appearance", () => {
       ["stats", "items"],
       ["faq", "items"],
       ["testimonials", "items"],
+      ["carousel", "slides"],
+      ["gallery", "images"],
+      ["pricing", "tiers"],
+      ["team", "members"],
+      ["logos", "items"],
     ];
     for (const [type, key] of wants) {
       const field = BLOCK_TYPES[type].fields.find((f) => f.key === key);
