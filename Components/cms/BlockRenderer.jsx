@@ -544,9 +544,18 @@ function CardBlock({ p, s: st }) {
         {meta.length ? (
           <dl className={`mt-4 space-y-1.5 text-xs ${overlay || dark ? "text-white/75" : "text-gray-500"}`}>
             {meta.map((m, i) => (
-              <div key={i} className="flex items-baseline justify-between gap-3">
-                <dt>{m.label}</dt>
-                <dd className={`font-semibold ${overlay || dark ? "text-white" : "text-gray-800"}`}>{m.value}</dd>
+              <div
+                key={i}
+                className={`flex items-baseline justify-between gap-3 ${m.bgColor ? "rounded-md px-2 py-1" : ""}`}
+                style={{ backgroundColor: m.bgColor || undefined }}
+              >
+                <dt style={m.textColor ? { color: m.textColor } : undefined}>{m.label}</dt>
+                <dd
+                  className={`font-semibold ${m.accent ? "" : overlay || dark ? "text-white" : "text-gray-800"}`}
+                  style={m.accent ? { color: m.accent } : undefined}
+                >
+                  {m.value}
+                </dd>
               </div>
             ))}
           </dl>
@@ -775,12 +784,14 @@ function SplitBlock({ p, s: st }) {
   const accent = accentOf(p);
   const inherit = !!st?.textColor;
   const right = p.imageSide === "right";
-  const bullets = Array.isArray(p.bullets)
-    ? p.bullets.map((b) => (typeof b === "string" ? b : b?.text)).filter(Boolean)
+  // A point may be a plain string (older pages, and the textarea form) or an
+  // object with its own icon and colours. Both end up in the same shape.
+  const bullets = (Array.isArray(p.bullets)
+    ? p.bullets.map((b) => (typeof b === "string" ? { text: b } : b || {}))
     : String(p.bullets || "")
         .split("\n")
-        .map((b) => b.trim())
-        .filter(Boolean);
+        .map((b) => ({ text: b.trim() }))
+  ).filter((b) => b.text);
 
   return (
     <section style={p.bgColor ? { backgroundColor: p.bgColor } : undefined}>
@@ -832,9 +843,21 @@ function SplitBlock({ p, s: st }) {
             {bullets.length ? (
               <ul className="mt-6 grid sm:grid-cols-2 gap-x-6 gap-y-3">
                 {bullets.map((b, i) => (
-                  <li key={i} className={`flex items-start gap-2.5 text-sm ${inherit ? "opacity-90" : "text-gray-700"}`}>
-                    <Check size={17} className="shrink-0 mt-0.5" style={{ color: accent }} />
-                    <span>{b}</span>
+                  <li
+                    key={i}
+                    className={`flex items-start gap-2.5 text-sm ${
+                      b.textColor ? "" : inherit ? "opacity-90" : "text-gray-700"
+                    }`}
+                    style={b.textColor ? { color: b.textColor } : undefined}
+                  >
+                    {b.icon ? (
+                      <span className="shrink-0 mt-0.5 leading-none" style={{ color: b.accent || accent }}>
+                        {b.icon}
+                      </span>
+                    ) : (
+                      <Check size={17} className="shrink-0 mt-0.5" style={{ color: b.accent || accent }} />
+                    )}
+                    <span>{b.text}</span>
                   </li>
                 ))}
               </ul>

@@ -14,7 +14,8 @@ import { ContactReferenceProvider } from "@/context/ContactReferenceContext";
 import CookieBanner from "@/Components/CookieBanner";
 import { SiteContentProvider } from "@/context/SiteContentContext";
 import MaintenanceGate from "@/Components/cms/MaintenanceGate";
-import { getFaviconInfo, getGlobalBundle, getGlobalSettings } from "@/lib/cms";
+import { getGlobalBundle } from "@/lib/cms";
+import { pageMetadata } from "@/lib/cms/metadata";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,141 +27,20 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-// Complete Title mapping for all your routes
-const getPageTitle = (pathname) => {
-  const titleMap = {
-    // Public Pages
-    "/": "Home",
-    "/about-us": "About Us",
-    "/contact-us": "Contact Us",
-    "/FAQs": "FAQs",
-    "/forgot-password": "Forgot Password",
-    "/glossary-of-terms": "Glossary of Terms",
-    "/logo-use": "Logo Use Policy",
-    "/partner": "Page Not Available",
-    "/privacy-policy": "Privacy Policy",
-    "/professional-dev": "Professional Development",
-    "/profile": "Profile",
-    "/qualification": "Qualifications",
-    "/refund-policy": "Refund Policy",
-    "/terms-of-services": "Terms of Service",
-    "/verify-certificate": "Verify Certificate",
-    "/verify-email": "Verify Email",
 
-    "/login": "Login",
-    "/reset-password": "Reset Password",
-    "/send-email": "Email Verification",
 
-    "/dashboard": "Dashboard",
-    "/admin": "Admin Dashboard",
-    "/owner": "Owner Dashboard",
-
-    "/dashboard/course-reference/new": "New Course reference | Dashboard",
-    "/dashboard/course-reference/all": "All Course reference | Dashboard",
-    "/dashboard/courses/create": "Create Courses | Dashboard",
-    "/dashboard/courses/all": "All Courses | Dashboard",
-
-    "/admin/organizations": "Organizations | Admin Dashboard",
-    "/admin/default-course/new": "New Default Courses | Admin Dashboard",
-    "/admin/default-course/all": "All Default Courses | Admin Dashboard",
-    "/admin/enquiries": "Enquiries | Admin Dashboard",
-
-    "/owner/organizations": "Organizations | Owner Dashboard",
-    "/owner/users": "Users | Owner Dashboard",
-    "/owner/default-course/new": "New Default Courses | Owner Dashboard",
-    "/owner/default-course/all": "All Default Courses | Owner Dashboard",
-    "/owner/enquiries": "Enquiries | Owner Dashboard",
-  };
-
-  // Check for exact match first
-  if (titleMap[pathname]) {
-    return titleMap[pathname];
-  }
-
-  // Check for dynamic routes
-  for (const [route, title] of Object.entries(titleMap)) {
-    if (pathname.startsWith(route) && route !== "/") {
-      // Handle dynamic routes
-      if (route.includes(":path*")) {
-        const baseRoute = route.replace("/:path*", "");
-        if (pathname.startsWith(baseRoute)) {
-          return title;
-        }
-      } else {
-        return title;
-      }
-    }
-  }
-
-  // Handle specific dynamic patterns
-  if (pathname.startsWith("/qualification/")) {
-    return "Qualifications";
-  }
-
-  if (pathname.startsWith("/professional-dev/")) {
-    return "Professional Development";
-  }
-
-  if (pathname.startsWith("/dashboard/")) {
-    return "Dashboard";
-  }
-
-  if (pathname.startsWith("/admin/")) {
-    return "Admin Dashboard";
-  }
-
-  if (pathname.startsWith("/owner/")) {
-    return "Owner Dashboard";
-  }
-
-  // Extract title from pathname for unknown routes
-  if (pathname !== "/") {
-    const segments = pathname.split("/").filter((segment) => segment);
-    if (segments.length > 0) {
-      const lastSegment = segments[segments.length - 1];
-      const formattedTitle = lastSegment
-        .split("-")
-        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(" ");
-      return formattedTitle;
-    }
-  }
-
-  return "Ababeel";
-};
-
+/**
+ * The site-wide default.
+ *
+ * Only the home page and anything without a layout of its own lands here. Every
+ * managed route has an `app/<route>/layout.js` that calls pageMetadata with its
+ * own key — a layout cannot know which path it is rendering, and the header
+ * this function used to read for that (`x-invoke-path`) is a Pages Router
+ * internal the App Router never sends, so every page was inheriting the home
+ * page's title.
+ */
 export async function generateMetadata() {
-  try {
-    const { headers } = await import("next/headers");
-    const headersList = await headers();
-    const pathname = headersList.get("x-invoke-path") || "/";
-    const pageTitle = getPageTitle(pathname);
-
-    // Pull live branding from the CMS so the site title, description and
-    // favicon are all editable from the owner dashboard.
-    const settings = await getGlobalSettings();
-    const template = settings?.seo?.titleTemplate || "%s | Ababeel";
-    const brand = settings?.brand?.shortName || "Ababeel";
-    const title = template.includes("%s")
-      ? template.replace("%s", pageTitle)
-      : `${pageTitle} | ${brand}`;
-    // Always point at the /favicon.ico route (it resolves the CMS icon server
-    // side) and stamp it with a version that changes whenever the icon does —
-    // without the stamp browsers keep showing the previously cached icon.
-    const { version } = await getFaviconInfo();
-    const favicon = `/favicon.ico?v=${version}`;
-
-    return {
-      title,
-      description: settings?.seo?.defaultDescription || "Your safety technology partner",
-      icons: { icon: favicon, shortcut: favicon, apple: favicon },
-    };
-  } catch (error) {
-    return {
-      title: "Ababeel | Safety Technology Solutions",
-      description: "Your safety technology partner",
-    };
-  }
+  return pageMetadata("home", "Home");
 }
 
 export default async function RootLayout({ children }) {

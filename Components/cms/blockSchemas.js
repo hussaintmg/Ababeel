@@ -190,7 +190,12 @@ export const BLOCK_TYPES = {
         type: "list",
         label: "Checklist",
         itemLabel: "Point",
-        itemFields: [{ key: "text", type: "text", label: "Point" }],
+        itemFields: [
+          { key: "text", type: "text", label: "Point" },
+          { key: "icon", type: "text", label: "Icon / emoji (replaces the tick)" },
+          { key: "accent", type: "color", label: "Tick colour (this point only)" },
+          { key: "textColor", type: "color", label: "Text colour (this point only)" },
+        ],
       },
       { key: "image", type: "image", label: "Image" },
       { key: "imageAlt", type: "text", label: "Image description (for screen readers)" },
@@ -345,6 +350,9 @@ export const BLOCK_TYPES = {
         itemFields: [
           { key: "label", type: "text", label: "Label" },
           { key: "value", type: "text", label: "Value" },
+          { key: "accent", type: "color", label: "Value colour (this row only)" },
+          { key: "textColor", type: "color", label: "Label colour (this row only)" },
+          { key: "bgColor", type: "color", label: "Row background (this row only)" },
         ],
       },
       { key: "price", type: "text", label: "Price (optional)" },

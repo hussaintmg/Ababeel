@@ -11,7 +11,7 @@ import {
   LayoutTemplate, Sparkles, Heading, Type, Image as ImageIcon, LayoutGrid,
   BarChart3, HelpCircle, Columns2, Columns3, MousePointerClick, Megaphone, MoveVertical,
   GalleryHorizontal, Images, Quote, BadgeDollarSign, Building2, UsersRound, Video,
-  Bookmark, Star, Database, Repeat, Film, Bug, Play, RefreshCw, SlidersHorizontal,
+  Bookmark, Star, Database, Repeat, Film, Bug, Play, RefreshCw, SlidersHorizontal, Globe,
 } from "lucide-react";
 import { BLOCK_TYPE_LIST, BLOCK_TYPES, createBlock, isContainer } from "@/Components/cms/blockSchemas";
 import { TEMPLATES, TEMPLATE_CATEGORIES, createBlocksFromTemplate } from "@/Components/cms/templates";
@@ -220,6 +220,14 @@ function PageBuilderInner({ pageKey, meta }) {
   const [showTemplates, setShowTemplates] = useState(false);
   const [showCss, setShowCss] = useState(false);
   const [showHtml, setShowHtml] = useState(false);
+  const [showSeo, setShowSeo] = useState(false);
+  // What the browser tab and a search result show for this page. Kept apart
+  // from the page's CMS name, which is what the owner dashboard lists it by.
+  const [seoTitle, setSeoTitle] = useState("");
+  const [seoDescription, setSeoDescription] = useState("");
+  // Anything else already in the page's settings, so saving SEO does not
+  // discard it.
+  const [otherSettings, setOtherSettings] = useState({});
   const [pageHtml, setPageHtml] = useState("");
   const [customTemplates, setCustomTemplates] = useState([]);
   const route = meta?.route || "/";
@@ -288,6 +296,12 @@ function PageBuilderInner({ pageKey, meta }) {
           setTitle(d.title || meta?.title || "");
           setShowInNav(!!d.showInNav);
           setNavLabel(d.navLabel || d.title || meta?.title || "");
+          const st = d.settings && typeof d.settings === "object" ? d.settings : {};
+          setSeoTitle(st.seo?.title || "");
+          setSeoDescription(st.seo?.description || "");
+          // eslint-disable-next-line no-unused-vars
+          const { seo: _seo, ...rest } = st;
+          setOtherSettings(rest);
           setDataSources(Array.isArray(d.dataSources) ? d.dataSources : []);
           setDynamicRoute(d.dynamicRoute || null);
           if ((d.dataSources?.length || d.dynamicRoute?.enabled) && previewMode === "static") {
@@ -339,7 +353,15 @@ function PageBuilderInner({ pageKey, meta }) {
   const save = async () => {
     setSaving(true);
     try {
-      const payload = { title, blocks, customCss, enabled, dataSources, dynamicRoute };
+      const payload = {
+        title,
+        blocks,
+        customCss,
+        enabled,
+        dataSources,
+        dynamicRoute,
+        settings: { ...otherSettings, seo: { title: seoTitle, description: seoDescription } },
+      };
       if (isCustom) {
         payload.showInNav = showInNav;
         payload.navLabel = navLabel;
@@ -551,6 +573,56 @@ function PageBuilderInner({ pageKey, meta }) {
               ))}
             </Reorder.Group>
           )}
+
+          {/* Browser tab + search result */}
+          <div className="mt-3 rounded-xl border border-gray-200 bg-white overflow-hidden">
+            <button onClick={() => setShowSeo((v) => !v)} className="w-full flex items-center gap-2 px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50">
+              <Globe size={16} className="text-gray-400" /> Browser tab &amp; search result
+              <span className="text-[11px] text-gray-400 font-normal truncate">
+                {seoTitle || title || meta?.title || "using the page name"}
+              </span>
+              <ChevronDown size={16} className={`ml-auto text-gray-400 transition-transform ${showSeo ? "rotate-180" : ""}`} />
+            </button>
+            {showSeo ? (
+              <div className="px-4 pb-4 space-y-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Title</label>
+                  <input
+                    value={seoTitle}
+                    onChange={(e) => setSeoTitle(e.target.value)}
+                    placeholder={title || meta?.title || "Page title"}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <p className="mt-1 text-[11px] text-gray-400">
+                    Leave it empty and the page name is used. The site template around it
+                    (&ldquo;%s | Ababeel&rdquo;) is set under Global Settings.
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Description</label>
+                  <textarea
+                    value={seoDescription}
+                    onChange={(e) => setSeoDescription(e.target.value)}
+                    rows={2}
+                    placeholder="One or two sentences, shown under the title in search results."
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                {/* What it will look like — the thing an author is actually
+                    trying to picture. */}
+                <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                  <div className="text-[11px] text-gray-400 mb-1.5">Preview</div>
+                  <div className="text-[13px] text-blue-800 truncate">
+                    {(seoTitle || title || meta?.title || "Page") + " | Ababeel"}
+                  </div>
+                  <div className="text-[11px] text-green-700">{route}</div>
+                  <div className="text-[11px] text-gray-600 line-clamp-2">
+                    {seoDescription || "No description set — the site's default is used."}
+                  </div>
+                </div>
+              </div>
+            ) : null}
+          </div>
 
           {/* Custom CSS */}
           <div className="mt-3 rounded-xl border border-gray-200 bg-white overflow-hidden">

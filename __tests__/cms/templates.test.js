@@ -95,6 +95,17 @@ describe("per-item appearance", () => {
     }
   });
 
+  test("a split's points and a card's rows can be styled individually", () => {
+    const bullets = BLOCK_TYPES.split.fields.find((f) => f.key === "bullets");
+    const keys = bullets.itemFields.map((f) => f.key);
+    // A point takes an icon in place of the tick, and colours for both.
+    expect(keys).toEqual(expect.arrayContaining(["text", "icon", "accent", "textColor"]));
+
+    const meta = BLOCK_TYPES.card.fields.find((f) => f.key === "meta");
+    const metaKeys = meta.itemFields.map((f) => f.key);
+    expect(metaKeys).toEqual(expect.arrayContaining(["label", "value", "accent", "textColor", "bgColor"]));
+  });
+
   test("the before/after slider exposes each of its parts", () => {
     const keys = BLOCK_TYPES.beforeAfter.fields.map((f) => f.key);
     expect(keys).toEqual(
