@@ -28,8 +28,9 @@ const cmsDataSourceSchema = new mongoose.Schema(
     key: { type: String, required: true, unique: true, trim: true, index: true },
     label: { type: String, default: "" },
     model: { type: String, required: true, trim: true },
-    // "list" → array of documents, "single" → one document.
-    mode: { type: String, enum: ["list", "single"], default: "list" },
+    // "list" → array of documents, "single" → one document, "count" → how many
+    // documents match, so a page can bind a headline figure to real data.
+    mode: { type: String, enum: ["list", "single", "count"], default: "list" },
 
     filters: { type: [filterSchema], default: [] },
     match: { type: String, enum: ["all", "any"], default: "all" },

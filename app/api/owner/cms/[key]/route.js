@@ -15,7 +15,7 @@ function sanitizeDataSource(src, key) {
     key,
     label: String(src?.label || key).slice(0, 120),
     model: src.model,
-    mode: src?.mode === "single" ? "single" : "list",
+    mode: src?.mode === "single" || src?.mode === "count" ? src.mode : "list",
     match: src?.match === "any" ? "any" : "all",
     filters: (Array.isArray(src?.filters) ? src.filters : []).slice(0, 20).map((f) => ({
       field: String(f?.field || "").slice(0, 120),

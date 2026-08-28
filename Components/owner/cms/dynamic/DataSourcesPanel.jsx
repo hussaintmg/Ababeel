@@ -164,11 +164,15 @@ export default function DataSourcesPanel({
                   <ChevronDown size={14} className={`text-gray-400 transition-transform ${open ? "" : "-rotate-90"}`} />
                   <code className="text-xs font-mono text-blue-700">{source.key}</code>
                   <span className="text-xs text-gray-400">
-                    {source.mode === "single" ? "one" : `up to ${source.limit}`} · {source.model}
+                    {source.mode === "single" ? "one" : source.mode === "count" ? "how many" : `up to ${source.limit}`} · {source.model}
                   </span>
                   {result ? (
                     <span className="ml-auto text-[11px] text-gray-400">
-                      {result.error ? "error" : `${Array.isArray(result.data) ? result.data.length : result.data ? 1 : 0} record(s)`}
+                      {result.error
+                        ? "error"
+                        : source.mode === "count"
+                        ? `${result.data ?? 0}`
+                        : `${Array.isArray(result.data) ? result.data.length : result.data ? 1 : 0} record(s)`}
                     </span>
                   ) : null}
                 </button>
@@ -210,6 +214,7 @@ export default function DataSourcesPanel({
                         >
                           <option value="list">A list</option>
                           <option value="single">A single record</option>
+                          <option value="count">How many (a number)</option>
                         </select>
                       </div>
                     </div>

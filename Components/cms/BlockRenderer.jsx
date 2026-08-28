@@ -73,6 +73,23 @@ const alignClass = { left: "text-left", center: "text-center", right: "text-righ
 
 /* ---------- block components ---------- */
 
+/**
+ * A block's accent colour — the one used for buttons, numerals, icon chips and
+ * rules. Blocks that never set it keep the original blue, so existing pages
+ * look exactly as they did.
+ */
+function accentOf(p) {
+  return p.accent || "#2563eb";
+}
+
+/** Same colour at low opacity, for chip and rule backgrounds. */
+function tint(hex, alpha) {
+  const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || ""));
+  if (!m) return `rgba(37,99,235,${alpha})`;
+  const n = parseInt(m[1], 16);
+  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${alpha})`;
+}
+
 function HeroBlock({ p }) {
   const align = p.align === "left" ? "items-start text-left" : "items-center text-center";
   // Background: gradient > solid color.
@@ -87,6 +104,12 @@ function HeroBlock({ p }) {
   const minH = parseInt(p.minHeight, 10);
   const overlay = p.overlay != null && p.overlay !== "" ? Math.min(parseInt(p.overlay, 10) || 0, 100) / 100 : 0.55;
   const padY = p.padY ? `${parseInt(p.padY, 10)}px` : undefined;
+  // "Professional Training | Practical Learning | Workplace Safety" — the row of
+  // short claims a hero usually carries under its buttons.
+  const badges = String(p.badges || "")
+    .split(/[|\n]/)
+    .map((b) => b.trim())
+    .filter(Boolean);
   return (
     <section
       className={`relative overflow-hidden ${p.rounded ? "rounded-3xl" : ""}`}
@@ -95,11 +118,21 @@ function HeroBlock({ p }) {
       {p.image ? (
         <>
           <img src={p.image} alt="" className="absolute inset-0 w-full h-full object-cover" />
-          <div className="absolute inset-0" style={{ backgroundColor: `rgba(0,0,0,${overlay})` }} />
+          {/* A flat wash over a photograph flattens it; angling the scrim away
+              from the text keeps the picture readable as a picture. */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                p.align === "left"
+                  ? `linear-gradient(100deg, ${tint(p.bgColor, Math.min(overlay + 0.3, 0.96))} 0%, ${tint(p.bgColor, overlay)} 45%, ${tint(p.bgColor, Math.max(overlay - 0.3, 0))} 100%)`
+                  : `rgba(0,0,0,${overlay})`,
+            }}
+          />
         </>
       ) : null}
       <div
-        className={`relative max-w-5xl mx-auto px-6 flex flex-col ${align} ${Number.isNaN(minH) ? "py-20 md:py-28" : "flex-1 justify-center py-16"}`}
+        className={`relative ${p.align === "left" ? "max-w-6xl" : "max-w-5xl"} mx-auto px-6 flex flex-col ${align} ${Number.isNaN(minH) ? "py-20 md:py-28" : "flex-1 justify-center py-16"}`}
         style={{ paddingTop: padY, paddingBottom: padY, minHeight: Number.isNaN(minH) ? undefined : "inherit" }}
       >
         {p.eyebrow ? (
@@ -107,7 +140,8 @@ function HeroBlock({ p }) {
             initial={{ opacity: 0, y: 12 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="inline-block mb-4 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide uppercase bg-white/15 backdrop-blur"
+            className="inline-block mb-5 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide uppercase backdrop-blur"
+            style={p.accent ? { backgroundColor: accentOf(p), color: "#fff" } : { backgroundColor: "rgba(255,255,255,.15)" }}
           >
             {p.eyebrow}
           </motion.span>
@@ -143,7 +177,8 @@ function HeroBlock({ p }) {
             {p.primaryCta?.label ? (
               <SmartLink
                 href={p.primaryCta.href}
-                className="px-6 py-3 rounded-xl bg-white text-gray-900 font-semibold shadow-lg hover:scale-[1.03] active:scale-95 transition-transform"
+                className="px-7 py-3.5 rounded-xl font-semibold shadow-lg hover:scale-[1.03] active:scale-95 transition-transform"
+                style={p.accent ? { backgroundColor: accentOf(p), color: "#fff" } : { backgroundColor: "#fff", color: "#111827" }}
               >
                 {p.primaryCta.label}
               </SmartLink>
@@ -151,13 +186,23 @@ function HeroBlock({ p }) {
             {p.secondaryCta?.label ? (
               <SmartLink
                 href={p.secondaryCta.href}
-                className="px-6 py-3 rounded-xl border border-white/60 font-semibold hover:bg-white/10 transition-colors"
+                className="px-7 py-3.5 rounded-xl border border-white/60 font-semibold hover:bg-white/10 transition-colors"
               >
                 {p.secondaryCta.label}
               </SmartLink>
             ) : null}
           </motion.div>
         )}
+        {badges.length ? (
+          <div className={`mt-10 flex flex-wrap gap-x-7 gap-y-3 text-sm font-medium opacity-90 ${p.align === "left" ? "" : "justify-center"}`}>
+            {badges.map((b, i) => (
+              <span key={i} className="flex items-center gap-2">
+                <Check size={16} style={{ color: accentOf(p) }} />
+                {b}
+              </span>
+            ))}
+          </div>
+        ) : null}
       </div>
     </section>
   );
@@ -213,7 +258,7 @@ function ImageBlock({ p }) {
   );
 }
 
-function CardGridBlock({ p }) {
+function CardGridBlock({ p, s }) {
   const cols =
     p.columns === "2"
       ? "sm:grid-cols-2"
@@ -221,12 +266,22 @@ function CardGridBlock({ p }) {
       ? "sm:grid-cols-2 lg:grid-cols-4"
       : "sm:grid-cols-2 lg:grid-cols-3";
   const items = Array.isArray(p.items) ? p.items : [];
+  const accent = accentOf(p);
+  // "numbered" replaces the icon with 01…06 in the accent colour, which is what
+  // a list of reasons or steps wants; "plain" is the original card.
+  const numbered = p.variant === "numbered";
+  const inherit = !!s?.textColor;
   return (
     <section className="max-w-6xl mx-auto px-6 py-12">
-      {p.title ? (
+      {p.title || p.eyebrow ? (
         <Reveal className="text-center mb-10">
-          <h2 className="text-2xl md:text-4xl font-bold text-gray-900">{p.title}</h2>
-          {p.subtitle ? <p className="mt-3 text-gray-600 max-w-2xl mx-auto">{p.subtitle}</p> : null}
+          {p.eyebrow ? (
+            <div className="text-xs font-bold uppercase tracking-[0.18em] mb-3" style={{ color: accent }}>
+              {p.eyebrow}
+            </div>
+          ) : null}
+          {p.title ? <h2 className={`text-2xl md:text-4xl font-bold ${inherit ? "" : "text-gray-900"}`}>{p.title}</h2> : null}
+          {p.subtitle ? <p className={`mt-3 max-w-2xl mx-auto ${inherit ? "opacity-80" : "text-gray-600"}`}>{p.subtitle}</p> : null}
         </Reveal>
       ) : null}
       <motion.div
@@ -240,17 +295,36 @@ function CardGridBlock({ p }) {
           const inner = (
             <motion.div
               variants={reveal}
-              className="h-full bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all p-6"
+              className="group/card relative h-full bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all p-7 overflow-hidden"
             >
-              {it.image ? (
-                <img src={it.image} alt={it.title || ""} className="w-full h-40 object-cover rounded-xl mb-4" />
+              {/* A rule in the accent colour that fills out on hover — enough to
+                  make a grid of cards feel deliberate rather than generic. */}
+              <span
+                className="absolute left-0 top-0 h-1 w-12 group-hover/card:w-full transition-all duration-500"
+                style={{ backgroundColor: accent }}
+              />
+              {numbered ? (
+                <div className="text-3xl font-extrabold tabular-nums mb-4" style={{ color: accent }}>
+                  {String(i + 1).padStart(2, "0")}
+                </div>
+              ) : it.image ? (
+                <img src={it.image} alt={it.title || ""} className="w-full h-40 object-cover rounded-xl mb-5" />
               ) : it.icon ? (
-                <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-2xl mb-4">
+                <div
+                  className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl mb-5"
+                  style={{ backgroundColor: tint(accent, 0.1) }}
+                >
                   {it.icon}
                 </div>
               ) : null}
               {it.title ? <h3 className="text-lg font-semibold text-gray-900">{it.title}</h3> : null}
               {it.text ? <p className="mt-2 text-gray-600 text-sm leading-relaxed">{it.text}</p> : null}
+              {it.href && it.linkLabel ? (
+                <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold" style={{ color: accent }}>
+                  {it.linkLabel}
+                  <ChevronRight size={15} className="group-hover/card:translate-x-1 transition-transform" />
+                </span>
+              ) : null}
             </motion.div>
           );
           return it.href ? (
@@ -274,25 +348,206 @@ function StatsBlock({ p, s }) {
   // and labels follow it instead of their built-in blue/grey, which would be
   // unreadable there.
   const inherit = !!s?.textColor;
+  const accent = p.accent || "";
   return (
     <section style={{ backgroundColor: p.bgColor || "#f1f5f9" }}>
       <div className="max-w-6xl mx-auto px-6 py-14">
-        {p.title ? (
-          <h2 className={`text-center text-2xl md:text-3xl font-bold mb-10 ${inherit ? "" : "text-gray-900"}`}>{p.title}</h2>
+        {p.title || p.subtitle ? (
+          <div className="text-center mb-10">
+            {p.title ? (
+              <h2 className={`text-2xl md:text-3xl font-bold ${inherit ? "" : "text-gray-900"}`}>{p.title}</h2>
+            ) : null}
+            {p.subtitle ? (
+              <p className={`mt-3 max-w-2xl mx-auto ${inherit ? "opacity-80" : "text-gray-600"}`}>{p.subtitle}</p>
+            ) : null}
+          </div>
         ) : null}
         <motion.div
-          className="grid grid-cols-2 md:grid-cols-4 gap-6"
+          className="grid grid-cols-2 md:grid-cols-4 gap-y-10"
           initial="hidden"
           whileInView="show"
           viewport={{ once: true }}
           variants={{ show: { transition: { staggerChildren: 0.1 } } }}
         >
           {items.map((it, i) => (
-            <motion.div key={i} variants={reveal} className="text-center">
-              <div className={`text-3xl md:text-4xl font-extrabold ${inherit ? "" : "text-blue-600"}`}>{it.value}</div>
-              <div className={`mt-1 text-sm md:text-base ${inherit ? "opacity-80" : "text-gray-600"}`}>{it.label}</div>
+            <motion.div
+              key={i}
+              variants={reveal}
+              // Hairline dividers turn four numbers into one band instead of
+              // four floating figures.
+              className={`text-center px-4 ${i > 0 ? "md:border-l" : ""} ${i % 2 === 1 ? "border-l md:border-l" : ""}`}
+              style={{ borderColor: inherit ? "rgba(255,255,255,.18)" : "rgba(15,23,42,.1)" }}
+            >
+              <div
+                className={`text-4xl md:text-5xl font-extrabold tracking-tight tabular-nums ${
+                  accent || inherit ? "" : "text-blue-600"
+                }`}
+                style={accent ? { color: accent } : undefined}
+              >
+                {it.value}
+                {it.suffix ? <span className="text-2xl md:text-3xl align-top">{it.suffix}</span> : null}
+              </div>
+              <div className={`mt-2 text-sm md:text-base font-medium ${inherit ? "opacity-85" : "text-gray-600"}`}>
+                {it.label}
+              </div>
             </motion.div>
           ))}
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
+/**
+ * Picture on one side, a claim and a checklist on the other.
+ *
+ * The layout most "here is what we do for you" sections actually want, and the
+ * one a stack of centred headings and paragraphs cannot produce.
+ */
+function SplitBlock({ p, s: st }) {
+  const accent = accentOf(p);
+  const inherit = !!st?.textColor;
+  const right = p.imageSide === "right";
+  const bullets = Array.isArray(p.bullets)
+    ? p.bullets.map((b) => (typeof b === "string" ? b : b?.text)).filter(Boolean)
+    : String(p.bullets || "")
+        .split("\n")
+        .map((b) => b.trim())
+        .filter(Boolean);
+
+  return (
+    <section style={p.bgColor ? { backgroundColor: p.bgColor } : undefined}>
+      <div className="max-w-6xl mx-auto px-6 py-16 md:py-20">
+        <div className={`grid gap-10 md:gap-14 items-center ${p.image ? "md:grid-cols-2" : ""}`}>
+          {p.image ? (
+            <Reveal className={`relative ${right ? "md:order-2" : ""}`}>
+              <img
+                src={p.image}
+                alt={p.imageAlt || p.title || ""}
+                className="w-full aspect-[4/3] object-cover rounded-2xl shadow-xl"
+              />
+              {/* A block of accent behind one corner: cheap, and it stops the
+                  photograph reading as a stock image dropped on a page. */}
+              <span
+                aria-hidden
+                className={`absolute -z-10 w-2/3 h-2/3 rounded-2xl ${right ? "-right-5 -bottom-5" : "-left-5 -bottom-5"}`}
+                style={{ backgroundColor: tint(accent, 0.16) }}
+              />
+              {p.badgeValue ? (
+                <div
+                  className={`absolute -bottom-6 rounded-2xl px-6 py-4 shadow-2xl text-white ${right ? "left-6" : "right-6"}`}
+                  style={{ backgroundColor: accent }}
+                >
+                  <div className="text-3xl font-extrabold leading-none tabular-nums">{p.badgeValue}</div>
+                  {p.badgeLabel ? <div className="mt-1 text-xs font-medium opacity-90">{p.badgeLabel}</div> : null}
+                </div>
+              ) : null}
+            </Reveal>
+          ) : null}
+
+          <Reveal className={right ? "md:order-1" : ""}>
+            {p.eyebrow ? (
+              <div className="text-xs font-bold uppercase tracking-[0.18em] mb-3" style={{ color: accent }}>
+                {p.eyebrow}
+              </div>
+            ) : null}
+            {p.title ? (
+              <h2 className={`text-2xl md:text-4xl font-bold leading-tight ${inherit ? "" : "text-gray-900"}`}>
+                {p.title}
+              </h2>
+            ) : null}
+            {p.text ? (
+              <div
+                className={`cms-prose mt-5 ${inherit ? "opacity-85" : "text-gray-600"}`}
+                dangerouslySetInnerHTML={{ __html: p.text }}
+              />
+            ) : null}
+            {bullets.length ? (
+              <ul className="mt-6 grid sm:grid-cols-2 gap-x-6 gap-y-3">
+                {bullets.map((b, i) => (
+                  <li key={i} className={`flex items-start gap-2.5 text-sm ${inherit ? "opacity-90" : "text-gray-700"}`}>
+                    <Check size={17} className="shrink-0 mt-0.5" style={{ color: accent }} />
+                    <span>{b}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+            {p.cta?.label ? (
+              <SmartLink
+                href={p.cta.href}
+                className="mt-8 inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-white shadow-lg hover:scale-[1.03] active:scale-95 transition-transform"
+                style={{ backgroundColor: accent }}
+              >
+                {p.cta.label}
+                <ChevronRight size={17} />
+              </SmartLink>
+            ) : null}
+          </Reveal>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/** A grid of photographs, each captioned over the picture itself. */
+function ImageTilesBlock({ p, s: st }) {
+  const items = Array.isArray(p.items) ? p.items : [];
+  const accent = accentOf(p);
+  const inherit = !!st?.textColor;
+  const cols = p.columns === "2" ? "sm:grid-cols-2" : p.columns === "4" ? "sm:grid-cols-2 lg:grid-cols-4" : "sm:grid-cols-2 lg:grid-cols-3";
+  return (
+    <section style={p.bgColor ? { backgroundColor: p.bgColor } : undefined}>
+      <div className="max-w-6xl mx-auto px-6 py-16">
+        {p.title || p.eyebrow ? (
+          <Reveal className="text-center mb-10">
+            {p.eyebrow ? (
+              <div className="text-xs font-bold uppercase tracking-[0.18em] mb-3" style={{ color: accent }}>
+                {p.eyebrow}
+              </div>
+            ) : null}
+            {p.title ? <h2 className={`text-2xl md:text-4xl font-bold ${inherit ? "" : "text-gray-900"}`}>{p.title}</h2> : null}
+            {p.subtitle ? (
+              <p className={`mt-3 max-w-2xl mx-auto ${inherit ? "opacity-80" : "text-gray-600"}`}>{p.subtitle}</p>
+            ) : null}
+          </Reveal>
+        ) : null}
+        <motion.div
+          className={`grid grid-cols-1 ${cols} gap-5`}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, amount: 0.1 }}
+          variants={{ show: { transition: { staggerChildren: 0.07 } } }}
+        >
+          {items.map((it, i) => {
+            const tile = (
+              <motion.div variants={reveal} className="group relative h-full overflow-hidden rounded-2xl shadow-md">
+                {it.image ? (
+                  <img
+                    src={it.image}
+                    alt={it.title || ""}
+                    className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-700"
+                  />
+                ) : (
+                  <div className="w-full h-64 bg-gray-100" />
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
+                <div className="absolute inset-x-0 bottom-0 p-5 text-white">
+                  <span className="block h-1 w-9 mb-3 rounded-full" style={{ backgroundColor: accent }} />
+                  {it.title ? <h3 className="text-lg font-semibold">{it.title}</h3> : null}
+                  {it.text ? <p className="mt-1.5 text-sm text-white/80 leading-relaxed">{it.text}</p> : null}
+                </div>
+              </motion.div>
+            );
+            return it.href ? (
+              <SmartLink key={i} href={it.href} className="block h-full">
+                {tile}
+              </SmartLink>
+            ) : (
+              <div key={i} className="h-full">
+                {tile}
+              </div>
+            );
+          })}
         </motion.div>
       </div>
     </section>
@@ -302,24 +557,29 @@ function StatsBlock({ p, s }) {
 function FaqBlock({ p }) {
   const items = Array.isArray(p.items) ? p.items : [];
   const [open, setOpen] = useState(null);
+  const accent = accentOf(p);
+  const two = p.columns === "2";
   return (
-    <section className="max-w-3xl mx-auto px-6 py-12">
+    <section className={`${two ? "max-w-6xl" : "max-w-3xl"} mx-auto px-6 py-12`}>
       {p.title ? (
-        <h2 className="text-2xl md:text-4xl font-bold text-gray-900 text-center mb-8">{p.title}</h2>
+        <h2 className="text-2xl md:text-4xl font-bold text-gray-900 text-center mb-3">{p.title}</h2>
       ) : null}
-      <div className="space-y-3">
+      {p.subtitle ? <p className="text-gray-600 text-center max-w-2xl mx-auto mb-8">{p.subtitle}</p> : null}
+      {!p.subtitle && p.title ? <div className="mb-8" /> : null}
+      <div className={two ? "grid md:grid-cols-2 gap-x-6 gap-y-3 items-start" : "space-y-3"}>
         {items.map((it, i) => {
           const isOpen = open === i;
           return (
             <Reveal key={i} className="border border-gray-200 rounded-xl overflow-hidden bg-white">
               <button
                 onClick={() => setOpen(isOpen ? null : i)}
-                className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left font-medium text-gray-900 hover:bg-gray-50"
+                className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left font-semibold text-gray-900 hover:bg-gray-50"
               >
                 <span>{it.q}</span>
                 <ChevronDown
                   size={18}
                   className={`shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`}
+                  style={{ color: accent }}
                 />
               </button>
               <motion.div
@@ -358,19 +618,29 @@ function CtaBlock({ p }) {
   return (
     <section className="px-6 py-12">
       <Reveal
-        className="max-w-5xl mx-auto rounded-3xl px-8 py-14 text-center shadow-xl"
+        className="max-w-6xl mx-auto rounded-3xl px-8 py-16 text-center shadow-xl"
         style={{ backgroundColor: p.bgColor || "#2563eb", color: p.textColor || "#fff" }}
       >
         <h2 className="text-2xl md:text-4xl font-bold">{p.title}</h2>
         {p.text ? <p className="mt-3 opacity-90 max-w-2xl mx-auto">{p.text}</p> : null}
-        {p.button?.label ? (
-          <div className="mt-8">
-            <SmartLink
-              href={p.button.href}
-              className="inline-block px-8 py-3.5 rounded-xl bg-white text-gray-900 font-semibold shadow-lg hover:scale-[1.03] active:scale-95 transition-transform"
-            >
-              {p.button.label}
-            </SmartLink>
+        {p.button?.label || p.secondaryButton?.label ? (
+          <div className="mt-8 flex flex-wrap gap-4 justify-center">
+            {p.button?.label ? (
+              <SmartLink
+                href={p.button.href}
+                className="inline-block px-8 py-3.5 rounded-xl bg-white text-gray-900 font-semibold shadow-lg hover:scale-[1.03] active:scale-95 transition-transform"
+              >
+                {p.button.label}
+              </SmartLink>
+            ) : null}
+            {p.secondaryButton?.label ? (
+              <SmartLink
+                href={p.secondaryButton.href}
+                className="inline-block px-8 py-3.5 rounded-xl border-2 border-white/70 font-semibold hover:bg-white/10 transition-colors"
+              >
+                {p.secondaryButton.label}
+              </SmartLink>
+            ) : null}
           </div>
         ) : null}
       </Reveal>
@@ -844,6 +1114,8 @@ const RENDERERS = {
   richText: RichTextBlock,
   image: ImageBlock,
   cardGrid: CardGridBlock,
+  split: SplitBlock,
+  imageTiles: ImageTilesBlock,
   stats: StatsBlock,
   faq: FaqBlock,
   columns: ColumnsBlock,

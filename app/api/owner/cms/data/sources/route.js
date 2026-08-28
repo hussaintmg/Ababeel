@@ -65,7 +65,7 @@ export async function PUT(request) {
           key,
           label: String(body.label || key).slice(0, 120),
           model: body.model,
-          mode: body.mode === "single" ? "single" : "list",
+          mode: body.mode === "single" || body.mode === "count" ? body.mode : "list",
           filters: Array.isArray(body.filters) ? body.filters.slice(0, 20) : [],
           match: body.match === "any" ? "any" : "all",
           sortField: String(body.sortField || "createdAt"),

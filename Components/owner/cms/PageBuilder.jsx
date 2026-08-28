@@ -9,7 +9,7 @@ import {
   Plus, Save, Trash2, Copy, ChevronUp, ChevronDown, ChevronRight,
   Eye, EyeOff, Loader2, ArrowLeft, ExternalLink, Code2, X, GripVertical,
   LayoutTemplate, Sparkles, Heading, Type, Image as ImageIcon, LayoutGrid,
-  BarChart3, HelpCircle, Columns3, MousePointerClick, Megaphone, MoveVertical,
+  BarChart3, HelpCircle, Columns2, Columns3, MousePointerClick, Megaphone, MoveVertical,
   GalleryHorizontal, Images, Quote, BadgeDollarSign, Building2, UsersRound, Video,
   Bookmark, Star, Database, Repeat, Film, Bug, Play, RefreshCw,
 } from "lucide-react";
@@ -27,7 +27,7 @@ import { buildSampleContext } from "@/lib/cms/sampleData";
 
 const ICONS = {
   Sparkles, Heading, Type, Image: ImageIcon, LayoutGrid, BarChart3,
-  HelpCircle, Columns3, MousePointerClick, Megaphone, MoveVertical,
+  HelpCircle, Columns2, Columns3, MousePointerClick, Megaphone, MoveVertical,
   GalleryHorizontal, Images, Quote, BadgeDollarSign, Building2, UsersRound, Video, Code2,
   Repeat, Film,
 };
