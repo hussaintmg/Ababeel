@@ -13,18 +13,16 @@
  * open normally in Owner → Website CMS afterwards. Re-running is safe: pages
  * are upserted by key.
  */
-import { MongoClient, ObjectId } from "mongodb";
+import { ObjectId } from "mongodb";
 import fs from "fs";
 import path from "path";
+import { connectSeed } from "./lib/connect.mjs";
 
 const MONGO_URI = process.env.MONGO_URI;
-if (!MONGO_URI) {
-  console.error("MONGO_URI is not set. Example:\n  MONGO_URI=mongodb://127.0.0.1:27017/ababeel node scripts/seed-demo-page.mjs");
-  process.exit(1);
-}
-
 const args = new Set(process.argv.slice(2));
 const withCourses = args.has("--with-courses");
+const force = args.has("--force");
+const dbOverride = (process.argv.find((a) => a.startsWith("--db=")) || "--db=").split("=")[1];
 const VIDEO = "/uploads/cms/demo-scroll.mp4";
 const POSTER = "/uploads/cms/demo-scroll-poster.jpg";
 
@@ -279,9 +277,12 @@ function pageDoc(over) {
 }
 
 async function main() {
-  const client = new MongoClient(MONGO_URI);
-  await client.connect();
-  const db = client.db();
+  const { client, db } = await connectSeed({
+    uri: MONGO_URI,
+    db: dbOverride,
+    force,
+    script: "the demo page seed",
+  });
 
   if (withCourses) {
     const courses = db.collection("defaultcourses");

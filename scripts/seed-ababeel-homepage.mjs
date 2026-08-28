@@ -11,19 +11,16 @@
  * Safety: the current `home` document is written to a timestamped JSON backup
  * before anything is overwritten, and --dry-run changes nothing.
  */
-import { MongoClient } from "mongodb";
 import fs from "fs";
 import path from "path";
+import { connectSeed } from "./lib/connect.mjs";
 
 const MONGO_URI = process.env.MONGO_URI;
-if (!MONGO_URI) {
-  console.error("MONGO_URI is not set. Example:\n  MONGO_URI='mongodb+srv://…' node scripts/seed-ababeel-homepage.mjs");
-  process.exit(1);
-}
-
 const args = new Set(process.argv.slice(2));
 const dryRun = args.has("--dry-run");
+const force = args.has("--force");
 const pageKey = (process.argv.find((a) => a.startsWith("--page=")) || "--page=home").split("=")[1];
+const dbOverride = (process.argv.find((a) => a.startsWith("--db=")) || "--db=").split("=")[1];
 
 /* ---- brand palette, taken from the approved design ---- */
 const NAVY = "#0b2a4a";
@@ -352,9 +349,13 @@ const blocks = [
  * run
  * ------------------------------------------------------------------ */
 async function main() {
-  const client = new MongoClient(MONGO_URI);
-  await client.connect();
-  const site = client.db().collection("sitecontents");
+  const { client, db } = await connectSeed({
+    uri: MONGO_URI,
+    db: dbOverride,
+    force,
+    script: "the homepage seed",
+  });
+  const site = db.collection("sitecontents");
 
   const existing = await site.findOne({ key: pageKey });
 
@@ -394,7 +395,9 @@ async function main() {
     { upsert: true }
   );
 
-  console.log("\nDone — the homepage is published and fully editable in Owner → Website CMS.");
+  const written = await site.findOne({ key: pageKey });
+  console.log(`\nWrote ${written?.blocks?.length ?? 0} blocks to ${db.databaseName}.sitecontents (key: "${pageKey}", enabled: ${written?.enabled}).`);
+  console.log("Open the site and hard-refresh — the homepage reads this on every request, so no rebuild is needed.");
   await client.close();
 }
 
