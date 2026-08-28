@@ -68,3 +68,6 @@ public/safetech-*.json
 # tracked. jest.config.js already points at `__tests__`, and the dynamic-CMS
 # work ships both a suite and an architecture note, so they are tracked now.
 # Re-add the two lines above this comment if that was deliberate.
+
+# CMS content backups written by the seed scripts
+/backups/

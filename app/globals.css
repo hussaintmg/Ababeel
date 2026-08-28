@@ -202,6 +202,14 @@ button{cursor: pointer;}
   .cms-kenburns { animation: none; }
 }
 
+/* When a block sets its own text colour in the Design tab, the block body must
+   follow it rather than its built-in Tailwind colour. Links are left alone so
+   they keep their accent. Specificity (0,1,1) beats a bare utility class, so no
+   !important is needed. */
+.cms-inherit-color :is(h1, h2, h3, h4, h5, h6, p, li, span, dt, dd, blockquote, strong, em, small) {
+  color: inherit;
+}
+
 /* ---------------------------------------------------------------------------
    Scroll Video section
    The stage is pinned with position: sticky, so nothing in the ancestor chain

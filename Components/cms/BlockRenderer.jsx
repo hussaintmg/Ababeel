@@ -268,13 +268,17 @@ function CardGridBlock({ p }) {
   );
 }
 
-function StatsBlock({ p }) {
+function StatsBlock({ p, s }) {
   const items = Array.isArray(p.items) ? p.items : [];
+  // On a dark band the author sets a text colour in the Design tab; the numbers
+  // and labels follow it instead of their built-in blue/grey, which would be
+  // unreadable there.
+  const inherit = !!s?.textColor;
   return (
     <section style={{ backgroundColor: p.bgColor || "#f1f5f9" }}>
       <div className="max-w-6xl mx-auto px-6 py-14">
         {p.title ? (
-          <h2 className="text-center text-2xl md:text-3xl font-bold text-gray-900 mb-10">{p.title}</h2>
+          <h2 className={`text-center text-2xl md:text-3xl font-bold mb-10 ${inherit ? "" : "text-gray-900"}`}>{p.title}</h2>
         ) : null}
         <motion.div
           className="grid grid-cols-2 md:grid-cols-4 gap-6"
@@ -285,8 +289,8 @@ function StatsBlock({ p }) {
         >
           {items.map((it, i) => (
             <motion.div key={i} variants={reveal} className="text-center">
-              <div className="text-3xl md:text-4xl font-extrabold text-blue-600">{it.value}</div>
-              <div className="mt-1 text-sm md:text-base text-gray-600">{it.label}</div>
+              <div className={`text-3xl md:text-4xl font-extrabold ${inherit ? "" : "text-blue-600"}`}>{it.value}</div>
+              <div className={`mt-1 text-sm md:text-base ${inherit ? "opacity-80" : "text-gray-600"}`}>{it.label}</div>
             </motion.div>
           ))}
         </motion.div>
@@ -967,6 +971,11 @@ function buildWrapper(block) {
   const classes = [];
   if (s.className || adv.className) classes.push(s.className || adv.className);
   if (s.hover && HOVER_CLASS[s.hover]) classes.push(HOVER_CLASS[s.hover]);
+  // Block bodies carry their own Tailwind text colours (text-gray-900 and so
+  // on), which beat the wrapper's inline `color`. Without this an author who
+  // sets a dark background and white text in the Design tab gets dark text on
+  // a dark band — invisible. The class makes the body inherit instead.
+  if (s.textColor) classes.push("cms-inherit-color");
 
   return {
     style,
