@@ -8,6 +8,7 @@ import {
 import DynamicField from "@/Components/owner/cms/dynamic/DynamicField";
 import BlockDataTab from "@/Components/owner/cms/dynamic/BlockDataTab";
 import ScrollVideoStudio from "@/Components/owner/cms/dynamic/ScrollVideoStudio";
+import FrameGenerator from "@/Components/owner/cms/dynamic/FrameGenerator";
 import { SlidersHorizontal, Palette, Database } from "lucide-react";
 
 export default function BlockEditor({ block, onChange, features = {}, scopeHint = "" }) {
@@ -88,7 +89,15 @@ export default function BlockEditor({ block, onChange, features = {}, scopeHint 
               Inside a Repeat — use <code className="font-mono">{scopeHint}</code> to reach the current record.
             </p>
           ) : null}
-          {block.type === "scrollVideo" ? <ScrollVideoStudio props={props} /> : null}
+          {block.type === "scrollVideo" ? (
+            <>
+              <ScrollVideoStudio props={props} />
+              <FrameGenerator
+                props={props}
+                onApply={(patch) => onChange({ ...block, props: { ...props, ...patch } })}
+              />
+            </>
+          ) : null}
           {def.fields.map((field) => (
             <div key={field.key}>
               {field.type !== "boolean" ? <Label>{field.label}</Label> : null}

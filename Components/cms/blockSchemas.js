@@ -495,6 +495,14 @@ export const BLOCK_TYPES = {
       src: "",
       mobileSrc: "",
       poster: "",
+      // "video" seeks an HTML5 video; "frames" draws a pre-extracted image
+      // sequence, which scrubs instantly because no decoding happens while
+      // scrolling. Generated from the video in the block editor.
+      renderMode: "video",
+      framesId: "",
+      frameCount: "",
+      frameExt: "webp",
+      frameWidth: "1280",
       title: "",
       subtitle: "",
       textColor: "#ffffff",
@@ -522,6 +530,16 @@ export const BLOCK_TYPES = {
       { key: "src", type: "video", label: "Video" },
       { key: "mobileSrc", type: "video", label: "Mobile video (optional)" },
       { key: "poster", type: "image", label: "Poster frame (first frame / reduced-motion fallback)" },
+      {
+        key: "renderMode",
+        type: "select",
+        label: "Playback source",
+        help: "Frames scrub instantly; video downloads less. Generate frames in the panel above.",
+        options: [
+          { value: "video", label: "Video file (seek while scrolling)" },
+          { value: "frames", label: "Frame sequence (smoothest)" },
+        ],
+      },
       { key: "height", type: "text", label: "Scroll distance", placeholder: "300vh" },
       { key: "stageHeight", type: "text", label: "Stage height", placeholder: "100vh" },
       { key: "sticky", type: "boolean", label: "Sticky (pin while scrolling)" },

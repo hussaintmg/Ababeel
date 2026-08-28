@@ -828,8 +828,10 @@ function RepeaterBlock({ p }) {
 }
 
 /* ---------- Scroll Video ---------- */
-function ScrollVideoBlock({ p }) {
-  return <ScrollVideo p={p} />;
+// The wrapper deliberately does not clip (see STICKY_BLOCK_TYPES), so a corner
+// radius is applied to the pinned stage instead — same look, sticky intact.
+function ScrollVideoBlock({ p, s }) {
+  return <ScrollVideo p={p} radius={s?.radius} />;
 }
 
 const RENDERERS = {
@@ -856,6 +858,12 @@ const RENDERERS = {
   customCode: CustomCodeBlock,
 };
 
+// Blocks that pin themselves with position: sticky. Their wrapper must not
+// clip or become a scroll container, because `position: sticky` resolves
+// against the nearest scrolling ancestor — an `overflow: hidden` wrapper makes
+// that wrapper the scrollport and the section silently stops pinning.
+const STICKY_BLOCK_TYPES = new Set(["scrollVideo"]);
+
 const SHADOWS = {
   none: "none",
   sm: "0 1px 2px rgba(0,0,0,.06)",
@@ -875,6 +883,7 @@ const HOVER_CLASS = {
 function buildWrapper(block) {
   const s = block._style || {};
   const adv = block._adv || {};
+  const pins = STICKY_BLOCK_TYPES.has(block.type);
   const px = (v) => {
     const n = parseInt(v, 10);
     return Number.isNaN(n) ? null : `${n}px`;
@@ -933,7 +942,7 @@ function buildWrapper(block) {
   if (s.shadow && s.shadow !== "none") style.boxShadow = SHADOWS[s.shadow] || undefined;
 
   const minH = px(s.minHeight);
-  if (minH) {
+  if (minH && !pins) {
     style.minHeight = minH;
     style.display = "flex";
     style.flexDirection = "column";
@@ -950,7 +959,7 @@ function buildWrapper(block) {
   // maxWidth wraps the block in a centered container.
   const mw = px(s.maxWidth);
   const radius = px(s.radius);
-  if (radius) {
+  if (radius && !pins) {
     style.borderRadius = radius;
     style.overflow = "hidden";
   }
@@ -1030,7 +1039,7 @@ export function BlockView({ block, showWarnings = false }) {
   const content = (
     <>
       {showWarnings && block._missing?.length ? <MissingVariableWarning missing={block._missing} /> : null}
-      <Cmp p={block.props || {}} />
+      <Cmp p={block.props || {}} s={block._style || {}} />
     </>
   );
   const inner = maxWidth ? (

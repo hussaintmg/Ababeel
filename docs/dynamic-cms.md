@@ -129,8 +129,23 @@ configured name (plus `index`, `number`, `isFirst`, `isLast`, `isEven`, `isOdd`)
   fetches only the bytes it needs.
 - Modes: frame scrubbing, reverse, ping-pong and loop-while-scrolling, with
   start/end offsets, scroll speed, smoothing and an optional mobile source.
-- The video is **never played**: scroll sets `currentTime` and the element stays
-  paused throughout. Nothing in the section calls `play()`.
+- Two playback sources:
+  - **Video** — scroll sets `currentTime`; the element is never played and
+    nothing calls `play()`. Smallest download, but every scroll step makes the
+    browser decode, so a long or lightly-keyframed clip visibly lags the scroll.
+  - **Frame sequence** *(smoothest)* — the video is extracted once into WebP
+    frames under `public/uploads/cms/frames/<id>/`, and the section draws frame
+    N straight to a `<canvas>`. No decoder in the scroll path, so scrubbing is
+    exact. Generate it from the block editor; ~120 frames at 1280px is around
+    1 MB. Frames are fetched first-frame-first, a few at a time, and any frame
+    that has not arrived falls back to the nearest earlier one.
+- Frame extraction runs through ffmpeg on the server when it is installed, and
+  otherwise in the author's browser (seek → canvas → WebP → upload), so the
+  feature does not require ffmpeg in production.
+- A block wrapper is never allowed to clip a pinning section: `overflow: hidden`
+  on an ancestor makes that ancestor the sticky element's scrollport and the
+  section silently stops pinning. A corner radius set in the Design tab is
+  applied to the pinned stage instead of the wrapper.
 - It is driven by whichever container actually scrolls it — the page on a public
   page, the preview pane in the builder (`scroll` does not bubble, so the
   listener is registered in the capture phase).
@@ -154,6 +169,7 @@ configured name (plus `index`, `number`, `isFirst`, `isLast`, `isEven`, `isOdd`)
 | `POST /api/owner/cms/preview/data` | Resolve a page's context (live / sample / mixed) |
 | `GET /api/cms/[key]` | Public page blocks, plus the resolved context when the page is dynamic |
 | `GET /api/cms/[key]/data` | Public resolved context on its own |
+| `GET/POST/PUT/DELETE /api/owner/cms/frames` | Scroll-video frame sequences: capability probe, ffmpeg extraction, browser-extracted uploads, deletion |
 
 ## 10. Seeing it work
 
