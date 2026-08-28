@@ -1,4 +1,4 @@
-import { mapProgress, computeProgress, loadOrder, SCROLL_MODES } from "@/Components/cms/ScrollVideo";
+import { mapProgress, computeProgress, loadOrder, lockStep, SCROLL_MODES } from "@/Components/cms/ScrollVideo";
 
 describe("scroll → playback mapping", () => {
   test("frame scrubbing maps scroll linearly onto the clip", () => {
@@ -123,5 +123,39 @@ describe("frame download priority", () => {
 
   test("a single-frame sequence is handled", () => {
     expect(loadOrder(1, 0)).toEqual([0]);
+  });
+});
+
+describe("scroll lock", () => {
+  const step = (o) => lockStep({ delta: 0, progress: 0.5, pinned: true, ...o });
+
+  test("does nothing while the stage is not pinned", () => {
+    expect(step({ delta: 500, pinned: false })).toEqual({ handled: false, step: 0 });
+  });
+
+  test("holds a fast flick to one small step so no frame is skipped", () => {
+    const { handled, step: px } = step({ delta: 1200 });
+    expect(handled).toBe(true);
+    expect(px).toBeLessThanOrEqual(90);
+    expect(px).toBeGreaterThan(0);
+  });
+
+  test("a small gesture is passed through unchanged", () => {
+    expect(step({ delta: 40 })).toEqual({ handled: true, step: 40 });
+  });
+
+  test("releases the page once the last frame is reached", () => {
+    expect(step({ delta: 300, progress: 1 }).handled).toBe(false);
+    // …but scrolling back up from the last frame is still locked.
+    expect(step({ delta: -300, progress: 1 }).handled).toBe(true);
+  });
+
+  test("releases upward out of the section at the first frame", () => {
+    expect(step({ delta: -300, progress: 0 }).handled).toBe(false);
+    expect(step({ delta: 300, progress: 0 }).handled).toBe(true);
+  });
+
+  test("scrolling up through the animation is clamped too", () => {
+    expect(step({ delta: -1200 }).step).toBeGreaterThanOrEqual(-90);
   });
 });

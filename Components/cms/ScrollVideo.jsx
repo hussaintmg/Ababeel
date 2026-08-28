@@ -8,6 +8,16 @@
  * onto `video.currentTime`, so the frames advance as you scroll and the section
  * releases once the last frame is reached.
  *
+ * Two things make that a real lock rather than a hope. The track is pinned by
+ * `position: sticky`, so the page physically cannot reach the next section
+ * before it has scrolled the whole track — every frame gets its own scroll
+ * distance. And a single flick of a trackpad can otherwise cover that whole
+ * track in one event, so while the stage is pinned each gesture is clamped to a
+ * small step (see useScrollLock): the animation plays through from the first
+ * frame to the last instead of being skipped. The clamp releases the moment the
+ * animation reaches either end, and gives up entirely if the page stops
+ * responding to it, so a visitor can never be trapped in the section.
+ *
  * Performance notes (this is the whole reason it does not use a frame-image
  * sequence): one HTML5 <video> element is downloaded, nothing is rasterised,
  * scroll listeners are passive, all seeking happens inside a single
@@ -26,6 +36,13 @@ export const SCROLL_MODES = [
 ];
 
 const clamp = (v, lo, hi) => Math.min(Math.max(v, lo), hi);
+
+/**
+ * Most scroll a single wheel notch or touch move may cover while the stage is
+ * pinned. Roughly one notch on a mouse; a trackpad flick that would otherwise
+ * jump 800px in one event is spread over the frames instead.
+ */
+const MAX_STEP_PX = 90;
 
 /**
  * Scroll progress of the track through its viewport, 0–1.
@@ -272,6 +289,105 @@ function useFrameSequence({ id, count, ext, enabled, onFirstFrame, urls }) {
   return { imagesRef, loaded, ready };
 }
 
+/**
+ * Should this scroll gesture be held back, and by how much?
+ *
+ *   handled === false → leave the gesture alone entirely. That covers a stage
+ *   that is not pinned, and — the important one — an animation already at the
+ *   end it is being scrolled towards, which is what releases the page onward
+ *   once the last frame has been reached (or back up from the first).
+ *
+ * Split out from the listener so the decision can be tested without a DOM.
+ */
+export function lockStep({ delta, progress, pinned }) {
+  if (!pinned || !delta) return { handled: false, step: 0 };
+  if (delta > 0 && progress >= 0.999) return { handled: false, step: 0 };
+  if (delta < 0 && progress <= 0.001) return { handled: false, step: 0 };
+  return { handled: true, step: clamp(delta, -MAX_STEP_PX, MAX_STEP_PX) };
+}
+
+/**
+ * Keeps the page inside a pinned section until its animation has played out.
+ *
+ * `position: sticky` already guarantees the scroll distance exists; what it
+ * cannot do is stop one flick from consuming all of it, which is how a
+ * scroll-driven section ends up looking like it "jumped to the next section".
+ * So while the stage is pinned and the animation is part-way through, each
+ * wheel or touch gesture is clamped to MAX_STEP_PX and applied by hand.
+ *
+ * Deliberate escape hatches, so this can never trap anyone:
+ *   • at either end of the animation the gesture is left alone, which is what
+ *     lets the page move on once the last frame is reached (or back up out of
+ *     the section from the first);
+ *   • keyboard paging, the scrollbar and anchor jumps are untouched;
+ *   • if the clamped scroll stops actually moving the page, the lock switches
+ *     itself off for good.
+ *
+ * @param wrapRef      the track element
+ * @param scroller     the scrolling ancestor, or null for the page
+ * @param progressRef  live 0–1 scroll progress, written by the scroll handler
+ * @param enabled      false for reduced motion, the builder, and video mode
+ */
+export function useScrollLock({ wrapRef, scroller, progressRef, enabled }) {
+  useEffect(() => {
+    const wrap = wrapRef.current;
+    if (!enabled || !wrap || typeof window === "undefined") return undefined;
+
+    let surrendered = false;
+    let lastTouchY = null;
+
+    const scrollTop = () => (scroller ? scroller.scrollTop : window.scrollY);
+    const viewHeight = () => (scroller ? scroller.clientHeight : window.innerHeight);
+
+    // The stage is pinned exactly while the track spans the whole viewport.
+    const pinned = () => {
+      const rect = wrap.getBoundingClientRect();
+      const top = scroller ? scroller.getBoundingClientRect().top : 0;
+      return rect.top <= top + 1 && rect.bottom >= top + viewHeight() - 1;
+    };
+
+    const apply = (delta, event) => {
+      if (surrendered) return;
+      const { handled, step } = lockStep({ delta, progress: progressRef.current, pinned: pinned() });
+      if (!handled) return;
+
+      const before = scrollTop();
+      event.preventDefault();
+      if (scroller) scroller.scrollBy(0, step);
+      else window.scrollBy(0, step);
+
+      // Preventing the default and then failing to move would freeze the page;
+      // one such gesture is enough to stop interfering.
+      if (Math.abs(scrollTop() - before) < 0.5) surrendered = true;
+    };
+
+    const onWheel = (e) => {
+      if (e.ctrlKey) return; // pinch-zoom
+      apply(e.deltaY, e);
+    };
+    const onTouchStart = (e) => {
+      lastTouchY = e.touches[0]?.clientY ?? null;
+    };
+    const onTouchMove = (e) => {
+      const y = e.touches[0]?.clientY;
+      if (y == null || lastTouchY == null) return;
+      const delta = lastTouchY - y;
+      lastTouchY = y;
+      apply(delta, e);
+    };
+
+    const target = scroller || window;
+    target.addEventListener("wheel", onWheel, { passive: false });
+    target.addEventListener("touchstart", onTouchStart, { passive: true });
+    target.addEventListener("touchmove", onTouchMove, { passive: false });
+    return () => {
+      target.removeEventListener("wheel", onWheel);
+      target.removeEventListener("touchstart", onTouchStart);
+      target.removeEventListener("touchmove", onTouchMove);
+    };
+  }, [wrapRef, scroller, progressRef, enabled]);
+}
+
 function prefersReducedMotion() {
   if (typeof window === "undefined" || !window.matchMedia) return false;
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -284,6 +400,10 @@ export default function ScrollVideo({ p = {}, builderProgress = null, radius = "
   const targetRef = useRef(0);
   const currentRef = useRef(0);
   const visibleRef = useRef(false);
+  // Raw 0–1 track progress, kept in a ref so the scroll lock can read it
+  // without a render in between.
+  const rawRef = useRef(0);
+  const [scroller, setScroller] = useState(null);
 
   const [isMobile, setIsMobile] = useState(false);
   const [reduced, setReduced] = useState(false);
@@ -296,6 +416,7 @@ export default function ScrollVideo({ p = {}, builderProgress = null, radius = "
   const desktopSrc = p.src || "";
   const mobileSrc = p.mobileSrc || "";
   const src = isMobile && mobileSrc ? mobileSrc : desktopSrc;
+  const hasVideoSrc = !!src;
 
   // Frame-sequence mode: the decoder is out of the scroll path entirely, so
   // scrubbing is instant instead of waiting on a seek.
@@ -313,9 +434,16 @@ export default function ScrollVideo({ p = {}, builderProgress = null, radius = "
     urls: frameUrls,
   });
 
-  const trackHeight = p.height || "300vh";
   const stageHeight = p.stageHeight || "100vh";
   const sticky = p.sticky !== false;
+  // Track length decides how much scrolling one playthrough costs. Left to the
+  // author it is a guess; for a frame sequence the honest answer is a fixed
+  // amount of scroll per frame on top of the pinned stage, so every frame is
+  // actually seen however many there are.
+  const pxPerFrame = clamp(Number(p.pxPerFrame) || 12, 2, 80);
+  const trackHeight =
+    p.height ||
+    (usesFrames ? `calc(${stageHeight} + ${Math.round(frameCount * pxPerFrame)}px)` : "300vh");
   const fit = p.fit === "contain" ? "contain" : "cover";
   const smoothing = clamp(Number(p.smoothing ?? 0.18) || 0.18, 0.02, 1);
 
@@ -392,9 +520,17 @@ export default function ScrollVideo({ p = {}, builderProgress = null, radius = "
       rafRef.current = 0;
 
       // Ease towards the target so a fast flick does not produce a hard jump.
-      const diff = targetRef.current - currentRef.current;
-      currentRef.current += diff * smoothing;
-      if (Math.abs(diff) < 0.0008) currentRef.current = targetRef.current;
+      // At the two ends the easing is cut short instead: the first frame has to
+      // be on screen the moment the stage pins, and the last frame has to be
+      // reached before it releases — a tail of easing there would let the
+      // section scroll away mid-animation.
+      const target = targetRef.current;
+      const atEnd = target <= 0.001 || target >= 0.999;
+      const diff = target - currentRef.current;
+      currentRef.current += diff * (atEnd ? Math.max(smoothing, 0.5) : smoothing);
+      if (Math.abs(diff) < 0.0008 || (atEnd && Math.abs(diff) < 0.02)) {
+        currentRef.current = target;
+      }
 
       if (usesFrames) {
         drawFrame(currentRef.current);
@@ -442,11 +578,12 @@ export default function ScrollVideo({ p = {}, builderProgress = null, radius = "
 
     // The section may scroll inside the page or inside the builder's preview
     // pane; measure against whichever actually scrolls it.
-    const scroller = findScrollParent(wrap);
+    const found = findScrollParent(wrap);
+    setScroller((prev) => (prev === found ? prev : found));
     const compute = () => {
       const rect = wrap.getBoundingClientRect();
-      const view = scroller
-        ? { top: scroller.getBoundingClientRect().top, height: scroller.clientHeight }
+      const view = found
+        ? { top: found.getBoundingClientRect().top, height: found.clientHeight }
         : { top: 0, height: window.innerHeight };
       return computeProgress({
         rectTop: rect.top,
@@ -459,6 +596,7 @@ export default function ScrollVideo({ p = {}, builderProgress = null, radius = "
     const onScroll = () => {
       if (!visibleRef.current) return;
       const raw = compute();
+      rawRef.current = raw;
       setProgress(raw);
       schedule(raw);
     };
@@ -478,7 +616,7 @@ export default function ScrollVideo({ p = {}, builderProgress = null, radius = "
                 }
               });
             },
-            { root: scroller, rootMargin: "100px 0px" }
+            { root: found, rootMargin: "100px 0px" }
           )
         : null;
     if (io) io.observe(wrap);
@@ -498,6 +636,21 @@ export default function ScrollVideo({ p = {}, builderProgress = null, radius = "
       rafRef.current = 0;
     };
   }, [schedule, builderProgress, p.pauseOutside]);
+
+  /* ---- keep the page inside the section until the last frame ---- */
+  // Off under reduced motion and in the builder, where the scrubber owns the
+  // position and hijacking the preview pane's scroll would fight the author.
+  useScrollLock({
+    wrapRef,
+    scroller,
+    progressRef: rawRef,
+    enabled:
+      p.lockScroll !== false &&
+      sticky &&
+      builderProgress === null &&
+      !(reduced && p.respectReducedMotion !== false) &&
+      (usesFrames || hasVideoSrc),
+  });
 
   /* ---- builder scrubber ---- */
   // The scrubber owns the value, so it drives the video directly rather than
@@ -520,7 +673,7 @@ export default function ScrollVideo({ p = {}, builderProgress = null, radius = "
 
   const shownProgress = builderProgress === null ? progress : builderProgress;
 
-  const hasVideo = !!src;
+  const hasVideo = hasVideoSrc;
   const reducedFallback = reduced && p.respectReducedMotion !== false;
   const hasSource = hasVideo || usesFrames;
 
