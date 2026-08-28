@@ -67,8 +67,24 @@ export async function connectSeed({ uri, db: dbOverride = "", force = false, scr
     ]);
   }
 
-  const client = new MongoClient(uri);
-  await client.connect();
+  const client = new MongoClient(uri, { serverSelectionTimeoutMS: 8000 });
+  try {
+    await client.connect();
+  } catch (err) {
+    // A driver stack trace tells an operator nothing they can act on; the two
+    // things worth saying are which host was tried and what usually causes it.
+    fail([
+      `Could not reach MongoDB at ${uri.replace(/\/\/[^@]*@/, "//****@")}`,
+      "",
+      `  ${err?.message || err}`,
+      "",
+      "Usually one of:",
+      "  • the host or port in MONGO_URI is wrong",
+      "  • MongoDB is not running        (systemctl status mongod)",
+      "  • a firewall is blocking the port from this machine",
+      "  • the credentials in the URI are wrong or missing",
+    ]);
+  }
   const database = client.db(name);
 
   // A database with no users collection is almost certainly not the app's.

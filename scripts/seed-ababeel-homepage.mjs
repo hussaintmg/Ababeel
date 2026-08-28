@@ -565,7 +565,9 @@ async function main() {
   console.log(
     `\nWrote ${written?.blocks?.length ?? 0} blocks to ${db.databaseName}.sitecontents (key: "${pageKey}", enabled: ${written?.enabled}).`
   );
-  console.log("Open the site and hard-refresh — the homepage reads this on every request, so no rebuild is needed.");
+  console.log("");
+  console.log("The homepage reads this on every request, so the content is live now — hard-refresh to see it.");
+  console.log("If you also pulled new code, that still needs `npm run build` and a restart of the app.");
   await client.close();
 }
 
