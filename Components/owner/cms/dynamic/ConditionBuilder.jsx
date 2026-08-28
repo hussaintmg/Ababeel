@@ -7,21 +7,23 @@
  * Rules can be nested one level into AND/OR groups, and the right-hand side of
  * a comparison can be either a typed value or another variable.
  */
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Plus, Trash2, Braces, GitBranch } from "lucide-react";
 import VariablePicker from "@/Components/owner/cms/dynamic/VariablePicker";
+import PickerPopover from "@/Components/owner/cms/dynamic/PickerPopover";
 import { OPERATORS, operatorArity, newRule, newGroup, describeConditions } from "@/lib/cms/conditions";
 import { useCmsVariables } from "@/context/CmsVariablesContext";
 import { typeIcon } from "@/lib/cms/types";
 
 function VariableInput({ value, onChange, placeholder }) {
   const [open, setOpen] = useState(false);
+  const anchorRef = useRef(null);
   const { lookup } = useCmsVariables();
   const variable = lookup(String(value || ""));
 
   return (
     <div className="relative flex-1 min-w-[140px]">
-      <div className="flex items-center gap-1">
+      <div ref={anchorRef} className="flex items-center gap-1">
         <span className="text-xs" aria-hidden>{variable ? typeIcon(variable.type) : "•"}</span>
         <input
           type="text"
@@ -48,18 +50,16 @@ function VariableInput({ value, onChange, placeholder }) {
           <Braces size={13} />
         </button>
       </div>
-      {open ? (
-        <div className="absolute z-50 mt-1 right-0">
-          <VariablePicker
-            fieldType={null}
-            onClose={() => setOpen(false)}
-            onPick={(name) => {
-              onChange(name);
-              setOpen(false);
-            }}
-          />
-        </div>
-      ) : null}
+      <PickerPopover anchorRef={anchorRef} open={open} onClose={() => setOpen(false)}>
+        <VariablePicker
+          fieldType={null}
+          onClose={() => setOpen(false)}
+          onPick={(name) => {
+            onChange(name);
+            setOpen(false);
+          }}
+        />
+      </PickerPopover>
     </div>
   );
 }

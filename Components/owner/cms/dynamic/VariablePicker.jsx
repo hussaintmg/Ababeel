@@ -88,6 +88,13 @@ export default function VariablePicker({
   onClose,
   scopeHint = "",
   anchorClassName = "",
+  // Height available for the scrolling list — a number or any CSS length. The
+  // popover publishes the space it was given as --picker-max-h, so the picker
+  // always fits on screen.
+  listMaxHeight = "calc(var(--picker-max-h, 400px) - 150px)",
+  fullWidth = false,
+  // The floating palette supplies its own title bar, so it hides this one.
+  hideHeader = false,
 }) {
   const { variables, tree, loading } = useCmsVariables();
   const [query, setQuery] = useState("");
@@ -102,16 +109,18 @@ export default function VariablePicker({
   );
 
   return (
-    <div className={`w-[340px] max-w-[92vw] rounded-xl border border-gray-200 bg-white shadow-2xl overflow-hidden ${anchorClassName}`}>
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-100 bg-gray-50">
-        <Database size={14} className="text-blue-600" />
-        <span className="text-xs font-semibold text-gray-700">Insert a variable</span>
-        {onClose ? (
-          <button type="button" onClick={onClose} className="ml-auto p-1 rounded hover:bg-gray-200 text-gray-500">
-            <X size={14} />
-          </button>
-        ) : null}
-      </div>
+    <div className={`${fullWidth ? "w-full" : "w-[340px] max-w-[92vw]"} rounded-xl border border-gray-200 bg-white shadow-2xl overflow-hidden flex flex-col ${anchorClassName}`}>
+      {hideHeader ? null : (
+        <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-100 bg-gray-50">
+          <Database size={14} className="text-blue-600" />
+          <span className="text-xs font-semibold text-gray-700">Insert a variable</span>
+          {onClose ? (
+            <button type="button" onClick={onClose} className="ml-auto p-1 rounded hover:bg-gray-200 text-gray-500">
+              <X size={14} />
+            </button>
+          ) : null}
+        </div>
+      )}
 
       <div className="p-2 border-b border-gray-100">
         <div className="relative">
@@ -150,7 +159,7 @@ export default function VariablePicker({
         </div>
       ) : null}
 
-      <div className="max-h-[320px] overflow-y-auto p-2">
+      <div className="overflow-y-auto p-2 flex-1" style={{ maxHeight: listMaxHeight }}>
         {loading ? (
           <div className="py-8 flex items-center justify-center text-gray-400 text-xs">
             <Loader2 size={14} className="animate-spin mr-2" /> Loading variables…

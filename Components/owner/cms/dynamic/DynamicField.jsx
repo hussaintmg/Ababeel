@@ -14,6 +14,7 @@ import { useMemo, useRef, useState } from "react";
 import { Braces, Sigma, Type as TypeIcon, X, CornerDownLeft, AlertTriangle } from "lucide-react";
 import { FieldRenderer, Label } from "@/Components/owner/cms/fields";
 import VariablePicker from "@/Components/owner/cms/dynamic/VariablePicker";
+import PickerPopover, { PICKER_MAX_H } from "@/Components/owner/cms/dynamic/PickerPopover";
 import VariableToken from "@/Components/owner/cms/dynamic/VariableToken";
 import { useCmsVariables } from "@/context/CmsVariablesContext";
 import { isDynamic, tokenizeTemplate, parseExpressionSource, resolveTemplate } from "@/lib/cms/expression";
@@ -109,6 +110,7 @@ function Composer({ value, onChange, fieldType, multiline }) {
   const [dragOver, setDragOver] = useState(false);
 
   const text = typeof value === "string" ? value : "";
+  const fieldRef = useRef(null);
 
   const insertAtCaret = (snippet) => {
     const el = ref.current;
@@ -161,6 +163,7 @@ function Composer({ value, onChange, fieldType, multiline }) {
   return (
     <div className="relative">
       <div
+        ref={fieldRef}
         onDragOver={(e) => {
           if (e.dataTransfer.types.includes("application/x-cms-variable")) {
             e.preventDefault();
@@ -204,8 +207,18 @@ function Composer({ value, onChange, fieldType, multiline }) {
         </button>
       </div>
 
-      {suggestions.length ? (
-        <div className="absolute z-40 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg overflow-hidden">
+      <PickerPopover
+        anchorRef={fieldRef}
+        open={suggestions.length > 0}
+        onClose={() => setSuggestions([])}
+        matchAnchorWidth
+        maxHeight={260}
+        align="start"
+      >
+        <div
+          className="rounded-lg border border-gray-200 bg-white shadow-xl overflow-y-auto"
+          style={{ maxHeight: PICKER_MAX_H }}
+        >
           {suggestions.map((s) => (
             <button
               key={s.name}
@@ -220,20 +233,18 @@ function Composer({ value, onChange, fieldType, multiline }) {
             </button>
           ))}
         </div>
-      ) : null}
+      </PickerPopover>
 
-      {showPicker ? (
-        <div className="absolute z-50 mt-1 right-0">
-          <VariablePicker
-            fieldType={fieldType}
-            onClose={() => setShowPicker(false)}
-            onPick={(name) => {
-              insertAtCaret(`{{${name}}}`);
-              setShowPicker(false);
-            }}
-          />
-        </div>
-      ) : null}
+      <PickerPopover anchorRef={fieldRef} open={showPicker} onClose={() => setShowPicker(false)}>
+        <VariablePicker
+          fieldType={fieldType}
+          onClose={() => setShowPicker(false)}
+          onPick={(name) => {
+            insertAtCaret(`{{${name}}}`);
+            setShowPicker(false);
+          }}
+        />
+      </PickerPopover>
 
       <TokenStrip template={text} onChange={onChange} lookup={lookup} />
     </div>
@@ -310,13 +321,14 @@ const BINDABLE_TYPES = new Set(["text", "textarea", "richtext", "code", "image",
  */
 function CollectionField({ value, onChange }) {
   const [open, setOpen] = useState(false);
+  const anchorRef = useRef(null);
   const { lookup } = useCmsVariables();
   const path = String(value || "");
   const variable = lookup(path);
 
   return (
     <div className="relative">
-      <div className="flex items-center gap-1.5">
+      <div ref={anchorRef} className="flex items-center gap-1.5">
         <input
           type="text"
           value={path}
@@ -355,18 +367,16 @@ function CollectionField({ value, onChange }) {
           )}
         </p>
       ) : null}
-      {open ? (
-        <div className="absolute z-50 mt-1 right-0">
-          <VariablePicker
-            fieldType="collection"
-            onClose={() => setOpen(false)}
-            onPick={(name) => {
-              onChange(name);
-              setOpen(false);
-            }}
-          />
-        </div>
-      ) : null}
+      <PickerPopover anchorRef={anchorRef} open={open} onClose={() => setOpen(false)}>
+        <VariablePicker
+          fieldType="collection"
+          onClose={() => setOpen(false)}
+          onPick={(name) => {
+            onChange(name);
+            setOpen(false);
+          }}
+        />
+      </PickerPopover>
     </div>
   );
 }

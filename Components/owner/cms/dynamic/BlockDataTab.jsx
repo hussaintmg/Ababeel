@@ -5,10 +5,11 @@
  * visibility conditions, conditional properties, dynamic style values and
  * (for ordinary blocks) a direct repeat over a collection.
  */
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Plus, Trash2, Repeat, Palette, Braces } from "lucide-react";
 import ConditionBuilder from "@/Components/owner/cms/dynamic/ConditionBuilder";
 import VariablePicker from "@/Components/owner/cms/dynamic/VariablePicker";
+import PickerPopover from "@/Components/owner/cms/dynamic/PickerPopover";
 import { Label } from "@/Components/owner/cms/fields";
 import { BLOCK_TYPES, isContainer } from "@/Components/cms/blockSchemas";
 import { newGroup } from "@/lib/cms/conditions";
@@ -29,9 +30,10 @@ const DYNAMIC_STYLE_KEYS = [
 
 function BoundInput({ value, onChange, fieldType, placeholder }) {
   const [open, setOpen] = useState(false);
+  const anchorRef = useRef(null);
   return (
     <div className="relative">
-      <div className="flex items-center gap-1">
+      <div ref={anchorRef} className="flex items-center gap-1">
         <input
           type="text"
           value={value ?? ""}
@@ -57,18 +59,16 @@ function BoundInput({ value, onChange, fieldType, placeholder }) {
           <Braces size={13} />
         </button>
       </div>
-      {open ? (
-        <div className="absolute z-50 mt-1 right-0">
-          <VariablePicker
-            fieldType={fieldType}
-            onClose={() => setOpen(false)}
-            onPick={(name) => {
-              onChange(`{{${name}}}`);
-              setOpen(false);
-            }}
-          />
-        </div>
-      ) : null}
+      <PickerPopover anchorRef={anchorRef} open={open} onClose={() => setOpen(false)}>
+        <VariablePicker
+          fieldType={fieldType}
+          onClose={() => setOpen(false)}
+          onPick={(name) => {
+            onChange(`{{${name}}}`);
+            setOpen(false);
+          }}
+        />
+      </PickerPopover>
     </div>
   );
 }

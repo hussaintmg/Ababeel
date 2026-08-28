@@ -21,7 +21,7 @@ import BlockRenderer from "@/Components/cms/BlockRenderer";
 import { CmsVariablesProvider, useCmsVariables } from "@/context/CmsVariablesContext";
 import DataSourcesPanel from "@/Components/owner/cms/dynamic/DataSourcesPanel";
 import DataInspector from "@/Components/owner/cms/dynamic/DataInspector";
-import VariablePicker from "@/Components/owner/cms/dynamic/VariablePicker";
+import VariablesFloatingPanel from "@/Components/owner/cms/dynamic/VariablesFloatingPanel";
 import { getFeatures } from "@/lib/cms/features";
 import { buildSampleContext } from "@/lib/cms/sampleData";
 
@@ -607,18 +607,14 @@ function PageBuilderInner({ pageKey, meta }) {
             </div>
           ) : null}
 
-          {showVariables && features.variables ? (
-            <div className="mt-3">
-              <div className="rounded-xl border border-gray-200 bg-white p-2">
-                <p className="px-2 pb-2 text-[11px] text-gray-400">
-                  Drag any variable straight onto a field, or click it while a field&apos;s picker is open.
-                </p>
-                <VariablePicker fieldType={null} onPick={() => {}} anchorClassName="!w-full !border-0 !shadow-none" />
-              </div>
-            </div>
-          ) : null}
         </div>
       </div>
+
+      {/* Variables live in a floating window you can park wherever suits — it
+          no longer pushes the live preview down the page. */}
+      {features.variables ? (
+        <VariablesFloatingPanel open={showVariables} onClose={() => setShowVariables(false)} />
+      ) : null}
 
       {/* Single-block palette modal */}
       <AnimatePresence>
