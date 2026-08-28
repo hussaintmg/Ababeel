@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo, useRef } from "react";
+import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import axios from "axios";
 import Link from "next/link";
 import { toast } from "react-toastify";
@@ -11,25 +11,128 @@ import {
   LayoutTemplate, Sparkles, Heading, Type, Image as ImageIcon, LayoutGrid,
   BarChart3, HelpCircle, Columns3, MousePointerClick, Megaphone, MoveVertical,
   GalleryHorizontal, Images, Quote, BadgeDollarSign, Building2, UsersRound, Video,
-  Bookmark, Star,
+  Bookmark, Star, Database, Repeat, Film, Bug, Play, RefreshCw,
 } from "lucide-react";
-import { BLOCK_TYPE_LIST, BLOCK_TYPES, createBlock } from "@/Components/cms/blockSchemas";
+import { BLOCK_TYPE_LIST, BLOCK_TYPES, createBlock, isContainer } from "@/Components/cms/blockSchemas";
 import { TEMPLATES, TEMPLATE_CATEGORIES, createBlocksFromTemplate } from "@/Components/cms/templates";
 import { loadCustomTemplates, saveCustomTemplate, deleteCustomTemplate } from "@/Components/cms/customTemplates";
 import BlockEditor from "@/Components/owner/cms/BlockEditor";
 import BlockRenderer from "@/Components/cms/BlockRenderer";
+import { CmsVariablesProvider, useCmsVariables } from "@/context/CmsVariablesContext";
+import DataSourcesPanel from "@/Components/owner/cms/dynamic/DataSourcesPanel";
+import DataInspector from "@/Components/owner/cms/dynamic/DataInspector";
+import VariablePicker from "@/Components/owner/cms/dynamic/VariablePicker";
+import { getFeatures } from "@/lib/cms/features";
+import { buildSampleContext } from "@/lib/cms/sampleData";
 
 const ICONS = {
   Sparkles, Heading, Type, Image: ImageIcon, LayoutGrid, BarChart3,
   HelpCircle, Columns3, MousePointerClick, Megaphone, MoveVertical,
   GalleryHorizontal, Images, Quote, BadgeDollarSign, Building2, UsersRound, Video, Code2,
+  Repeat, Film,
 };
 
+/* ---------------- nested children (Repeat containers) ---------------- */
+function ChildBlocks({ block, onChange, features, scopeHint }) {
+  const children = Array.isArray(block.children) ? block.children : [];
+  const [expandedId, setExpandedId] = useState(null);
+  const [showPalette, setShowPalette] = useState(false);
+
+  const setChildren = (next) => onChange({ ...block, children: next });
+  const add = (type) => {
+    const bl = createBlock(type);
+    setChildren([...children, bl]);
+    setExpandedId(bl.id);
+    setShowPalette(false);
+  };
+  const update = (id, next) => setChildren(children.map((c) => (c.id === id ? next : c)));
+  const remove = (id) => setChildren(children.filter((c) => c.id !== id));
+  const move = (id, dir) => {
+    const i = children.findIndex((c) => c.id === id);
+    const j = i + dir;
+    if (i === -1 || j < 0 || j >= children.length) return;
+    const next = [...children];
+    [next[i], next[j]] = [next[j], next[i]];
+    setChildren(next);
+  };
+
+  return (
+    <div className="rounded-lg border border-dashed border-blue-200 bg-blue-50/40 p-3">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-blue-600 mb-2">
+        Repeated design — rendered once per record
+      </p>
+      {children.length === 0 ? (
+        <p className="text-xs text-gray-400 mb-2">
+          Add the blocks that make up one card, then bind their properties to{" "}
+          <code className="font-mono">{scopeHint}</code>.
+        </p>
+      ) : null}
+      <div className="space-y-2">
+        {children.map((child, i) => {
+          const def = BLOCK_TYPES[child.type] || {};
+          const Icon = ICONS[def.icon] || Type;
+          const open = expandedId === child.id;
+          return (
+            <div key={child.id} className="rounded-lg border border-gray-200 bg-white overflow-hidden">
+              <div className="flex items-center gap-1.5 px-2 py-2 bg-gray-50 border-b border-gray-100">
+                <button onClick={() => setExpandedId(open ? null : child.id)} className="flex items-center gap-2 min-w-0 flex-1 text-left">
+                  <ChevronRight size={14} className={`text-gray-400 transition-transform ${open ? "rotate-90" : ""}`} />
+                  <span className="w-6 h-6 rounded bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                    <Icon size={13} />
+                  </span>
+                  <span className="font-medium text-xs text-gray-800 truncate">{def.label || child.type}</span>
+                </button>
+                <button onClick={() => move(child.id, -1)} disabled={i === 0} className="p-1 rounded hover:bg-gray-200 text-gray-500 disabled:opacity-30"><ChevronUp size={13} /></button>
+                <button onClick={() => move(child.id, 1)} disabled={i === children.length - 1} className="p-1 rounded hover:bg-gray-200 text-gray-500 disabled:opacity-30"><ChevronDown size={13} /></button>
+                <button onClick={() => remove(child.id)} className="p-1 rounded hover:bg-red-100 text-red-500"><Trash2 size={12} /></button>
+              </div>
+              {open ? (
+                <div className="p-3">
+                  <BlockEditor block={child} onChange={(next) => update(child.id, next)} features={features} scopeHint={scopeHint} />
+                </div>
+              ) : null}
+            </div>
+          );
+        })}
+      </div>
+      <button
+        onClick={() => setShowPalette(true)}
+        className="mt-2 w-full inline-flex items-center justify-center gap-1.5 py-2 rounded-lg border-2 border-dashed border-blue-300 text-xs text-blue-600 hover:bg-blue-50"
+      >
+        <Plus size={14} /> Add a block inside the repeat
+      </button>
+      <AnimatePresence>
+        {showPalette ? (
+          <Modal onClose={() => setShowPalette(false)} title="Add a block inside the repeat">
+            <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[60vh] overflow-y-auto">
+              {BLOCK_TYPE_LIST.filter((bl) => !isContainer(bl.type)).map((bl) => {
+                const Icon = ICONS[bl.icon] || Type;
+                return (
+                  <button key={bl.type} onClick={() => add(bl.type)} className="flex items-start gap-3 p-3 rounded-xl border border-gray-200 text-left hover:border-blue-400 hover:bg-blue-50/40 transition-colors">
+                    <span className="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0"><Icon size={17} /></span>
+                    <span className="min-w-0">
+                      <span className="block font-medium text-sm text-gray-800">{bl.label}</span>
+                      <span className="block text-xs text-gray-500">{bl.description}</span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </Modal>
+        ) : null}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 /* ---------------- single draggable block card ---------------- */
-function BlockCard({ block, index, total, expanded, onToggle, onChange, onMove, onDuplicate, onRemove }) {
+function BlockCard({ block, index, total, expanded, onToggle, onChange, onMove, onDuplicate, onRemove, features }) {
   const controls = useDragControls();
   const def = BLOCK_TYPES[block.type] || {};
   const Icon = ICONS[def.icon] || Type;
+  const container = isContainer(block.type);
+  const scopeHint = block.props?.item || "item";
+  const bound = !!block._conditions?.rules?.length || !!block._repeat?.enabled || !!block._condProps?.length;
 
   return (
     <Reorder.Item
@@ -52,6 +155,14 @@ function BlockCard({ block, index, total, expanded, onToggle, onChange, onMove, 
             <Icon size={15} />
           </span>
           <span className="font-medium text-sm text-gray-800 truncate">{def.label || block.type}</span>
+          {container && block.props?.source ? (
+            <span className="shrink-0 rounded border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-mono text-emerald-700">
+              {block.props.source}
+            </span>
+          ) : null}
+          {bound && !container ? (
+            <span className="shrink-0 rounded border border-blue-200 bg-blue-50 px-1.5 py-0.5 text-[10px] text-blue-700">dynamic</span>
+          ) : null}
         </button>
         <div className="flex items-center gap-0.5">
           <button onClick={() => onMove(-1)} disabled={index === 0} className="p-1.5 rounded hover:bg-gray-200 text-gray-500 disabled:opacity-30" title="Move up">
@@ -71,8 +182,11 @@ function BlockCard({ block, index, total, expanded, onToggle, onChange, onMove, 
       <AnimatePresence initial={false}>
         {expanded ? (
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} className="overflow-hidden">
-            <div className="p-4">
-              <BlockEditor block={block} onChange={onChange} />
+            <div className="p-4 space-y-4">
+              <BlockEditor block={block} onChange={onChange} features={features} />
+              {container ? (
+                <ChildBlocks block={block} onChange={onChange} features={features} scopeHint={scopeHint} />
+              ) : null}
             </div>
           </motion.div>
         ) : null}
@@ -81,7 +195,15 @@ function BlockCard({ block, index, total, expanded, onToggle, onChange, onMove, 
   );
 }
 
-export default function PageBuilder({ pageKey, meta }) {
+export default function PageBuilder(props) {
+  return (
+    <CmsVariablesProvider>
+      <PageBuilderInner {...props} />
+    </CmsVariablesProvider>
+  );
+}
+
+function PageBuilderInner({ pageKey, meta }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [blocks, setBlocks] = useState([]);
@@ -98,8 +220,34 @@ export default function PageBuilder({ pageKey, meta }) {
   const [customTemplates, setCustomTemplates] = useState([]);
   const route = meta?.route || "/";
 
+  // ----- dynamic CMS state -----
+  const [features, setFeatures] = useState(() => getFeatures(null));
+  const [dataSources, setDataSources] = useState([]);
+  const [dynamicRoute, setDynamicRoute] = useState(null);
+  const [previewMode, setPreviewMode] = useState("static"); // static | live | sample
+  const [previewData, setPreviewData] = useState(null);
+  const [previewMeta, setPreviewMeta] = useState({});
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [showData, setShowData] = useState(false);
+  const [showInspector, setShowInspector] = useState(false);
+  const [showVariables, setShowVariables] = useState(false);
+  const { tree } = useCmsVariables();
+
   useEffect(() => {
     setCustomTemplates(loadCustomTemplates());
+  }, []);
+
+  // Feature switches come from the same global CMS settings as the rest of the
+  // site configuration.
+  useEffect(() => {
+    let alive = true;
+    axios
+      .get("/api/owner/cms/global", { withCredentials: true })
+      .then((res) => alive && setFeatures(getFeatures(res.data?.data?.settings)))
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -116,6 +264,11 @@ export default function PageBuilder({ pageKey, meta }) {
           setTitle(d.title || meta?.title || "");
           setShowInNav(!!d.showInNav);
           setNavLabel(d.navLabel || d.title || meta?.title || "");
+          setDataSources(Array.isArray(d.dataSources) ? d.dataSources : []);
+          setDynamicRoute(d.dynamicRoute || null);
+          if ((d.dataSources?.length || d.dynamicRoute?.enabled) && previewMode === "static") {
+            setPreviewMode("live");
+          }
         }
       })
       .catch(() => toast.error("Failed to load page content"))
@@ -123,12 +276,46 @@ export default function PageBuilder({ pageKey, meta }) {
     return () => {
       alive = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pageKey]);
+
+  // ----- preview data -----
+  const loadPreviewData = useCallback(async () => {
+    if (previewMode === "static") {
+      setPreviewData(null);
+      setPreviewMeta({});
+      return;
+    }
+    if (previewMode === "sample") {
+      setPreviewData(buildSampleContext(tree));
+      setPreviewMeta({});
+      return;
+    }
+    setPreviewLoading(true);
+    try {
+      const res = await axios.post(
+        "/api/owner/cms/preview/data",
+        { dataSources, dynamicRoute, params: {}, mode: "mixed" },
+        { withCredentials: true }
+      );
+      setPreviewData(res.data?.data?.context || {});
+      setPreviewMeta(res.data?.data?.meta || {});
+    } catch (e) {
+      toast.error(e?.response?.data?.error || "Could not load live data");
+      setPreviewData({});
+    } finally {
+      setPreviewLoading(false);
+    }
+  }, [previewMode, dataSources, dynamicRoute, tree]);
+
+  useEffect(() => {
+    loadPreviewData();
+  }, [loadPreviewData]);
 
   const save = async () => {
     setSaving(true);
     try {
-      const payload = { title, blocks, customCss, enabled };
+      const payload = { title, blocks, customCss, enabled, dataSources, dynamicRoute };
       if (isCustom) {
         payload.showInNav = showInNav;
         payload.navLabel = navLabel;
@@ -211,6 +398,25 @@ export default function PageBuilder({ pageKey, meta }) {
           <p className="text-xs text-gray-400">{route}</p>
         </div>
         <div className="ml-auto flex items-center gap-2 flex-wrap">
+          {features.dynamicCms && features.liveData ? (
+            <button
+              onClick={() => setShowData((v) => !v)}
+              className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border transition-colors ${showData ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"}`}
+              title="Configure the data this page reads from the database"
+            >
+              <Database size={15} /> Data
+              {dataSources.length ? <span className="text-[10px] rounded-full bg-blue-600 text-white px-1.5">{dataSources.length}</span> : null}
+            </button>
+          ) : null}
+          {features.dynamicCms && features.variables ? (
+            <button
+              onClick={() => setShowVariables((v) => !v)}
+              className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border transition-colors ${showVariables ? "bg-indigo-50 text-indigo-700 border-indigo-200" : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"}`}
+              title="Browse and drag variables into any field"
+            >
+              <Sparkles size={15} /> Variables
+            </button>
+          ) : null}
           <button
             onClick={() => setEnabled((e) => !e)}
             className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border transition-colors ${enabled ? "bg-green-50 text-green-700 border-green-200" : "bg-gray-50 text-gray-500 border-gray-200"}`}
@@ -267,6 +473,20 @@ export default function PageBuilder({ pageKey, meta }) {
         </div>
       ) : null}
 
+      {/* Dynamic data configuration */}
+      {showData && features.dynamicCms && features.liveData ? (
+        <div className="mt-4">
+          <DataSourcesPanel
+            sources={dataSources}
+            onChange={setDataSources}
+            dynamicRoute={dynamicRoute}
+            onDynamicRouteChange={setDynamicRoute}
+            pageKey={pageKey}
+            isCustom={isCustom}
+          />
+        </div>
+      ) : null}
+
       {/* Add / Templates buttons */}
       <div className="mt-5 flex flex-wrap gap-2">
         <button onClick={() => setShowTemplates(true)} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 text-white text-sm font-medium shadow-sm hover:shadow-md hover:scale-[1.02] transition-all">
@@ -301,6 +521,7 @@ export default function PageBuilder({ pageKey, meta }) {
                   onMove={(dir) => move(block.id, dir)}
                   onDuplicate={() => duplicateBlock(block.id)}
                   onRemove={() => removeBlock(block.id)}
+                  features={features}
                 />
               ))}
             </Reorder.Group>
@@ -328,13 +549,74 @@ export default function PageBuilder({ pageKey, meta }) {
               <span className="w-2.5 h-2.5 rounded-full bg-red-400" />
               <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
               <span className="w-2.5 h-2.5 rounded-full bg-green-400" />
-              <span className="ml-2 text-xs text-gray-400">Live preview {route}</span>
+              <span className="ml-2 text-xs text-gray-400 truncate">Preview {route}</span>
+              {previewLoading ? <Loader2 size={12} className="animate-spin text-gray-400" /> : null}
             </div>
+
+            {features.dynamicCms ? (
+              <div className="flex flex-wrap items-center gap-1 px-3 py-2 border-b border-gray-100 bg-white">
+                <span className="text-[11px] text-gray-400 mr-1">Data</span>
+                {[
+                  { id: "static", label: "Static", enabled: true },
+                  { id: "live", label: "Live Database", enabled: features.liveData },
+                  { id: "sample", label: "Sample Data", enabled: true },
+                ]
+                  .filter((m) => m.enabled)
+                  .map((m) => (
+                    <button
+                      key={m.id}
+                      onClick={() => setPreviewMode(m.id)}
+                      className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-colors ${previewMode === m.id ? "bg-gray-900 text-white" : "text-gray-500 hover:bg-gray-100"}`}
+                    >
+                      {m.label}
+                    </button>
+                  ))}
+                {previewMode === "live" ? (
+                  <button
+                    onClick={loadPreviewData}
+                    className="ml-1 p-1 rounded hover:bg-gray-100 text-gray-500"
+                    title="Refresh live data"
+                  >
+                    <RefreshCw size={12} />
+                  </button>
+                ) : null}
+                {features.dataInspector ? (
+                  <button
+                    onClick={() => setShowInspector((v) => !v)}
+                    className={`ml-auto inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium ${showInspector ? "bg-emerald-600 text-white" : "text-gray-500 hover:bg-gray-100"}`}
+                  >
+                    <Bug size={11} /> Inspect
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
+
             <div className="max-h-[70vh] overflow-y-auto bg-white">
               {customCss ? <style dangerouslySetInnerHTML={{ __html: customCss }} /> : null}
-              {blocks.length ? <BlockRenderer blocks={blocks} /> : <div className="py-24 text-center text-gray-300 text-sm">Preview appears here</div>}
+              {blocks.length ? (
+                <BlockRenderer blocks={blocks} data={previewData} showWarnings />
+              ) : (
+                <div className="py-24 text-center text-gray-300 text-sm">Preview appears here</div>
+              )}
             </div>
           </div>
+
+          {showInspector && features.dataInspector ? (
+            <div className="mt-3">
+              <DataInspector context={previewData || {}} blocks={blocks} meta={previewMeta} />
+            </div>
+          ) : null}
+
+          {showVariables && features.variables ? (
+            <div className="mt-3">
+              <div className="rounded-xl border border-gray-200 bg-white p-2">
+                <p className="px-2 pb-2 text-[11px] text-gray-400">
+                  Drag any variable straight onto a field, or click it while a field&apos;s picker is open.
+                </p>
+                <VariablePicker fieldType={null} onPick={() => {}} anchorClassName="!w-full !border-0 !shadow-none" />
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
 

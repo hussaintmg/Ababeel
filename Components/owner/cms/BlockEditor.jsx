@@ -5,9 +5,12 @@ import { BLOCK_TYPES, defaultStyle } from "@/Components/cms/blockSchemas";
 import {
   FieldRenderer, Label, TextInput, ColorInput, ImagePicker, SelectInput,
 } from "@/Components/owner/cms/fields";
-import { SlidersHorizontal, Palette } from "lucide-react";
+import DynamicField from "@/Components/owner/cms/dynamic/DynamicField";
+import BlockDataTab from "@/Components/owner/cms/dynamic/BlockDataTab";
+import ScrollVideoStudio from "@/Components/owner/cms/dynamic/ScrollVideoStudio";
+import { SlidersHorizontal, Palette, Database } from "lucide-react";
 
-export default function BlockEditor({ block, onChange }) {
+export default function BlockEditor({ block, onChange, features = {}, scopeHint = "" }) {
   const def = BLOCK_TYPES[block.type];
   const [tab, setTab] = useState("content");
   if (!def) return <p className="text-sm text-red-500">Unknown block type: {block.type}</p>;
@@ -15,6 +18,10 @@ export default function BlockEditor({ block, onChange }) {
   const props = block.props || {};
   // Merge older _adv values into _style so nothing is lost on legacy blocks.
   const style = { ...defaultStyle(), ...(block._adv || {}), ...(block._style || {}) };
+  const dynamicEnabled = features.dynamicCms !== false && features.variables !== false;
+  const showDataTab =
+    dynamicEnabled &&
+    (features.conditions !== false || features.repeater !== false || features.liveData !== false);
 
   const setProp = (key, v) => onChange({ ...block, props: { ...props, [key]: v } });
   const setStyle = (key, v) => onChange({ ...block, _style: { ...style, [key]: v } });
@@ -22,9 +29,35 @@ export default function BlockEditor({ block, onChange }) {
   // clobber you'd get from calling setStyle multiple times in one handler).
   const setStyleMany = (obj) => onChange({ ...block, _style: { ...style, ...obj } });
 
+  const fallbacks = block._fallbacks || {};
+  const setFallback = (key, v) => {
+    const next = { ...fallbacks };
+    if (v) next[key] = v;
+    else delete next[key];
+    onChange({ ...block, _fallbacks: next });
+  };
+
+  // Every leaf property gets the Static/Dynamic/Formula control; list fields
+  // recurse so items inside a Card Grid can be bound too.
+  const renderLeaf = (field, value, onValue, pathKey) => {
+    if (field.type === "list") {
+      return <FieldRenderer field={field} value={value} onChange={onValue} renderField={renderLeaf} />;
+    }
+    return (
+      <DynamicField
+        field={field}
+        value={value}
+        onChange={onValue}
+        enabled={dynamicEnabled}
+        fallback={fallbacks[pathKey || field.key]}
+        onFallbackChange={(v) => setFallback(pathKey || field.key, v)}
+      />
+    );
+  };
+
   return (
     <div>
-      {/* Content / Design tabs */}
+      {/* Content / Design / Data tabs */}
       <div className="flex gap-1 mb-4 bg-gray-100 p-1 rounded-lg w-fit">
         <button
           onClick={() => setTab("content")}
@@ -38,17 +71,34 @@ export default function BlockEditor({ block, onChange }) {
         >
           <Palette size={14} /> Design
         </button>
+        {showDataTab ? (
+          <button
+            onClick={() => setTab("data")}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${tab === "data" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+          >
+            <Database size={14} /> Data
+          </button>
+        ) : null}
       </div>
 
       {tab === "content" ? (
         <div className="space-y-4">
+          {scopeHint ? (
+            <p className="rounded-lg bg-blue-50 border border-blue-100 px-3 py-2 text-[11px] text-blue-700">
+              Inside a Repeat — use <code className="font-mono">{scopeHint}</code> to reach the current record.
+            </p>
+          ) : null}
+          {block.type === "scrollVideo" ? <ScrollVideoStudio props={props} /> : null}
           {def.fields.map((field) => (
             <div key={field.key}>
               {field.type !== "boolean" ? <Label>{field.label}</Label> : null}
-              <FieldRenderer field={field} value={props[field.key]} onChange={(v) => setProp(field.key, v)} />
+              {renderLeaf(field, props[field.key], (v) => setProp(field.key, v), field.key)}
+              {field.help ? <p className="mt-1 text-[11px] text-gray-400">{field.help}</p> : null}
             </div>
           ))}
         </div>
+      ) : tab === "data" ? (
+        <BlockDataTab block={block} onChange={onChange} features={features} />
       ) : (
         <div className="space-y-5">
           <p className="text-xs text-gray-500">

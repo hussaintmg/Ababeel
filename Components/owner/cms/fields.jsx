@@ -200,6 +200,81 @@ async function optimizeImageForUpload(file) {
   }
 }
 
+/* ---------------- video picker (upload + url) ---------------- */
+
+export function VideoPicker({ value, onChange }) {
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState("");
+  const inputRef = useRef(null);
+
+  const handleFile = async (file) => {
+    if (!file) return;
+    setError("");
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await axios.post("/api/owner/cms/upload", fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+        withCredentials: true,
+      });
+      if (res.data?.success && res.data.url) onChange(res.data.url);
+      else setError(res.data?.error || "Upload failed");
+    } catch (e) {
+      setError(e?.response?.data?.error || "Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div>
+      <div className="flex items-center gap-3">
+        {value ? (
+          <video
+            src={value}
+            className="h-14 w-24 rounded-lg object-cover border border-gray-200 bg-black"
+            muted
+            playsInline
+            preload="metadata"
+          />
+        ) : (
+          <div className="h-14 w-24 rounded-lg border border-dashed border-gray-300 flex items-center justify-center text-gray-300 text-xs bg-gray-50">
+            none
+          </div>
+        )}
+        <input
+          type="text"
+          value={value ?? ""}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="Video URL or upload →"
+          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          disabled={uploading}
+          className="shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gray-900 text-white text-sm hover:bg-gray-700 disabled:opacity-60"
+        >
+          {uploading ? <Loader2 size={15} className="animate-spin" /> : <Upload size={15} />}
+          Upload
+        </button>
+        <input
+          ref={inputRef}
+          type="file"
+          accept="video/mp4,video/webm,video/ogg,video/quicktime"
+          className="hidden"
+          onChange={(e) => handleFile(e.target.files?.[0])}
+        />
+      </div>
+      <p className="mt-1 text-[11px] text-gray-400">
+        MP4 (H.264) or WebM, up to 200MB. Short, well-compressed clips scrub the most smoothly.
+      </p>
+      {error ? <p className="mt-1 text-xs text-red-500">{error}</p> : null}
+    </div>
+  );
+}
+
 /* ---------------- link input ({label, href}) ---------------- */
 
 export function LinkInput({ value, onChange }) {
@@ -305,7 +380,14 @@ export function RichTextArea({ value, onChange, rows = 8 }) {
 
 /* ---------------- generic field renderer (schema-driven) ---------------- */
 
-export function FieldRenderer({ field, value, onChange }) {
+/**
+ * Schema-driven field renderer.
+ *
+ * `renderField` lets a caller (the block editor) wrap every leaf field in the
+ * Static/Dynamic/Formula control without this module importing it — which
+ * keeps the dependency one-directional and avoids an import cycle.
+ */
+export function FieldRenderer({ field, value, onChange, renderField }) {
   const set = (v) => onChange(v);
   switch (field.type) {
     case "textarea":
@@ -329,12 +411,26 @@ export function FieldRenderer({ field, value, onChange }) {
       return <ColorInput value={value} onChange={set} />;
     case "image":
       return <ImagePicker value={value} onChange={set} />;
+    case "video":
+      return <VideoPicker value={value} onChange={set} />;
+    case "collection":
+      // A collection is always bound to a variable — the DynamicField wrapper
+      // supplies the picker, so the raw fallback here is a plain path input.
+      return (
+        <input
+          type="text"
+          value={value ?? ""}
+          onChange={(e) => set(e.target.value)}
+          placeholder="courses"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      );
     case "boolean":
       return <Toggle value={!!value} onChange={set} label={field.label} />;
     case "link":
       return <LinkInput value={value} onChange={set} />;
     case "list":
-      return <ListEditor field={field} value={value} onChange={set} />;
+      return <ListEditor field={field} value={value} onChange={set} renderField={renderField} />;
     case "text":
     default:
       return <TextInput value={value} onChange={set} placeholder={field.placeholder} />;
@@ -345,7 +441,7 @@ export function FieldRenderer({ field, value, onChange }) {
 
 import { Plus, Trash2, ChevronUp, ChevronDown } from "lucide-react";
 
-export function ListEditor({ field, value, onChange }) {
+export function ListEditor({ field, value, onChange, renderField }) {
   const items = Array.isArray(value) ? value : [];
 
   const update = (i, key, v) => {
@@ -392,7 +488,11 @@ export function ListEditor({ field, value, onChange }) {
             {field.itemFields.map((f) => (
               <div key={f.key}>
                 {f.type !== "boolean" ? <Label>{f.label}</Label> : null}
-                <FieldRenderer field={f} value={item[f.key]} onChange={(v) => update(i, f.key, v)} />
+                {renderField ? (
+                  renderField(f, item[f.key], (v) => update(i, f.key, v), `${field.key}.${i}.${f.key}`)
+                ) : (
+                  <FieldRenderer field={f} value={item[f.key]} onChange={(v) => update(i, f.key, v)} />
+                )}
               </div>
             ))}
           </div>

@@ -10,13 +10,24 @@ import PageSkeleton from "@/Components/cms/PageSkeleton";
  * loaded: if the owner has published CMS blocks for this page they are shown,
  * otherwise the page's built-in `children` (the default content) is shown.
  * Per-page custom CSS is injected when present.
+ *
+ * Pages that bind to database variables get their blocks back already resolved
+ * — repeats unrolled, conditions applied, variables filled in — so there is no
+ * flash of raw `{{ }}` tokens and no block that a condition hid ever reaches
+ * the browser.
  */
 export default function CmsPageContent({ pageKey, children }) {
   const [state, setState] = useState({ loaded: false, enabled: false, blocks: [], css: "" });
 
   useEffect(() => {
     let alive = true;
-    fetch(`/api/cms/${pageKey}`, { cache: "no-store" })
+    // Query-string values are forwarded so a page's data sources can filter on
+    // them (e.g. /qualification?category=safety). Read from `location` rather
+    // than useSearchParams so this component needs no Suspense boundary and
+    // pages keep their current rendering mode.
+    const query = typeof window !== "undefined" ? window.location.search.replace(/^\?/, "") : "";
+    const url = query ? `/api/cms/${pageKey}?${query}` : `/api/cms/${pageKey}`;
+    fetch(url, { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (!alive) return;

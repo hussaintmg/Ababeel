@@ -67,6 +67,21 @@ const siteContentSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    // ----- dynamic CMS (additive; absent on every pre-existing document) -----
+    // Saved queries whose results become page variables, e.g.
+    // { key: "courses", model: "DefaultCourse", mode: "list", filters: [...] }.
+    // Validated and executed by lib/cms/dataQuery — never a raw Mongo query.
+    dataSources: {
+      type: [mongoose.Schema.Types.Mixed],
+      default: [],
+    },
+    // Turns this page into a template rendered for many documents:
+    // { enabled, paramName: "slug", model: "DefaultCourse",
+    //   lookupField: "slug", itemKey: "course" } served at /<key>/<param>.
+    dynamicRoute: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null,
+    },
     updatedByEmail: {
       type: String,
       default: "",
