@@ -6,6 +6,7 @@ import { safeErrorResponse, successResponse, badRequestResponse } from "@/lib/er
 import { mediaCapabilities, FPS_MODES, writeTempUpload } from "@/lib/cms/frameSources";
 import { RESOLUTION_PRESETS, MAX_VIDEO_SIZE_MB, MAX_FRAME_COUNT } from "@/lib/cms/frameIngest";
 import { createSequence, runIngestion, INGESTERS, serializeSummary } from "@/lib/cms/frameJobs";
+import { finishUpload, collectFiles, discardUpload } from "@/lib/cms/uploadSession";
 import fs from "fs";
 
 export const runtime = "nodejs";
@@ -50,9 +51,14 @@ export async function GET(request) {
  *   source=video   video=<file>            fpsMode,customFps,targetFrames,width,quality
  *   source=zip     zip=<file>              width,quality
  *   source=frames  frames=<file> (xN)      width,quality
+ *
+ * Anything past a few megabytes arrives through the chunked upload route
+ * instead and is named here by `uploadId`, because the request body is capped
+ * well below the size of a real frame archive — see lib/cms/uploadSession.
  */
 export async function POST(request) {
   let temp = null;
+  let uploaded = null;
   try {
     const { user, error } = await requireOwner(request);
     if (error) return error;
@@ -76,10 +82,25 @@ export async function POST(request) {
       targetFrames: form.get("targetFrames") || "",
     };
 
+    // A file sent whole (small) or assembled from chunks (anything real).
+    const uploadId = String(form.get("uploadId") || "");
+    let assembled = null;
+    if (uploadId) {
+      uploaded = uploadId;
+      // A frame selection is many whole files; a video or archive is one file
+      // sent in parts. Only the latter has something to assemble.
+      if (source !== "frames") {
+        assembled = await finishUpload({ id: uploadId, userId: user._id.toString() });
+      }
+    }
+
     if (source === "video") {
       const file = form.get("video");
-      if (!file || typeof file === "string") return badRequestResponse("No video was uploaded");
-      if (file.size > MAX_VIDEO_SIZE_MB * 1024 * 1024) {
+      if (!assembled && (!file || typeof file === "string")) {
+        return badRequestResponse("No video was uploaded");
+      }
+      const size = assembled ? assembled.size : file.size;
+      if (size > MAX_VIDEO_SIZE_MB * 1024 * 1024) {
         return badRequestResponse(`Video is larger than ${MAX_VIDEO_SIZE_MB} MB`);
       }
       const caps = await mediaCapabilities();
@@ -88,28 +109,41 @@ export async function POST(request) {
         return badRequestResponse(caps.ffmpegReason);
       }
 
-      temp = await writeTempUpload(Buffer.from(await file.arrayBuffer()), file.name);
+      if (!assembled) temp = await writeTempUpload(Buffer.from(await file.arrayBuffer()), file.name);
+      const videoPath = assembled ? assembled.file : temp.file;
       const doc = await createSequence({ name, sourceType: "VIDEO", settings, email: user.email });
-      const outcome = await runIngestion(doc, INGESTERS.VIDEO({ videoPath: temp.file, settings }));
+      const outcome = await runIngestion(doc, INGESTERS.VIDEO({ videoPath, settings }));
       return finish(doc._id, outcome);
     }
 
     if (source === "zip") {
       const file = form.get("zip");
-      if (!file || typeof file === "string") return badRequestResponse("No archive was uploaded");
-      const buffer = Buffer.from(await file.arrayBuffer());
+      if (!assembled && (!file || typeof file === "string")) {
+        return badRequestResponse("No archive was uploaded");
+      }
+      const buffer = assembled
+        ? await fs.promises.readFile(assembled.file)
+        : Buffer.from(await file.arrayBuffer());
       const doc = await createSequence({ name, sourceType: "ZIP", settings, email: user.email });
       const outcome = await runIngestion(doc, INGESTERS.ZIP({ zipBuffer: buffer, settings }));
       return finish(doc._id, outcome);
     }
 
     if (source === "frames") {
-      const files = form.getAll("frames").filter((f) => typeof f !== "string");
-      if (!files.length) return badRequestResponse("No images were uploaded");
-      const entries = [];
-      for (const f of files) {
-        entries.push({ name: f.name, buffer: Buffer.from(await f.arrayBuffer()) });
+      let entries;
+      if (uploadId) {
+        // Sent one at a time through the upload route, because a whole frame
+        // selection is far past any request body limit.
+        entries = await collectFiles({ id: uploadId, userId: user._id.toString() });
+      } else {
+        const files = form.getAll("frames").filter((f) => typeof f !== "string");
+        if (!files.length) return badRequestResponse("No images were uploaded");
+        entries = [];
+        for (const f of files) {
+          entries.push({ name: f.name, buffer: Buffer.from(await f.arrayBuffer()) });
+        }
       }
+      if (!entries.length) return badRequestResponse("No images were uploaded");
       const doc = await createSequence({ name, sourceType: "FRAMES", settings, email: user.email });
       const outcome = await runIngestion(doc, INGESTERS.FRAMES({ files: entries, settings }));
       return finish(doc._id, outcome);
@@ -121,6 +155,8 @@ export async function POST(request) {
     return safeErrorResponse(error, error.status || 500);
   } finally {
     if (temp?.dir) await fs.promises.rm(temp.dir, { recursive: true, force: true }).catch(() => {});
+    // The assembled file has been read by now, however the run ended.
+    if (uploaded) await discardUpload(uploaded);
   }
 }
 

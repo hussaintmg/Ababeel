@@ -105,6 +105,11 @@ export async function PUT(request, { params }) {
     const update = { updatedByEmail: user.email || "" };
     if (typeof body.title === "string") update.title = body.title.slice(0, 200);
     if (typeof body.customCss === "string") update.customCss = body.customCss.slice(0, 200000);
+    // The home page is the site — hiding it would take everything down, so the
+    // switch is refused here as well as being absent from the UI.
+    if (typeof body.publicHidden === "boolean") {
+      update.publicHidden = key === "home" ? false : body.publicHidden;
+    }
     if (typeof body.enabled === "boolean") update.enabled = body.enabled;
 
     // Custom-page menu settings (ignored for managed/global pages).
@@ -181,6 +186,7 @@ export async function PUT(request, { params }) {
         settings: doc.settings || {},
         customCss: doc.customCss || "",
         enabled: !!doc.enabled,
+        publicHidden: !!doc.publicHidden,
         isCustom: !!doc.isCustom,
         showInNav: !!doc.showInNav,
         navLabel: doc.navLabel || "",

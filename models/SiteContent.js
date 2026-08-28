@@ -14,6 +14,9 @@ import mongoose from "mongoose";
  * - `customCss` raw CSS injected on the page (or globally for "global").
  * - `enabled`  when false the public page renders its built-in content and
  *              ignores the CMS blocks (safe default so nothing breaks).
+ * - `publicHidden` when true the page is off the public site altogether: it
+ *              answers 404 and drops out of the navigation. Distinct from
+ *              `enabled`, which only chooses between CMS and built-in content.
  */
 const siteContentSchema = new mongoose.Schema(
   {
@@ -45,6 +48,11 @@ const siteContentSchema = new mongoose.Schema(
       default: "",
     },
     enabled: {
+      type: Boolean,
+      default: false,
+    },
+    // Taken off the public site entirely — 404, and out of the nav.
+    publicHidden: {
       type: Boolean,
       default: false,
     },

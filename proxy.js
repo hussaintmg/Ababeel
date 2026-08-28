@@ -112,7 +112,58 @@ function handleApiMiddleware(request, pathname) {
   return response;
 }
 
+/**
+ * Routes the owner has taken off the public site.
+ *
+ * Cached for a minute so this costs one internal request per minute rather than
+ * one per page view. Any failure is treated as "nothing is hidden": a page that
+ * should have 404'd staying up is a far smaller problem than the whole site
+ * going down because a lookup failed.
+ */
+let hiddenCache = { routes: [], at: 0 };
+const HIDDEN_TTL_MS = 60 * 1000;
+
+async function hiddenRoutes(request) {
+  const now = Date.now();
+  if (now - hiddenCache.at < HIDDEN_TTL_MS) return hiddenCache.routes;
+  try {
+    const res = await fetch(new URL("/api/cms/hidden", request.url), {
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+    });
+    if (!res.ok) throw new Error(String(res.status));
+    const data = await res.json();
+    hiddenCache = { routes: Array.isArray(data?.routes) ? data.routes : [], at: now };
+  } catch {
+    // Keep whatever was last known good, and try again after the TTL.
+    hiddenCache = { routes: hiddenCache.routes, at: now };
+  }
+  return hiddenCache.routes;
+}
+
+/** Is this request for a page the owner has switched off? */
+async function isHiddenPage(request, pathname) {
+  if (pathname === "/" || PROTECTED_PAGES.some((p) => pathname.startsWith(p))) return false;
+  const routes = await hiddenRoutes(request);
+  if (!routes.length) return false;
+  const path = pathname.replace(/\/+$/, "").toLowerCase() || "/";
+  return routes.some((r) => {
+    const route = String(r).replace(/\/+$/, "").toLowerCase();
+    // A hidden page takes its own sub-paths with it: /qualification also hides
+    // /qualification/iosh-managing-safely.
+    return route && (path === route || path.startsWith(`${route}/`));
+  });
+}
+
 async function handlePageMiddleware(request, pathname) {
+  // Switched off in the CMS → gone, with a real 404 rather than a page that
+  // merely looks empty, so search engines drop it too.
+  if (await isHiddenPage(request, pathname)) {
+    const gone = NextResponse.rewrite(new URL("/_not-found", request.url), { status: 404 });
+    applySecurityHeaders(gone);
+    return gone;
+  }
+
   const response = NextResponse.next();
   applySecurityHeaders(response);
 

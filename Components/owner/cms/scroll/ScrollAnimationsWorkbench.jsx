@@ -10,6 +10,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
+import { uploadInChunks, uploadFiles } from "@/lib/cms/chunkedUpload";
 import Link from "next/link";
 import { toast } from "react-toastify";
 import { motion, AnimatePresence } from "framer-motion";
@@ -137,37 +138,38 @@ export default function ScrollAnimationsWorkbench() {
   }, [frames]);
 
   const submit = async () => {
-    const form = new FormData();
-    form.append("source", tab);
-    form.append("name", name.trim() || "Untitled animation");
-    form.append("width", width);
-    if (tab === "video") {
-      if (!video) return toast.info("Choose a video first.");
-      form.append("video", video);
-      form.append("fpsMode", fpsMode);
-      form.append("customFps", customFps);
-      form.append("targetFrames", targetFrames);
-    } else if (tab === "zip") {
-      if (!zip) return toast.info("Choose a ZIP first.");
-      form.append("zip", zip);
-    } else {
-      if (!frames.length) return toast.info("Choose some frames first.");
-      frames.forEach((f) => form.append("frames", f, f.name));
-    }
+    if (tab === "video" && !video) return toast.info("Choose a video first.");
+    if (tab === "zip" && !zip) return toast.info("Choose a ZIP first.");
+    if (tab === "frames" && !frames.length) return toast.info("Choose some frames first.");
 
     setBusy(true);
     setUploadPct(0);
     setStage("Uploading");
     try {
+      // The file goes up in pieces first. Sending it whole worked only for the
+      // smallest archives: past the request body limit the server got a
+      // truncated stream and answered "Failed to parse body as FormData".
+      let uploadId;
+      if (tab === "frames") {
+        uploadId = await uploadFiles(frames, setUploadPct);
+      } else {
+        uploadId = await uploadInChunks(tab === "video" ? video : zip, setUploadPct);
+      }
+
+      setStage("Processing on the server");
+      const form = new FormData();
+      form.append("source", tab);
+      form.append("name", name.trim() || "Untitled animation");
+      form.append("width", width);
+      form.append("uploadId", uploadId);
+      if (tab === "video") {
+        form.append("fpsMode", fpsMode);
+        form.append("customFps", customFps);
+        form.append("targetFrames", targetFrames);
+      }
+
       const res = await axios.post("/api/owner/scroll-animations", form, {
         withCredentials: true,
-        headers: { "Content-Type": "multipart/form-data" },
-        onUploadProgress: (e) => {
-          if (!e.total) return;
-          const pct = Math.round((e.loaded / e.total) * 100);
-          setUploadPct(pct);
-          if (pct >= 100) setStage("Processing on the server");
-        },
       });
       const seq = res.data?.data;
       if (res.data?.ok === false) {

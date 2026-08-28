@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Settings, Home, Info, Mail, Award, Briefcase, HelpCircle, BookOpen,
   Image as ImageIcon, Shield, Receipt, FileText, ExternalLink, Loader2,
-  Eye, EyeOff, LayoutTemplate, Plus, Trash2, X, Globe, KeyRound, Layers,
+  Eye, EyeOff, LayoutTemplate, Plus, Trash2, X, Globe, Ban, KeyRound, Layers,
 } from "lucide-react";
 import { slugify } from "@/lib/cmsDefaults";
 
@@ -69,6 +69,29 @@ export default function CmsDashboardPage() {
       setPages((prev) => prev.filter((p) => p.key !== key));
     } catch (e) {
       toast.error(e?.response?.data?.error || "Could not delete page");
+    }
+  };
+
+  /**
+   * Take a page off the public site, or put it back.
+   *
+   * Separate from Published/Draft: that chooses between CMS content and the
+   * page's built-in content, while this decides whether the address resolves
+   * at all. A hidden page answers 404 and leaves the navigation.
+   */
+  const togglePublic = async (page) => {
+    const hiding = !page.publicHidden;
+    if (hiding && !window.confirm(`Take "${page.title}" off the site? Visitors will get a 404 at ${page.route}.`)) {
+      return;
+    }
+    // Optimistic: the request is a single boolean and the row shows the result.
+    setPages((prev) => prev.map((p) => (p.key === page.key ? { ...p, publicHidden: hiding } : p)));
+    try {
+      await axios.put(`/api/owner/cms/${page.key}`, { publicHidden: hiding }, { withCredentials: true });
+      toast.success(hiding ? `"${page.title}" is off the site` : `"${page.title}" is back on the site`);
+    } catch (e) {
+      setPages((prev) => prev.map((p) => (p.key === page.key ? { ...p, publicHidden: !hiding } : p)));
+      toast.error(e?.response?.data?.error || "Could not change the page");
     }
   };
 
@@ -142,6 +165,10 @@ export default function CmsDashboardPage() {
                           <div className="flex items-center gap-1.5">
                             {isGlobal ? (
                               <span className="text-[11px] font-medium px-2 py-1 rounded-full bg-indigo-50 text-indigo-600">Global</span>
+                            ) : p.publicHidden ? (
+                              <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-1 rounded-full bg-red-50 text-red-600">
+                                <Ban size={12} /> Off the site
+                              </span>
                             ) : p.enabled ? (
                               <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-1 rounded-full bg-green-50 text-green-600">
                                 <Eye size={12} /> {p.isCustom ? "Live" : "Published"}
@@ -151,6 +178,21 @@ export default function CmsDashboardPage() {
                                 <EyeOff size={12} /> {p.isCustom ? "Disabled" : "Draft"}
                               </span>
                             )}
+                            {!isGlobal && p.kind !== "auth" && p.key !== "home" ? (
+                              <span
+                                role="button"
+                                tabIndex={0}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  togglePublic(p);
+                                }}
+                                className={`p-1.5 rounded-lg ${p.publicHidden ? "text-red-600 hover:bg-red-50" : "text-gray-400 hover:text-gray-700 hover:bg-gray-100"}`}
+                                title={p.publicHidden ? "Put this page back on the site" : "Take this page off the site (visitors get a 404)"}
+                              >
+                                {p.publicHidden ? <Ban size={14} /> : <Globe size={14} />}
+                              </span>
+                            ) : null}
                             {p.isCustom ? (
                               <span
                                 role="button"
