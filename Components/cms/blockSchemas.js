@@ -263,6 +263,72 @@ export const BLOCK_TYPES = {
     ],
   },
 
+  card: {
+    label: "Card",
+    icon: "Bookmark",
+    description: "One card — put it inside a Repeat to render one per record",
+    defaults: {
+      variant: "elevated",
+      image: "",
+      icon: "",
+      badge: "",
+      eyebrow: "",
+      title: "Card title",
+      text: "A short description of this item.",
+      meta: [],
+      price: "",
+      priceNote: "",
+      href: "",
+      linkLabel: "Learn more",
+      buttonStyle: "link",
+      accent: "",
+    },
+    fields: [
+      {
+        key: "variant",
+        type: "select",
+        label: "Style",
+        options: [
+          { value: "elevated", label: "Elevated (white, soft shadow)" },
+          { value: "outline", label: "Outlined" },
+          { value: "glass", label: "Glass (over a photo or gradient)" },
+          { value: "dark", label: "Dark" },
+          { value: "overlay", label: "Photo with the text over it" },
+        ],
+      },
+      { key: "image", type: "image", label: "Image" },
+      { key: "icon", type: "text", label: "Icon / emoji (used when there is no image)" },
+      { key: "badge", type: "text", label: "Badge (optional)" },
+      { key: "eyebrow", type: "text", label: "Eyebrow (small label)" },
+      { key: "title", type: "text", label: "Title" },
+      { key: "text", type: "textarea", label: "Text" },
+      {
+        key: "meta",
+        type: "list",
+        label: "Detail rows",
+        itemLabel: "Row",
+        itemFields: [
+          { key: "label", type: "text", label: "Label" },
+          { key: "value", type: "text", label: "Value" },
+        ],
+      },
+      { key: "price", type: "text", label: "Price (optional)" },
+      { key: "priceNote", type: "text", label: "Price note, e.g. per person" },
+      { key: "href", type: "text", label: "Link" },
+      { key: "linkLabel", type: "text", label: "Link text" },
+      {
+        key: "buttonStyle",
+        type: "select",
+        label: "Link style",
+        options: [
+          { value: "link", label: "Text link" },
+          { value: "solid", label: "Full-width button" },
+        ],
+      },
+      { key: "accent", type: "color", label: "Accent colour" },
+    ],
+  },
+
   stats: {
     label: "Stats / Numbers",
     icon: "BarChart3",
@@ -779,6 +845,9 @@ export function defaultStyle() {
     textColor: "",
     // The section's own CSS, rewritten to apply only inside it (lib/cms/scopeCss)
     css: "",
+    // The ::before / ::after decorative layers (lib/cms/decorations)
+    decorBefore: null,
+    decorAfter: null,
     // Spacing (paddingY/X are the simple controls; the four sides override them)
     paddingY: "",
     paddingX: "",

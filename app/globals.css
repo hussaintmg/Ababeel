@@ -250,3 +250,17 @@ button{cursor: pointer;}
     position: static !important;
   }
 }
+
+/* A block used inside a Repeat fills its grid cell.
+   The cell is stretched by the grid and this wrapper stretches with it, but a
+   plain block child does not: it stays as tall as its own text, so cards in one
+   row ended up different heights and their buttons never lined up. Making the
+   wrapper a column and letting its child grow fixes it for every block type
+   rather than for cards alone. */
+.cms-repeat-child {
+  display: flex;
+  flex-direction: column;
+}
+.cms-repeat-child > * {
+  flex: 1 1 auto;
+}

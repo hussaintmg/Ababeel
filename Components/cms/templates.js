@@ -9,6 +9,10 @@ import { newId, defaultStyle } from "@/Components/cms/blockSchemas";
 
 const b = (type, props = {}, style = {}) => ({ type, props, style });
 
+// The brand accent the newer templates use, so a page assembled from several
+// of them is one design rather than a sampler.
+const ORANGE = "#f26722";
+
 export const TEMPLATE_CATEGORIES = [
   "Full Pages",
   "Heroes",
@@ -19,6 +23,7 @@ export const TEMPLATE_CATEGORIES = [
   "Pricing",
   "Team",
   "Gallery",
+  "Cards",
   "Before / After",
   "Logos",
   "Content",
@@ -262,6 +267,186 @@ export const TEMPLATES = [
   /* ===== VIDEO ===== */
   { id: "video-embed", name: "Video Embed", category: "Video", desc: "YouTube/Vimeo player", blocks: [b("video", { url: "", title: "Add a YouTube or Vimeo URL", maxWidth: "900" }, up)] },
   { id: "video-cta", name: "Video + CTA", category: "Video", desc: "Video followed by CTA", blocks: [ b("video", { url: "", title: "", maxWidth: "900" }), b("cta", { title: "Like what you see?", text: "Get in touch to learn more.", button: { label: "Contact Us", href: "/contact-us" }, bgColor: "#2563eb", textColor: "#ffffff" }) ] },
+
+  /* ===== CARDS =====
+     Built on the `card` block rather than raw Tailwind, so every one of them
+     stays editable in the Content tab afterwards instead of being a wall of
+     markup. Drop one inside a Repeat to render a card per database record. */
+  {
+    id: "cards-course-row",
+    name: "Cards — Course Row",
+    category: "Cards",
+    desc: "Three priced cards with full-width buttons",
+    blocks: [
+      b("heading", { level: "2", text: "Our Programmes", subtitle: "Pick the course that matches the work your people do.", align: "center" }),
+      b("columns", { columns: [] }, { paddingY: "0" }),
+      b("card", {
+        variant: "elevated", icon: "🛡️", eyebrow: "Most popular", title: "IOSH Managing Safely",
+        text: "A practical safety management course for managers and supervisors.",
+        price: "£495", priceNote: "per person", href: "/contact-us", linkLabel: "Enquire",
+        buttonStyle: "solid", accent: ORANGE,
+        meta: [{ label: "Duration", value: "3 days" }, { label: "Assessment", value: "Included" }],
+      }),
+      b("card", {
+        variant: "elevated", icon: "🔥", title: "Fire Warden Essentials",
+        text: "Evacuation procedure, extinguisher selection and fire risk assessment.",
+        price: "£245", priceNote: "per person", href: "/contact-us", linkLabel: "Enquire",
+        buttonStyle: "solid", accent: ORANGE,
+        meta: [{ label: "Duration", value: "1 day" }],
+      }),
+      b("card", {
+        variant: "elevated", icon: "🚑", title: "First Aid at Work",
+        text: "Primary survey, CPR, defibrillation and workplace incident management.",
+        price: "£610", priceNote: "per person", href: "/contact-us", linkLabel: "Enquire",
+        buttonStyle: "solid", accent: ORANGE,
+        meta: [{ label: "Duration", value: "3 days" }],
+      }),
+    ],
+  },
+  {
+    id: "cards-overlay",
+    name: "Cards — Photo Overlay",
+    category: "Cards",
+    desc: "Text sits over the photograph",
+    blocks: [
+      b("card", { variant: "overlay", image: "", badge: "Featured", title: "Add a photograph", text: "The text sits over the lower half of the image.", href: "/contact-us", linkLabel: "Read more", accent: ORANGE }),
+    ],
+  },
+  {
+    id: "cards-dark",
+    name: "Cards — Dark",
+    category: "Cards",
+    desc: "For use on a light band",
+    blocks: [
+      b("card", { variant: "dark", icon: "🎓", eyebrow: "Advanced", title: "Professional Qualifications", text: "Development pathways for people advancing a career in health and safety.", href: "/qualification", linkLabel: "Explore programmes", accent: ORANGE }),
+    ],
+  },
+  {
+    id: "cards-outline",
+    name: "Cards — Outlined",
+    category: "Cards",
+    desc: "Quieter, for dense grids",
+    blocks: [
+      b("card", { variant: "outline", icon: "📋", title: "Risk Assessment Training", text: "Identify hazards, assess risks and put control measures in place.", href: "/qualification", linkLabel: "Learn more", accent: ORANGE }),
+    ],
+  },
+
+  /* ===== SECTIONS (the newer block types) ===== */
+  {
+    id: "section-image-checklist",
+    name: "Image + Checklist",
+    category: "Features",
+    desc: "Photo beside a claim, a checklist and a button",
+    blocks: [
+      b("split", {
+        eyebrow: "For organisations",
+        title: "Safer Employees. Safer Operations.",
+        text: "<p>A paragraph explaining what this section is about, in two or three lines.</p>",
+        bullets: [{ text: "First point" }, { text: "Second point" }, { text: "Third point" }, { text: "Fourth point" }],
+        image: "", imageSide: "left", accent: ORANGE,
+        badgeValue: "", badgeLabel: "",
+        cta: { label: "Get in touch", href: "/contact-us" },
+      }),
+    ],
+  },
+  {
+    id: "section-image-checklist-badge",
+    name: "Image + Checklist (with figure)",
+    category: "Features",
+    desc: "As above, with a number badge over the photo",
+    blocks: [
+      b("split", {
+        eyebrow: "Who we are",
+        title: "A heading for this section",
+        text: "<p>Bind the badge to a live figure — a course count, a learner count — from the Data panel.</p>",
+        bullets: [{ text: "First point" }, { text: "Second point" }],
+        image: "", imageSide: "right", accent: ORANGE,
+        badgeValue: "20", badgeLabel: "Programmes running now",
+        cta: { label: "", href: "" },
+      }),
+    ],
+  },
+  {
+    id: "section-photo-tiles",
+    name: "Photo Tiles",
+    category: "Gallery",
+    desc: "Captions over the pictures",
+    blocks: [
+      b("imageTiles", {
+        eyebrow: "Industries",
+        title: "Where We Work",
+        subtitle: "Add a photograph and a caption to each tile.",
+        columns: "3", accent: ORANGE,
+        items: [
+          { image: "", title: "Construction", text: "A short line about this sector.", href: "" },
+          { image: "", title: "Oil & Gas", text: "A short line about this sector.", href: "" },
+          { image: "", title: "Manufacturing", text: "A short line about this sector.", href: "" },
+        ],
+      }),
+    ],
+  },
+  {
+    id: "stats-tight-band",
+    name: "Stats — Tight Band",
+    category: "Stats",
+    desc: "Numbers directly under a hero, no gap",
+    blocks: [
+      b("stats", {
+        title: "", accent: ORANGE, bgColor: "#0b2a4a",
+        items: [
+          { value: "500", suffix: "+", label: "Professionals trained" },
+          { value: "20", suffix: "", label: "Training programmes" },
+          { value: "10", suffix: "+", label: "Industries served" },
+          { value: "100", suffix: "%", label: "Commitment to safety" },
+        ],
+      }, { textColor: "#ffffff", paddingY: "0" }),
+    ],
+  },
+  {
+    id: "section-accent-edge",
+    name: "Section — Accent Edge",
+    category: "Content",
+    desc: "A coloured strip along the top, via ::before",
+    blocks: [
+      b("richText", {
+        html: "<h2>A section with a coloured edge</h2><p>The strip is the section's ::before layer — change it under Design → Decorative layers.</p>",
+        maxWidth: "full", align: "left",
+      }, {
+        bgColor: "#f6f8fb", paddingY: "56",
+        decorBefore: { kind: "color", layer: "behind", size: "top", thickness: "6", color: ORANGE, opacity: "100" },
+      }),
+    ],
+  },
+  {
+    id: "section-fade-edge",
+    name: "Section — Fade Into the Next",
+    category: "Content",
+    desc: "A gradient that fades the band out at the bottom",
+    blocks: [
+      b("richText", {
+        html: "<h2>A band that fades out</h2><p>The fade is the section's ::after layer, sitting in front of the content.</p>",
+        maxWidth: "full", align: "center",
+      }, {
+        bgColor: "#0b2a4a", textColor: "#ffffff", paddingY: "72",
+        decorAfter: { kind: "gradient", layer: "front", size: "bottom", thickness: "120", gradFrom: "rgba(11,42,74,0)", gradTo: "#ffffff", gradAngle: "180", opacity: "100" },
+      }),
+    ],
+  },
+  {
+    id: "section-watermark",
+    name: "Section — Watermark",
+    category: "Content",
+    desc: "Oversized text behind the content",
+    blocks: [
+      b("richText", {
+        html: "<h2>Safety first</h2><p>The word behind this text is the section's ::before layer.</p>",
+        maxWidth: "full", align: "center",
+      }, {
+        bgColor: "#f6f8fb", paddingY: "80",
+        decorBefore: { kind: "text", layer: "behind", size: "full", text: "SAFETY", fontSize: "180", color: "#0b2a4a", opacity: "6", rotate: "-6" },
+      }),
+    ],
+  },
 
   /* ===== CUSTOM / TAILWIND ===== */
   { id: "tw-hero", name: "Tailwind — Gradient Hero", category: "Custom / Tailwind", desc: "Editable Tailwind HTML hero", blocks: [b("customCode", { tailwind: true, html: '<section class="bg-gradient-to-br from-indigo-600 via-blue-600 to-cyan-500 text-white">\n  <div class="max-w-5xl mx-auto px-6 py-24 text-center">\n    <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight">Build with Tailwind</h1>\n    <p class="mt-5 text-lg text-blue-50 max-w-2xl mx-auto">Fully editable HTML using any Tailwind utility class.</p>\n    <a href="/contact-us" class="inline-block mt-8 px-8 py-3.5 rounded-xl bg-white text-blue-700 font-semibold shadow-lg hover:scale-105 transition">Get Started</a>\n  </div>\n</section>' })] },

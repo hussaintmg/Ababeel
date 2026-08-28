@@ -6,7 +6,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, ChevronLeft, ChevronRight, Star, Check, Quote, AlertTriangle } from "lucide-react";
 import ScrollVideo from "@/Components/cms/ScrollVideo";
 import { expandBlocks } from "@/lib/cms/binding";
-import { scopeCss, blockScopeId } from "@/lib/cms/scopeCss";
+import { scopeCss, blockScopeId, blockScopeSelector } from "@/lib/cms/scopeCss";
+import { decorationCss } from "@/lib/cms/decorations";
 
 /* ---------- Tailwind runtime (for Custom HTML blocks) ---------- */
 // Loads the Tailwind browser build once so arbitrary Tailwind utility classes
@@ -73,6 +74,27 @@ function Reveal({ children, className, style, id }) {
 const alignClass = { left: "text-left", center: "text-center", right: "text-right" };
 
 /* ---------- block components ---------- */
+
+/**
+ * A block's own vertical padding, unless the author set some.
+ *
+ * Every block ships with a `py-*` that suits it on its own. The Design tab's
+ * padding lands on the wrapper *outside* that, so setting it there used to add
+ * to the built-in figure rather than replace it: an author asking for 8px got
+ * 8px plus the block's own 56px and could not understand why the band stayed
+ * tall. When they have said what they want, the block's default gets out of the
+ * way.
+ *
+ * @param s         the block's _style
+ * @param fallback  the class to use when the author has not set padding
+ */
+function padY(s, fallback) {
+  const set = (k) => {
+    const v = s?.[k];
+    return v !== undefined && v !== null && String(v).trim() !== "";
+  };
+  return set("paddingY") || set("paddingTop") || set("paddingBottom") ? "" : fallback;
+}
 
 /**
  * A block's accent colour — the one used for buttons, numerals, icon chips and
@@ -273,7 +295,7 @@ function CardGridBlock({ p, s }) {
   const numbered = p.variant === "numbered";
   const inherit = !!s?.textColor;
   return (
-    <section className="max-w-6xl mx-auto px-6 py-12">
+    <section className={`max-w-6xl mx-auto px-6 ${padY(s, "py-12")}`}>
       {p.title || p.eyebrow ? (
         <Reveal className="text-center mb-10">
           {p.eyebrow ? (
@@ -352,7 +374,7 @@ function StatsBlock({ p, s }) {
   const accent = p.accent || "";
   return (
     <section style={{ backgroundColor: p.bgColor || "#f1f5f9" }}>
-      <div className="max-w-6xl mx-auto px-6 py-14">
+      <div className={`max-w-6xl mx-auto px-6 ${padY(s, "py-14")}`}>
         {p.title || p.subtitle ? (
           <div className="text-center mb-10">
             {p.title ? (
@@ -404,6 +426,153 @@ function clampPct(value, fallback) {
   const n = parseInt(value, 10);
   if (Number.isNaN(n)) return fallback;
   return Math.min(Math.max(n, 0), 100);
+}
+
+/**
+ * One card.
+ *
+ * The card grid takes a fixed list typed into the editor; this is a single card
+ * meant to sit inside a Repeat, so a page can render one per record and bind
+ * its fields — which is how a course list becomes a course list rather than
+ * eleven cards somebody kept in step by hand.
+ *
+ * The variants are the ways a card usefully differs, not a palette of themes:
+ * where the emphasis sits (a photo, a badge, a price), and how much weight the
+ * card carries against its neighbours.
+ */
+function CardBlock({ p, s: st }) {
+  const accent = accentOf(p);
+  const variant = p.variant || "elevated";
+  const dark = variant === "dark";
+  const overlay = variant === "overlay";
+  const meta = Array.isArray(p.meta) ? p.meta.filter((m) => m?.label || m?.value) : [];
+
+  const shell =
+    variant === "outline"
+      ? "bg-white border-2 border-gray-200 hover:border-transparent"
+      : variant === "glass"
+      ? "bg-white/70 backdrop-blur border border-white/60"
+      : dark
+      ? "bg-[#0b2a4a] border border-white/10"
+      : "bg-white border border-gray-100";
+
+  const body = (
+    <div
+      className={`group/card relative flex h-full flex-col overflow-hidden rounded-2xl shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${shell}`}
+      style={variant === "outline" ? { "--tw-ring-color": accent } : undefined}
+    >
+      {/* An accent rule that fills out on hover — the one shared gesture that
+          makes a grid of cards feel like one component. */}
+      {variant !== "overlay" ? (
+        <span
+          className="absolute left-0 top-0 z-10 h-1 w-12 transition-all duration-500 group-hover/card:w-full"
+          style={{ backgroundColor: accent }}
+        />
+      ) : null}
+
+      {p.image ? (
+        <div className={`relative overflow-hidden ${overlay ? "flex-1 min-h-[280px]" : "h-44"}`}>
+          <img
+            src={p.image}
+            alt={p.title || ""}
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover/card:scale-105"
+          />
+          {overlay ? <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" /> : null}
+          {p.badge ? (
+            <span
+              className="absolute left-4 top-4 rounded-full px-3 py-1 text-[11px] font-semibold text-white shadow"
+              style={{ backgroundColor: accent }}
+            >
+              {p.badge}
+            </span>
+          ) : null}
+        </div>
+      ) : null}
+
+      <div className={`flex flex-1 flex-col p-6 ${overlay ? "absolute inset-x-0 bottom-0 text-white" : ""}`}>
+        {!p.image && p.icon ? (
+          <div
+            className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl text-2xl"
+            style={{ backgroundColor: tint(accent, 0.12) }}
+          >
+            {p.icon}
+          </div>
+        ) : null}
+
+        {p.eyebrow ? (
+          <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.16em]" style={{ color: accent }}>
+            {p.eyebrow}
+          </div>
+        ) : null}
+        {!p.image && p.badge ? (
+          <span
+            className="mb-3 inline-block self-start rounded-full px-3 py-1 text-[11px] font-semibold text-white"
+            style={{ backgroundColor: accent }}
+          >
+            {p.badge}
+          </span>
+        ) : null}
+
+        {p.title ? (
+          <h3 className={`text-lg font-semibold leading-snug ${overlay || dark ? "text-white" : "text-gray-900"}`}>
+            {p.title}
+          </h3>
+        ) : null}
+        {p.text ? (
+          <p className={`mt-2 text-sm leading-relaxed ${overlay ? "text-white/80" : dark ? "text-white/70" : "text-gray-600"}`}>
+            {p.text}
+          </p>
+        ) : null}
+
+        {meta.length ? (
+          <dl className={`mt-4 space-y-1.5 text-xs ${overlay || dark ? "text-white/75" : "text-gray-500"}`}>
+            {meta.map((m, i) => (
+              <div key={i} className="flex items-baseline justify-between gap-3">
+                <dt>{m.label}</dt>
+                <dd className={`font-semibold ${overlay || dark ? "text-white" : "text-gray-800"}`}>{m.value}</dd>
+              </div>
+            ))}
+          </dl>
+        ) : null}
+
+        {/* The footer is pushed down so a row of cards lines up its prices and
+            buttons however uneven the text above them is. */}
+        <div className="mt-auto pt-5">
+          {p.price ? (
+            <div className="mb-4 flex items-baseline gap-2">
+              <span className="text-2xl font-extrabold tabular-nums" style={{ color: overlay || dark ? "#fff" : accent }}>
+                {p.price}
+              </span>
+              {p.priceNote ? (
+                <span className={`text-xs ${overlay || dark ? "text-white/70" : "text-gray-400"}`}>{p.priceNote}</span>
+              ) : null}
+            </div>
+          ) : null}
+          {p.href && p.linkLabel ? (
+            p.buttonStyle === "solid" ? (
+              <SmartLink
+                href={p.href}
+                className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl px-5 py-2.5 text-sm font-semibold text-white shadow transition-transform hover:scale-[1.02] active:scale-95"
+                style={{ backgroundColor: accent }}
+              >
+                {p.linkLabel}
+                <ChevronRight size={15} />
+              </SmartLink>
+            ) : (
+              <SmartLink href={p.href} className="inline-flex items-center gap-1.5 text-sm font-semibold" style={{ color: accent }}>
+                {p.linkLabel}
+                <ChevronRight size={15} className="transition-transform group-hover/card:translate-x-1" />
+              </SmartLink>
+            )
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+
+  // A card inside a Repeat has no section chrome of its own; one placed
+  // directly on a page still needs its margins.
+  return st?._inRepeat ? body : <div className="px-6 py-4">{body}</div>;
 }
 
 /**
@@ -473,7 +642,7 @@ function BeforeAfterBlock({ p, s: st }) {
 
   return (
     <section style={p.bgColor ? { backgroundColor: p.bgColor } : undefined}>
-      <div className="max-w-5xl mx-auto px-6 py-14">
+      <div className={`max-w-5xl mx-auto px-6 ${padY(st, "py-14")}`}>
         {p.title || p.eyebrow ? (
           <Reveal className="text-center mb-8">
             {p.eyebrow ? (
@@ -579,7 +748,7 @@ function SplitBlock({ p, s: st }) {
 
   return (
     <section style={p.bgColor ? { backgroundColor: p.bgColor } : undefined}>
-      <div className="max-w-6xl mx-auto px-6 py-16 md:py-20">
+      <div className={`max-w-6xl mx-auto px-6 ${padY(st, "py-16 md:py-20")}`}>
         <div className={`grid gap-10 md:gap-14 items-center ${p.image ? "md:grid-cols-2" : ""}`}>
           {p.image ? (
             <Reveal className={`relative ${right ? "md:order-2" : ""}`}>
@@ -659,7 +828,7 @@ function ImageTilesBlock({ p, s: st }) {
   const cols = p.columns === "2" ? "sm:grid-cols-2" : p.columns === "4" ? "sm:grid-cols-2 lg:grid-cols-4" : "sm:grid-cols-2 lg:grid-cols-3";
   return (
     <section style={p.bgColor ? { backgroundColor: p.bgColor } : undefined}>
-      <div className="max-w-6xl mx-auto px-6 py-16">
+      <div className={`max-w-6xl mx-auto px-6 ${padY(st, "py-16")}`}>
         {p.title || p.eyebrow ? (
           <Reveal className="text-center mb-10">
             {p.eyebrow ? (
@@ -716,13 +885,13 @@ function ImageTilesBlock({ p, s: st }) {
   );
 }
 
-function FaqBlock({ p }) {
+function FaqBlock({ p, s: st }) {
   const items = Array.isArray(p.items) ? p.items : [];
   const [open, setOpen] = useState(null);
   const accent = accentOf(p);
   const two = p.columns === "2";
   return (
-    <section className={`${two ? "max-w-6xl" : "max-w-3xl"} mx-auto px-6 py-12`}>
+    <section className={`${two ? "max-w-6xl" : "max-w-3xl"} mx-auto px-6 ${padY(st, "py-12")}`}>
       {p.title ? (
         <h2 className="text-2xl md:text-4xl font-bold text-gray-900 text-center mb-3">{p.title}</h2>
       ) : null}
@@ -1004,7 +1173,7 @@ function TestimonialCard({ t }) {
   );
 }
 
-function TestimonialsBlock({ p }) {
+function TestimonialsBlock({ p, s: st }) {
   const items = Array.isArray(p.items) ? p.items : [];
   const [i, setI] = useState(0);
   const count = items.length;
@@ -1019,7 +1188,7 @@ function TestimonialsBlock({ p }) {
   if (p.layout === "grid") {
     const cols = count >= 3 ? "sm:grid-cols-2 lg:grid-cols-3" : count === 2 ? "sm:grid-cols-2" : "";
     return (
-      <section className="max-w-6xl mx-auto px-6 py-14">
+      <section className={`max-w-6xl mx-auto px-6 ${padY(st, "py-14")}`}>
         {p.title ? <h2 className="text-2xl md:text-4xl font-bold text-gray-900 text-center mb-10">{p.title}</h2> : null}
         <motion.div
           className={`grid grid-cols-1 ${cols} gap-6`}
@@ -1041,7 +1210,7 @@ function TestimonialsBlock({ p }) {
   const t = items[i];
   const rating = parseInt(t.rating, 10) || 5;
   return (
-    <section className="max-w-3xl mx-auto px-6 py-14 text-center">
+    <section className={`max-w-3xl mx-auto px-6 ${padY(st, "py-14")} text-center`}>
       {p.title ? <h2 className="text-2xl md:text-4xl font-bold text-gray-900 mb-8">{p.title}</h2> : null}
       <Quote className="mx-auto text-blue-200 mb-4" size={40} />
       <AnimatePresence mode="wait">
@@ -1228,7 +1397,7 @@ function CustomCodeBlock({ p }) {
 /* ---------- Repeat (collection) ---------- */
 // The binding engine has already unrolled the collection into
 // `props._items = [{ key, blocks }]`; this only lays the results out.
-function RepeaterBlock({ p }) {
+function RepeaterBlock({ p, s }) {
   const items = Array.isArray(p._items) ? p._items : [];
 
   if (!items.length) {
@@ -1249,12 +1418,21 @@ function RepeaterBlock({ p }) {
       : `grid ${cols[String(p.columns || "3")] || cols[3]}`;
 
   return (
-    <section className="px-6 py-10">
-      <div className={`max-w-6xl mx-auto ${layout}`} style={style}>
+    <section className={`px-6 ${padY(s, "py-10")}`}>
+      <div className={`max-w-6xl mx-auto items-stretch ${layout}`} style={style}>
         {items.map((item) => (
-          <div key={item.key} className="min-w-0">
+          // A flex cell, not `h-full`: a percentage height cannot resolve
+          // against a grid item that the grid itself stretched, so the child
+          // stayed as short as its own text and the buttons in a row never
+          // lined up. Flex stretches it for real.
+          <div key={item.key} className="min-w-0 flex">
             {item.blocks.map((b, i) => (
-              <BlockView key={b.id || `${item.key}-${i}`} block={b} />
+              <BlockView
+                key={b.id || `${item.key}-${i}`}
+                // The repeat owns the grid and its gaps, so a child drops the
+                // page margins it would use standing on its own.
+                block={{ ...b, _style: { ...(b._style || {}), _inRepeat: true } }}
+              />
             ))}
           </div>
         ))}
@@ -1279,6 +1457,7 @@ const RENDERERS = {
   split: SplitBlock,
   imageTiles: ImageTilesBlock,
   beforeAfter: BeforeAfterBlock,
+  card: CardBlock,
   stats: StatsBlock,
   faq: FaqBlock,
   columns: ColumnsBlock,
@@ -1492,7 +1671,14 @@ export function BlockView({ block, showWarnings = false }) {
   // author can style what they are looking at without inventing a class name
   // and without a rule leaking across the rest of the page.
   const scopeId = blockScopeId(block.id);
-  const css = scopeCss(block._style?.css, block.id);
+  // The ::before / ::after layers come first so the author's own CSS, written
+  // later in the same tag, can still override them.
+  const css = [
+    decorationCss(blockScopeSelector(block.id), block._style),
+    scopeCss(block._style?.css, block.id),
+  ]
+    .filter(Boolean)
+    .join("\n");
 
   const content = (
     <>
@@ -1513,7 +1699,9 @@ export function BlockView({ block, showWarnings = false }) {
         // The anchor id stays the author's own, for linking. The scope rides
         // along as a class so the two never collide.
         id={anchorId}
-        className={[className, scopeId].filter(Boolean).join(" ")}
+        className={[className, scopeId, block._style?._inRepeat ? "cms-repeat-child" : ""]
+          .filter(Boolean)
+          .join(" ")}
         style={style}
         animation={animation}
         animDuration={animDuration}

@@ -12,6 +12,7 @@ import FrameGenerator from "@/Components/owner/cms/dynamic/FrameGenerator";
 import AnimationPicker from "@/Components/owner/cms/scroll/AnimationPicker";
 import { SlidersHorizontal, Palette, Database, Code2 } from "lucide-react";
 import CodeTab from "@/Components/owner/cms/CodeTab";
+import DecorationEditor from "@/Components/owner/cms/DecorationEditor";
 import { scopeCss } from "@/lib/cms/scopeCss";
 
 export default function BlockEditor({ block, onChange, features = {}, scopeHint = "", previewDoc = null }) {
@@ -289,6 +290,11 @@ export default function BlockEditor({ block, onChange, features = {}, scopeHint 
               <NumBox label="Duration (ms)" value={style.animDuration} onChange={(v) => setStyle("animDuration", v)} placeholder="700" />
               <NumBox label="Delay (ms)" value={style.animDelay} onChange={(v) => setStyle("animDelay", v)} placeholder="0" />
             </div>
+          </Section>
+
+          {/* ---------- Decorative layers ---------- */}
+          <Section title="Decorative layers (::before / ::after)">
+            <DecorationEditor style={style} setStyle={setStyle} blockId={block.id} />
           </Section>
 
           {/* ---------- This section's own CSS ---------- */}
