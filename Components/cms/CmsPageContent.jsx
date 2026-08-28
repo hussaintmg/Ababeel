@@ -11,12 +11,13 @@ import PageSkeleton from "@/Components/cms/PageSkeleton";
  * otherwise the page's built-in `children` (the default content) is shown.
  * Per-page custom CSS is injected when present.
  *
- * Pages that bind to database variables get their resolved data context in the
- * same response, so blocks, styles, repeats and conditions are all resolved in
- * one round-trip — no flash of raw `{{ }}` tokens.
+ * Pages that bind to database variables get their blocks back already resolved
+ * — repeats unrolled, conditions applied, variables filled in — so there is no
+ * flash of raw `{{ }}` tokens and no block that a condition hid ever reaches
+ * the browser.
  */
 export default function CmsPageContent({ pageKey, children }) {
-  const [state, setState] = useState({ loaded: false, enabled: false, blocks: [], css: "", data: null });
+  const [state, setState] = useState({ loaded: false, enabled: false, blocks: [], css: "" });
 
   useEffect(() => {
     let alive = true;
@@ -39,7 +40,6 @@ export default function CmsPageContent({ pageKey, children }) {
           enabled: !!data.enabled && Array.isArray(data.blocks) && data.blocks.length > 0,
           blocks: data.blocks || [],
           css: data.customCss || "",
-          data: data.dynamic ? data.context || {} : null,
         });
       })
       .catch(() => alive && setState((s) => ({ ...s, loaded: true })));
@@ -56,7 +56,7 @@ export default function CmsPageContent({ pageKey, children }) {
   return (
     <div className="cms-fade-in">
       {state.css ? <style dangerouslySetInnerHTML={{ __html: state.css }} /> : null}
-      {override ? <BlockRenderer blocks={state.blocks} data={state.data} /> : children}
+      {override ? <BlockRenderer blocks={state.blocks} /> : children}
     </div>
   );
 }

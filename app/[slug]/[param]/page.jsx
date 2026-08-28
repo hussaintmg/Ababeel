@@ -12,8 +12,9 @@
 import { notFound } from "next/navigation";
 import { getCmsDoc, getGlobalSettings } from "@/lib/cms";
 import BlockRenderer from "@/Components/cms/BlockRenderer";
-import { resolvePublicPageData, optionalServerUser } from "@/lib/cms/publicData";
+import { resolvePublicPageData, resolvePublicBlocks, optionalServerUser } from "@/lib/cms/publicData";
 import { resolveTemplate } from "@/lib/cms/expression";
+import { expandBlocks } from "@/lib/cms/binding";
 
 export const dynamic = "force-dynamic";
 
@@ -61,10 +62,12 @@ export default async function DynamicTemplatePage({ params, searchParams }) {
   // No matching record → a real 404 rather than a page of empty variables.
   if (!resolved?.context?.[itemKey]) notFound();
 
+  const blocks = expandBlocks(doc.blocks, resolved.context);
+
   return (
     <div className="cms-fade-in">
       {doc.customCss ? <style dangerouslySetInnerHTML={{ __html: doc.customCss }} /> : null}
-      <BlockRenderer blocks={doc.blocks} data={resolved.context} />
+      <BlockRenderer blocks={blocks} />
     </div>
   );
 }

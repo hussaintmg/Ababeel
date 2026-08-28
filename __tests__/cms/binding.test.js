@@ -197,3 +197,72 @@ describe("resolveBlock", () => {
     expect(resolveBlock(block(), ctx)._resolved).toBe(true);
   });
 });
+
+describe("published payload contains no authoring data", () => {
+  const page = [
+    {
+      id: "rep",
+      type: "repeater",
+      props: { source: "courses", item: "course" },
+      children: [
+        { id: "shown", type: "heading", props: { text: "{{course.title}}" } },
+        {
+          id: "secret",
+          type: "richText",
+          props: { html: "<p>Internal pricing note: do not publish</p>" },
+          _conditions: { enabled: true, match: "all", rules: [{ left: "user.role", op: "==", right: "admin" }] },
+        },
+      ],
+    },
+    {
+      id: "adminOnly",
+      type: "cta",
+      props: { title: "Admin console", text: "Staff only", button: { label: "Open", href: "/owner" } },
+      _conditions: { enabled: true, match: "all", rules: [{ left: "user.role", op: "==", right: "admin" }] },
+    },
+  ];
+
+  const visitorCtx = { ...ctx, user: { firstName: "Guest", role: "user" } };
+
+  test("a block hidden by a condition is absent entirely, not just unrendered", () => {
+    const out = expandBlocks(page, visitorCtx);
+    const json = JSON.stringify(out);
+    expect(out.find((b) => b.id === "adminOnly")).toBeUndefined();
+    expect(json).not.toContain("Admin console");
+    expect(json).not.toContain("Staff only");
+  });
+
+  test("a repeat child hidden by a condition never appears in the output", () => {
+    const [rep] = expandBlocks(page, visitorCtx);
+    const json = JSON.stringify(rep);
+    expect(json).not.toContain("Internal pricing note");
+    rep.props._items.forEach((item) => {
+      expect(item.blocks.map((b) => b.id.split("__")[0])).not.toContain("secret");
+    });
+  });
+
+  test("resolved blocks carry no unresolved templates or authoring keys", () => {
+    const out = expandBlocks(page, { ...ctx, user: { role: "admin" } });
+    const json = JSON.stringify(out);
+    expect(json).not.toContain("{{");
+    expect(json).not.toContain("children");
+    expect(json).not.toContain("_conditions");
+    expect(json).not.toContain("_condProps");
+    expect(json).not.toContain("_fallbacks");
+    expect(json).not.toContain("_repeat");
+  });
+
+  test("the direct per-block repeat also strips its authoring keys", () => {
+    const b = {
+      id: "x",
+      type: "heading",
+      props: { text: "{{course.title}}" },
+      _repeat: { enabled: true, source: "courses", item: "course" },
+      _fallbacks: { text: "untitled" },
+    };
+    const out = expandBlocks([b], ctx);
+    expect(out).toHaveLength(3);
+    expect(JSON.stringify(out)).not.toContain("_repeat");
+    expect(JSON.stringify(out)).not.toContain("_fallbacks");
+  });
+});

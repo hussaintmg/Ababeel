@@ -148,7 +148,32 @@ configured name (plus `index`, `number`, `isFirst`, `isLast`, `isEven`, `isOdd`)
 | `GET /api/cms/[key]` | Public page blocks, plus the resolved context when the page is dynamic |
 | `GET /api/cms/[key]/data` | Public resolved context on its own |
 
-## 10. Tests
+## 10. Seeing it work
+
+`scripts/seed-demo-page.mjs` builds a working example against your own database:
+
+```bash
+MONGO_URI=... node scripts/seed-demo-page.mjs --with-courses
+```
+
+It publishes two pages:
+
+- **`/courses`** — a Scroll Video hero, a heading whose subtitle is the formula
+  `{{= length(courses) }}`, and a Repeat over a live `courses` data source
+  (DefaultCourse, `status equals active`, sorted by price) rendering one card
+  per record with a dynamic `/course/<id>` link.
+- **`/course/<id>`** — a detail template rendered once per record, with a CTA
+  that only appears while the course is active.
+
+Both open normally in Owner → Website CMS afterwards, so they double as a
+worked example of how the pieces fit together. Drop a video at
+`public/uploads/cms/demo-scroll.mp4` (or pick one in the block's settings) to
+see the scroll section with real frames.
+
+Adding a course straight into MongoDB makes it appear on `/courses` on the next
+request — no CMS edit needed. That is the whole point of the data source.
+
+## 11. Tests
 
 `__tests__/cms/` covers schema discovery (simple, nested, arrays, references,
 nested references, enums, optional fields), variable resolution, repeaters,

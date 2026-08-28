@@ -8,7 +8,7 @@
 import { notFound } from "next/navigation";
 import { getCmsDoc, getGlobalSettings } from "@/lib/cms";
 import BlockRenderer from "@/Components/cms/BlockRenderer";
-import { resolvePublicPageData, optionalServerUser } from "@/lib/cms/publicData";
+import { resolvePublicPageData, resolvePublicBlocks, optionalServerUser } from "@/lib/cms/publicData";
 import { resolveTemplate } from "@/lib/cms/expression";
 
 export const dynamic = "force-dynamic";
@@ -50,7 +50,9 @@ export default async function CustomPage({ params, searchParams }) {
   const doc = await loadCustomPage(slug);
   if (!doc) notFound();
 
-  const resolved = await resolvePublicPageData(doc, {
+  // Resolved server-side, so the browser only ever receives the blocks this
+  // visitor is meant to see.
+  const { blocks } = await resolvePublicBlocks(doc, {
     params: await searchParamsFrom(searchParams),
     user: await optionalServerUser(),
   });
@@ -58,7 +60,7 @@ export default async function CustomPage({ params, searchParams }) {
   return (
     <div className="cms-fade-in">
       {doc.customCss ? <style dangerouslySetInnerHTML={{ __html: doc.customCss }} /> : null}
-      <BlockRenderer blocks={doc.blocks} data={resolved?.context || null} />
+      <BlockRenderer blocks={blocks} />
     </div>
   );
 }
