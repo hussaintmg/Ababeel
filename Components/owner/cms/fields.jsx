@@ -453,7 +453,11 @@ export function ListEditor({ field, value, onChange, renderField }) {
     field.itemFields.forEach((f) => {
       blank[f.key] = f.type === "boolean" ? false : f.type === "link" ? { label: "", href: "" } : "";
     });
-    onChange([...items, blank]);
+    // A list whose items only work once several numbers are filled in — a
+    // scroll scene needs a range, an easing and a position — added a row that
+    // was invisible until the author guessed all of them. `itemDefaults` lets
+    // the schema say what a usable new row looks like.
+    onChange([...items, { ...blank, ...(field.itemDefaults || {}) }]);
   };
   const remove = (i) => onChange(items.filter((_, idx) => idx !== i));
   const move = (i, dir) => {

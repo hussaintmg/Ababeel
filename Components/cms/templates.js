@@ -266,6 +266,69 @@ export const TEMPLATES = [
 
   /* ===== VIDEO ===== */
   { id: "video-embed", name: "Video Embed", category: "Video", desc: "YouTube/Vimeo player", blocks: [b("video", { url: "", title: "Add a YouTube or Vimeo URL", maxWidth: "900" }, up)] },
+
+  /* ===== SCROLL VIDEO =====
+     A pinned section the visitor scrubs by scrolling. Each of these is a
+     starting point that already works: attach a scroll animation (or a video)
+     under "Start here" and the scenes, ranges and easing are set up. Nothing
+     here hard-codes a media file — the section falls back to its poster and
+     its text until one is chosen, so a freshly inserted template is a designed
+     block rather than a black rectangle. */
+  {
+    id: "scroll-video-simple",
+    name: "Scroll Video — Single Caption",
+    category: "Video",
+    desc: "One pinned clip, one line of text",
+    blocks: [
+      b("scrollVideo", {
+        renderMode: "video", src: "", poster: "", scrollDuration: "2",
+        title: "Scroll to see it play", subtitle: "Attach a scroll animation or a video under “Start here”.",
+        textColor: "#ffffff", textAlign: "center", accent: ORANGE,
+        overlayType: "solid", overlay: "30", bgColor: "#081f38",
+        sticky: true, lockScroll: true, scrollStart: "top top", scrollEnd: "bottom bottom",
+        reducedMotion: "scrub", mobileMode: "same", mobileStageHeight: "100svh",
+      }),
+    ],
+  },
+  {
+    id: "scroll-video-story",
+    name: "Scroll Video — Three Scenes",
+    category: "Video",
+    desc: "Three beats told over one clip",
+    blocks: [
+      b("scrollVideo", {
+        renderMode: "video", src: "", poster: "", scrollDuration: "3",
+        accent: ORANGE, overlayType: "gradient", overlayFrom: "rgba(8,31,56,0.25)", overlayTo: "rgba(8,31,56,0.85)", overlayAngle: "180",
+        bgColor: "#081f38", sticky: true, lockScroll: true, snap: false,
+        scrollStart: "top top", scrollEnd: "bottom bottom", reducedMotion: "scrub",
+        mobileMode: "same", mobileStageHeight: "100svh",
+        scenes: [
+          { start: "0", end: "32", eyebrow: "Step one", heading: "Spot the hazard", text: "Write the first beat of the story here.", animation: "fade-up", ease: "power2.out", distance: "40", position: "center", align: "center", headingLevel: "h2", visibility: "both", textColor: "#ffffff" },
+          { start: "34", end: "66", eyebrow: "Step two", heading: "Assess the risk", text: "The second beat, as the clip continues.", animation: "fade-right", ease: "power2.out", distance: "60", position: "left", align: "left", headingLevel: "h2", visibility: "both", textColor: "#ffffff" },
+          { start: "68", end: "100", eyebrow: "Step three", heading: "Put controls in place", text: "The last beat, with the button that follows it.", animation: "zoom-in", ease: "power3.out", distance: "40", position: "center", align: "center", headingLevel: "h2", visibility: "both", textColor: "#ffffff", ctaLabel: "See our programmes", ctaHref: "/qualification" },
+        ],
+      }),
+    ],
+  },
+  {
+    id: "scroll-video-horizontal",
+    name: "Scroll Video — Scenes Slide Across",
+    category: "Video",
+    desc: "Scenes travel sideways as the page scrolls down",
+    blocks: [
+      b("scrollVideo", {
+        renderMode: "video", src: "", poster: "", scrollDuration: "3", direction: "horizontal",
+        accent: ORANGE, overlayType: "solid", overlay: "40", bgColor: "#0b2a4a",
+        sticky: true, lockScroll: true, scrollStart: "top top", scrollEnd: "bottom bottom",
+        reducedMotion: "scrub", mobileMode: "same", mobileStageHeight: "100svh",
+        scenes: [
+          { heading: "First panel", text: "Panels move sideways while the page scrolls downward.", position: "center", align: "center", headingLevel: "h2", visibility: "both", textColor: "#ffffff" },
+          { heading: "Second panel", text: "Which keeps it usable on a trackpad and a phone.", position: "center", align: "center", headingLevel: "h2", visibility: "both", textColor: "#ffffff" },
+          { heading: "Third panel", text: "Add or remove panels under Scenes.", position: "center", align: "center", headingLevel: "h2", visibility: "both", textColor: "#ffffff" },
+        ],
+      }),
+    ],
+  },
   { id: "video-cta", name: "Video + CTA", category: "Video", desc: "Video followed by CTA", blocks: [ b("video", { url: "", title: "", maxWidth: "900" }), b("cta", { title: "Like what you see?", text: "Get in touch to learn more.", button: { label: "Contact Us", href: "/contact-us" }, bgColor: "#2563eb", textColor: "#ffffff" }) ] },
 
   /* ===== CARDS =====

@@ -323,9 +323,10 @@ const practical = (animation) =>
     frameCount: String(animation.frames.length),
     frameExt: "webp",
     animationId: animation.id,
-    title: "Don't Just Learn Safety. Know How to Apply It.",
-    subtitle:
-      "A certificate shows you completed a course. Competence shows you know what to do when it matters — which is why our training focuses on real scenarios, hazard identification and workplace application.",
+    // The scenes below carry the words now. Left empty so the single caption
+    // does not sit on top of them.
+    title: "",
+    subtitle: "",
     textColor: "#ffffff",
     textAlign: "center",
     fadeText: false,
@@ -351,6 +352,44 @@ const practical = (animation) =>
     // eased catch-up and the scroll hold. A single still frame — what this used
     // to fall back to — is indistinguishable from a broken section.
     reducedMotion: "scrub",
+    scrollStart: "top top",
+    scrollEnd: "bottom bottom",
+    accent: ORANGE,
+    // On a phone the frames still play, but the stage is sized in svh: 100vh
+    // there is the height with the address bar hidden, so a 100vh stage starts
+    // taller than the screen and the section opens cut in half.
+    mobileMode: "same",
+    mobileStageHeight: "100svh",
+    // Three beats over the one sequence, rather than one caption held for the
+    // whole thing. Each owns a slice of the scroll and hands over to the next;
+    // the ranges leave a two-point gap so they cross over rather than overlap.
+    scenes: [
+      {
+        start: "0", end: "32",
+        eyebrow: "Step one", heading: "Spot the hazard",
+        text: "Training starts with seeing what everyone else walks past.",
+        animation: "fade-up", ease: "power2.out", distance: "40",
+        position: "center", align: "center", headingLevel: "h2",
+        visibility: "both", textColor: "#ffffff",
+      },
+      {
+        start: "34", end: "66",
+        eyebrow: "Step two", heading: "Assess the risk",
+        text: "Who is exposed, how badly, and how often.",
+        animation: "fade-right", ease: "power2.out", distance: "60",
+        position: "left", align: "left", headingLevel: "h2",
+        visibility: "both", textColor: "#ffffff",
+      },
+      {
+        start: "68", end: "100",
+        eyebrow: "Step three", heading: "Put the controls in place",
+        text: "Then prove the control works, and keep proving it.",
+        animation: "zoom-in", ease: "power3.out", distance: "40",
+        position: "center", align: "center", headingLevel: "h2",
+        visibility: "both", textColor: "#ffffff",
+        ctaLabel: "See our programmes", ctaHref: "/qualification",
+      },
+    ],
   });
 
 /* ------------------------------------------------------------------ *

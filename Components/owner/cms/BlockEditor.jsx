@@ -10,7 +10,7 @@ import BlockDataTab from "@/Components/owner/cms/dynamic/BlockDataTab";
 import ScrollVideoStudio from "@/Components/owner/cms/dynamic/ScrollVideoStudio";
 import FrameGenerator from "@/Components/owner/cms/dynamic/FrameGenerator";
 import AnimationPicker from "@/Components/owner/cms/scroll/AnimationPicker";
-import { SlidersHorizontal, Palette, Database, Code2 } from "lucide-react";
+import { SlidersHorizontal, Palette, Database, Code2, ChevronRight } from "lucide-react";
 import CodeTab from "@/Components/owner/cms/CodeTab";
 import DecorationEditor from "@/Components/owner/cms/DecorationEditor";
 import ReducedMotionNotice from "@/Components/owner/cms/ReducedMotionNotice";
@@ -145,13 +145,7 @@ export default function BlockEditor({ block, onChange, features = {}, scopeHint 
               />
             </>
           ) : null}
-          {def.fields.map((field) => (
-            <div key={field.key}>
-              {field.type !== "boolean" && field.type !== "animation" ? <Label>{field.label}</Label> : null}
-              {renderLeaf(field, props[field.key], (v) => setProp(field.key, v), field.key)}
-              {field.help ? <p className="mt-1 text-[11px] text-gray-400">{field.help}</p> : null}
-            </div>
-          ))}
+          <FieldList fields={def.fields} props={props} setProp={setProp} renderLeaf={renderLeaf} />
         </div>
       ) : tab === "code" ? (
         <CodeTab block={block} onChange={onChange} previewDoc={previewDoc} />
@@ -396,6 +390,57 @@ function NumBox({ label, value, onChange, placeholder }) {
         placeholder={placeholder || "0"}
         className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500"
       />
+    </div>
+  );
+}
+
+/**
+ * The block's own fields.
+ *
+ * A short block lists them flat, exactly as before. A long one — Scroll Video
+ * now has sixty-odd settings across sources, scroll behaviour, scenes, overlays
+ * and a separate mobile configuration — groups them into collapsible sections,
+ * because a sixty-field wall is a settings panel nobody reads to the bottom of.
+ *
+ * Grouping is opt-in per field (`group: "Scroll behaviour"`), so every existing
+ * block renders unchanged. The first group opens by default; the rest stay shut
+ * until they are wanted.
+ */
+function FieldList({ fields, props, setProp, renderLeaf }) {
+  const one = (field) => (
+    <div key={field.key}>
+      {field.type !== "boolean" && field.type !== "animation" ? <Label>{field.label}</Label> : null}
+      {renderLeaf(field, props[field.key], (v) => setProp(field.key, v), field.key)}
+      {field.help ? <p className="mt-1 text-[11px] text-gray-400">{field.help}</p> : null}
+    </div>
+  );
+
+  const grouped = fields.some((f) => f.group);
+  if (!grouped) return <>{fields.map(one)}</>;
+
+  const order = [];
+  const byGroup = new Map();
+  fields.forEach((f) => {
+    const key = f.group || "Other";
+    if (!byGroup.has(key)) {
+      byGroup.set(key, []);
+      order.push(key);
+    }
+    byGroup.get(key).push(f);
+  });
+
+  return (
+    <div className="space-y-2">
+      {order.map((name, i) => (
+        <details key={name} open={i === 0} className="rounded-xl border border-gray-200 bg-white overflow-hidden group">
+          <summary className="cursor-pointer select-none px-3 py-2.5 bg-gray-50 text-xs font-semibold text-gray-700 hover:bg-gray-100 flex items-center gap-2">
+            <ChevronRight size={13} className="text-gray-400 transition-transform group-open:rotate-90" />
+            {name}
+            <span className="ml-auto text-[10px] font-normal text-gray-400">{byGroup.get(name).length}</span>
+          </summary>
+          <div className="p-3 space-y-4">{byGroup.get(name).map(one)}</div>
+        </details>
+      ))}
     </div>
   );
 }
