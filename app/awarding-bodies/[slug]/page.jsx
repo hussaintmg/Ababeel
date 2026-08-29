@@ -64,9 +64,21 @@ export default async function AwardingBodyPage({ params }) {
                 </div>
               ) : null}
 
+              <p className="t-eyebrow mb-3 text-brand-400">Awarding body</p>
               <h1 className="t-h1 text-white">{body.name}</h1>
               {body.shortName && body.shortName !== body.name ? (
                 <p className="t-body mt-2 text-ink-500">{body.shortName}</p>
+              ) : null}
+              {body.description ? (
+                <p className="t-body-lg mt-4 max-w-2xl text-ink-200">
+                  {truncate(stripHtml(body.description), 180)}
+                </p>
+              ) : null}
+              {courses.length ? (
+                <p className="t-small mt-6 font-semibold text-brand-400">
+                  {courses.length} accredited course{courses.length === 1 ? "" : "s"} available
+                  through Ababeel
+                </p>
               ) : null}
 
               {body.website ? (
@@ -119,7 +131,15 @@ export default async function AwardingBodyPage({ params }) {
 
       <Section tone="muted" size="md">
         <Container>
-          <h2 className="t-h2 mb-8 text-ink-900">Courses awarded by {body.name}</h2>
+          <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <p className="t-eyebrow mb-2 text-brand-700">Training</p>
+              <h2 className="t-h2 text-ink-900">Courses awarded by {body.name}</h2>
+            </div>
+            <LinkButton href="/courses" variant="outline">
+              Browse all courses
+            </LinkButton>
+          </div>
           {courses.length ? (
             <RevealStagger className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {courses.map((course) => (
