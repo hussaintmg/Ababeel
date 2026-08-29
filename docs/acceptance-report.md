@@ -215,7 +215,30 @@ errors, `aria-live` on results, semantic buttons and links throughout.
 
 **One item, and it is the important one.**
 
-### Live database click-through — NOT PERFORMED
+### How to run it yourself
+
+The verification is written and committed —
+`__tests__/live/clickThrough.live.test.js`. It walks the whole journey against
+a real database using the real models and the real query layer, then deletes
+exactly what it created:
+
+```bash
+LIVE_DB=1 MONGO_URI="mongodb://HOST:27017/ababeel" npx jest live
+```
+
+24 checks: level, awarding body, course (asserting no price field), both
+certificate paths, public listing, draft exclusion, every filter and a combined
+one, course detail, session creation, schedule appearance, the Show-in-Schedule
+toggle (asserting the record survives), the registration link carrying both
+ids, closed-session refusal, submission, the dashboard list, rename-safety,
+resources, testimonials and the awarding-body page.
+
+Safe by construction: everything it writes is tagged with a run id, cleanup
+deletes by recorded id, and it never drops or empties a collection. `LIVE_DB=1`
+is required so it cannot fire by accident on a machine that happens to have
+MongoDB installed.
+
+### Live database click-through — NOT PERFORMED HERE
 
 This must be stated plainly: **it has not been tested against a real database.**
 
