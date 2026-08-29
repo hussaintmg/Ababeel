@@ -74,7 +74,7 @@ function ViewLink({ href, dark = false, label = "View details" }) {
     <span
       className={cn(
         "inline-flex items-center gap-1.5 t-small font-semibold",
-        dark ? "text-brand-400" : "text-brand-600",
+        dark ? "text-brand-400" : "text-brand-700",
       )}
     >
       {label}
@@ -144,7 +144,7 @@ function EditorialCard({ course }) {
           className="rounded-xl"
         />
         <div className="flex flex-1 flex-col pt-5">
-          {level ? <p className="t-eyebrow mb-2 text-brand-600">{level.name}</p> : null}
+          {level ? <p className="t-eyebrow mb-2 text-brand-700">{level.name}</p> : null}
           <h3 className="t-h3 text-ink-900 aba-clamp-2">{course.name}</h3>
           {course.shortDescription ? (
             <p className="mt-3 t-body text-ink-600 aba-clamp-3">{course.shortDescription}</p>

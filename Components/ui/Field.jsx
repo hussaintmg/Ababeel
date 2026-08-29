@@ -31,7 +31,7 @@ export function Field({ label, htmlFor, required, help, error, children, classNa
         <label htmlFor={htmlFor} className="mb-1.5 block t-small font-semibold text-ink-800">
           {label}
           {required && (
-            <span className="ml-1 text-brand-600" aria-hidden="true">
+            <span className="ml-1 text-brand-700" aria-hidden="true">
               *
             </span>
           )}
@@ -181,7 +181,7 @@ export function RadioGroup({
     <fieldset className={cn("border-0 p-0", className)}>
       <legend className="mb-2 t-small font-semibold text-ink-800">
         {label}
-        {required && <span className="ml-1 text-brand-600" aria-hidden="true">*</span>}
+        {required && <span className="ml-1 text-brand-700" aria-hidden="true">*</span>}
       </legend>
       <div
         className="space-y-1.5"
@@ -238,7 +238,7 @@ export function Checkbox({
         />
         <span>
           {label}
-          {required && <span className="ml-1 text-brand-600" aria-hidden="true">*</span>}
+          {required && <span className="ml-1 text-brand-700" aria-hidden="true">*</span>}
         </span>
       </label>
       {error ? (

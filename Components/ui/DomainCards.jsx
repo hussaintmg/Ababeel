@@ -35,7 +35,7 @@ export function AwardingBodyCard({ body }) {
           <p className="mt-2 t-small text-ink-600 aba-clamp-3">{body.description}</p>
         ) : null}
         {href ? (
-          <span className="mt-auto inline-flex items-center gap-1.5 pt-5 t-small font-semibold text-brand-600">
+          <span className="mt-auto inline-flex items-center gap-1.5 pt-5 t-small font-semibold text-brand-700">
             View courses
             <ArrowRight size={15} aria-hidden="true" className="aba-arrow" />
           </span>
@@ -70,11 +70,11 @@ export function SessionCard({ session, course: courseProp = null, showCourseName
         <div className="flex shrink-0 items-center gap-4 sm:w-32 sm:flex-col sm:items-start sm:gap-0">
           {start ? (
             <div className="rounded-lg bg-ink-50 px-4 py-3 text-center">
-              <p className="t-label text-brand-600">
+              <p className="t-label text-brand-700">
                 {start.toLocaleString("en-GB", { month: "short", timeZone: "UTC" })}
               </p>
               <p className="t-h3 leading-none text-ink-900">{start.getUTCDate()}</p>
-              <p className="t-caption text-ink-400">{start.getUTCFullYear()}</p>
+              <p className="t-caption text-ink-500">{start.getUTCFullYear()}</p>
             </div>
           ) : (
             <div className="rounded-lg bg-ink-50 px-4 py-3 text-center">
@@ -88,7 +88,7 @@ export function SessionCard({ session, course: courseProp = null, showCourseName
           {showCourseName && course?.name ? (
             course.slug ? (
               <Link href={`/courses/${course.slug}`} className="aba-focus">
-                <h3 className="t-h4 text-ink-900 hover:text-brand-600">{course.name}</h3>
+                <h3 className="t-h4 text-ink-900 hover:text-brand-700">{course.name}</h3>
               </Link>
             ) : (
               <h3 className="t-h4 text-ink-900">{course.name}</h3>
@@ -196,7 +196,7 @@ export function TestimonialCard({ testimonial, variant = "card" }) {
             className="h-5 w-auto shrink-0 object-contain"
           />
         ) : t.sourceName ? (
-          <span className="t-caption shrink-0 text-ink-400">{t.sourceName}</span>
+          <span className="t-caption shrink-0 text-ink-500">{t.sourceName}</span>
         ) : null}
       </div>
 
@@ -239,7 +239,7 @@ export function TestimonialCard({ testimonial, variant = "card" }) {
             {t.verifiedLabel}
           </span>
         ) : t.reviewDate ? (
-          <span className="ml-auto shrink-0 t-caption text-ink-400">{formatDate(t.reviewDate)}</span>
+          <span className="ml-auto shrink-0 t-caption text-ink-500">{formatDate(t.reviewDate)}</span>
         ) : null}
       </div>
     </Card>
@@ -262,7 +262,7 @@ export function PersonCard({ person, href = "", showBio = true }) {
       />
       <div className="pt-4">
         <h3 className="t-h4 text-ink-900">{person.name}</h3>
-        {person.position ? <p className="mt-0.5 t-small text-brand-600">{person.position}</p> : null}
+        {person.position ? <p className="mt-0.5 t-small text-brand-700">{person.position}</p> : null}
         {showBio && person.bio ? (
           <p className="mt-2 t-small text-ink-600 aba-clamp-3">{stripHtml(person.bio)}</p>
         ) : null}

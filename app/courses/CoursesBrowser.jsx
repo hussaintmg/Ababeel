@@ -131,11 +131,17 @@ export default function CoursesBrowser({ initial, filters, cardTemplate = "stand
     <Container className="py-12 sm:py-16">
       <div className="lg:grid lg:grid-cols-[260px_1fr] lg:gap-10">
         {/* Desktop sidebar */}
-        <aside className="hidden lg:block">
+        <aside className="hidden lg:block" aria-label="Filter courses">
           <div className="sticky top-24">{panel}</div>
         </aside>
 
         <div ref={resultsTop}>
+          {/* The course cards are h3. Without this the document outline goes
+              h1 (hero) straight to h3, which is what a screen-reader user
+              navigates by — so the results region names itself, visually
+              silently. */}
+          <h2 className="sr-only">Course results</h2>
+
           {/* Search, sort, and the mobile filter trigger */}
           <div className="mb-6 flex flex-wrap items-center gap-3">
             <SearchInput

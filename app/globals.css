@@ -175,6 +175,16 @@
   }
 }
 
+/* Tailwind's animate-spin is the one piece of motion the CMS rules above do not
+   cover, and a submit button spins for as long as the request takes. Slowed
+   rather than stopped: a frozen spinner says "stuck", which is worse than no
+   spinner at all. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-spin {
+    animation-duration: 2.4s;
+  }
+}
+
 /* Clamp helpers — card copy must not push a grid row out of alignment. */
 .aba-clamp-2,
 .aba-clamp-3 {

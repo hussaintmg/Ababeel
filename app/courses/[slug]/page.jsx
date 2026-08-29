@@ -113,7 +113,7 @@ export default async function CourseDetailPage({ params }) {
                     />
                   </div>
                   {certificate.isDefault ? (
-                    <p className="t-caption mt-2 text-ink-400">
+                    <p className="t-caption mt-2 text-ink-500">
                       Example certificate. The exact design may vary by awarding body.
                     </p>
                   ) : null}
@@ -165,12 +165,12 @@ export default async function CourseDetailPage({ params }) {
         <Container>
           <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
             <div>
-              <p className="t-eyebrow mb-2 text-brand-600">Dates</p>
+              <p className="t-eyebrow mb-2 text-brand-700">Dates</p>
               <h2 className="t-h2 text-ink-900">Upcoming sessions</h2>
             </div>
             <Link
               href="/schedule"
-              className="aba-focus inline-flex items-center gap-1.5 t-small font-semibold text-brand-600"
+              className="aba-focus inline-flex items-center gap-1.5 t-small font-semibold text-brand-700"
             >
               See the full schedule
               <ArrowRight size={15} aria-hidden="true" />
@@ -319,6 +319,7 @@ function CourseHero({ course, level, body, firstOpen }) {
               fallbackText={course.name}
               ratio="4/3"
               zoom={false}
+              priority
               className="rounded-xl"
             />
           </Reveal>
@@ -331,7 +332,7 @@ function CourseHero({ course, level, body, firstOpen }) {
 function HeroFact({ icon: Icon, label, value }) {
   return (
     <div>
-      <dt className="t-label mb-1 flex items-center gap-1.5 text-ink-400">
+      <dt className="t-label mb-1 flex items-center gap-1.5 text-ink-500">
         <Icon size={13} aria-hidden="true" />
         {label}
       </dt>

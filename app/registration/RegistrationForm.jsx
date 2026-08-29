@@ -204,7 +204,7 @@ function CourseSummary({ course, session, cta }) {
     <Card className="p-6 sm:p-7">
       <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="t-eyebrow mb-2 text-brand-600">You are registering for</p>
+          <p className="t-eyebrow mb-2 text-brand-700">You are registering for</p>
           <h2 className="t-h3 text-ink-900">{course.name}</h2>
         </div>
         {cta?.available ? <Badge tone="success">Open for registration</Badge> : null}
@@ -226,7 +226,7 @@ function CourseSummary({ course, session, cta }) {
         <p className="mt-5 rounded-lg bg-ink-50 px-4 py-3 t-small text-ink-600">
           No specific session was selected. Our team will contact you with the next available
           dates — or{" "}
-          <Link href="/schedule" className="font-semibold text-brand-600 underline">
+          <Link href="/schedule" className="font-semibold text-brand-700 underline">
             pick a date from the schedule
           </Link>
           .
@@ -295,7 +295,7 @@ function ContactRow({ icon: Icon, href, label, value, external }) {
         {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
         className="aba-focus flex items-center gap-3 rounded-lg bg-white p-3 transition-colors hover:bg-white/70"
       >
-        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-brand-50 text-brand-600">
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-brand-50 text-brand-700">
           <Icon size={16} aria-hidden="true" />
         </span>
         <span className="min-w-0">

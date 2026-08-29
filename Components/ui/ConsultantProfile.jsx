@@ -40,7 +40,7 @@ export function ConsultantProfile({ consultant, index = 0 }) {
     <div className={consultant.textAlign === "center" ? "text-center" : ""}>
       <h3 className="t-h3 text-ink-900">{consultant.name}</h3>
       {consultant.position ? (
-        <p className="t-body mt-1 text-brand-600">{consultant.position}</p>
+        <p className="t-body mt-1 text-brand-700">{consultant.position}</p>
       ) : null}
     </div>
   );
@@ -148,7 +148,7 @@ function Credentials({ consultant, dark = false }) {
     <div className="mt-6 space-y-5">
       {expertise.length ? (
         <div>
-          <p className={cn("t-label mb-2", dark ? "text-ink-400" : "text-ink-500")}>
+          <p className={cn("t-label mb-2", dark ? "text-ink-500" : "text-ink-500")}>
             Areas of expertise
           </p>
           <div className="flex flex-wrap gap-2">
@@ -166,7 +166,7 @@ function Credentials({ consultant, dark = false }) {
 
       {consultant.experience ? (
         <div>
-          <p className={cn("t-label mb-2", dark ? "text-ink-400" : "text-ink-500")}>Experience</p>
+          <p className={cn("t-label mb-2", dark ? "text-ink-500" : "text-ink-500")}>Experience</p>
           <p className={cn("t-small whitespace-pre-line", dark ? "text-ink-200" : "text-ink-600")}>
             {consultant.experience}
           </p>
@@ -180,7 +180,7 @@ function CredentialList({ label, items, dark }) {
   if (!items.length) return null;
   return (
     <div>
-      <p className={cn("t-label mb-2", dark ? "text-ink-400" : "text-ink-500")}>{label}</p>
+      <p className={cn("t-label mb-2", dark ? "text-ink-500" : "text-ink-500")}>{label}</p>
       <ul className={cn("t-small space-y-1", dark ? "text-ink-200" : "text-ink-600")}>
         {items.map((item) => (
           <li key={item} className="flex gap-2">
@@ -232,7 +232,7 @@ function Carousel({ images, name }) {
             type="button"
             onClick={() => go(index - 1)}
             aria-label="Previous image"
-            className="aba-focus absolute left-3 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-ink-900 shadow-md hover:bg-white"
+            className="aba-focus absolute left-3 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-ink-900 shadow-md hover:bg-white"
           >
             <ChevronLeft size={17} />
           </button>
@@ -240,11 +240,14 @@ function Carousel({ images, name }) {
             type="button"
             onClick={() => go(index + 1)}
             aria-label="Next image"
-            className="aba-focus absolute right-3 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-ink-900 shadow-md hover:bg-white"
+            className="aba-focus absolute right-3 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-ink-900 shadow-md hover:bg-white"
           >
             <ChevronRight size={17} />
           </button>
-          <div className="mt-3 flex justify-center gap-1.5">
+          {/* The dot is 6px; the button around it is 44. Padding rather than a
+              bigger dot, so the control stays tappable without the row of them
+              turning into a design feature of its own. */}
+          <div className="mt-1 flex justify-center">
             {images.map((image, i) => (
               <button
                 key={`dot-${image.url}-${i}`}
@@ -252,11 +255,16 @@ function Carousel({ images, name }) {
                 onClick={() => go(i)}
                 aria-label={`Image ${i + 1} of ${count}`}
                 aria-current={i === index}
-                className={cn(
-                  "aba-focus h-1.5 rounded-full transition-all",
-                  i === index ? "w-6 bg-brand-500" : "w-1.5 bg-ink-200 hover:bg-ink-300",
-                )}
-              />
+                className="aba-focus group grid h-11 w-6 place-items-center"
+              >
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    "h-1.5 rounded-full transition-all",
+                    i === index ? "w-6 bg-brand-500" : "w-1.5 bg-ink-200 group-hover:bg-ink-300",
+                  )}
+                />
+              </button>
             ))}
           </div>
         </>

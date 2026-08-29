@@ -19,13 +19,17 @@ const BASE =
   "aba-focus inline-flex items-center justify-center gap-2 t-button rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:pointer-events-none select-none";
 
 const VARIANTS = {
-  primary: "bg-brand-500 text-white hover:bg-brand-600 shadow-sm",
+  // Dark text on the orange, not white. White on brand-500 measures 3.12:1,
+  // which fails AA for 15px text — and the fix is not a duller orange, it is
+  // the contrast pairing real safety signage already uses. ink-900 on
+  // brand-500 is 5.86:1, and 7.02:1 on the lighter hover.
+  primary: "bg-brand-500 text-ink-900 hover:bg-brand-400 shadow-sm",
   dark: "bg-ink-900 text-white hover:bg-ink-800",
   outline: "border border-ink-200 text-ink-900 bg-white hover:bg-ink-50 hover:border-ink-300",
   // On a dark hero the outline has to be light, or it disappears.
   outlineLight: "border border-white/35 text-white hover:bg-white/10 hover:border-white/60",
   ghost: "text-ink-700 hover:bg-ink-50",
-  link: "text-brand-600 hover:text-brand-700 underline underline-offset-4 px-0 py-0 rounded-none",
+  link: "text-brand-700 hover:text-brand-800 underline underline-offset-4 px-0 py-0 rounded-none",
   danger: "bg-red-600 text-white hover:bg-red-700",
 };
 

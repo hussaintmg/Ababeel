@@ -101,7 +101,7 @@ export default async function AccreditationsPage() {
                             href={item.website}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="aba-focus mt-5 inline-flex items-center gap-1.5 t-small font-semibold text-brand-600 hover:text-brand-700"
+                            className="aba-focus mt-5 inline-flex items-center gap-1.5 t-small font-semibold text-brand-700 hover:text-brand-800"
                           >
                             Verify with the issuing body
                             <ExternalLink size={14} aria-hidden="true" />

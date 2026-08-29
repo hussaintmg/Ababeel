@@ -66,7 +66,7 @@ export default async function AwardingBodyPage({ params }) {
 
               <h1 className="t-h1 text-white">{body.name}</h1>
               {body.shortName && body.shortName !== body.name ? (
-                <p className="t-body mt-2 text-ink-400">{body.shortName}</p>
+                <p className="t-body mt-2 text-ink-500">{body.shortName}</p>
               ) : null}
 
               {body.website ? (
@@ -84,7 +84,7 @@ export default async function AwardingBodyPage({ params }) {
 
             {body.coverImage ? (
               <Reveal animation="fade-left">
-                <ImageWell src={body.coverImage} alt="" ratio="4/3" zoom={false} className="rounded-xl" />
+                <ImageWell src={body.coverImage} alt="" ratio="4/3" zoom={false} priority className="rounded-xl" />
               </Reveal>
             ) : null}
           </div>

@@ -93,6 +93,9 @@ export default function ScheduleBrowser({ initial, awardingBodies = [], emptyMes
 
   return (
     <Container className="py-12 sm:py-16">
+      {/* Session cards are h3; this keeps the outline from skipping h2. */}
+      <h2 className="sr-only">Training sessions by month</h2>
+
       {/* Month navigation */}
       <div className="mb-8">
         <div className="mb-4 flex items-center justify-between gap-4">
@@ -134,7 +137,7 @@ export default function ScheduleBrowser({ initial, awardingBodies = [], emptyMes
                   aria-selected={active}
                   onClick={() => go(year, value)}
                   className={cn(
-                    "aba-focus relative rounded-lg px-3.5 py-2 t-small font-semibold transition-colors",
+                    "aba-focus relative flex h-11 items-center rounded-lg px-4 t-small font-semibold transition-colors",
                     active
                       ? "bg-ink-900 text-white"
                       : "text-ink-600 hover:bg-ink-100",

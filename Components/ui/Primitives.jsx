@@ -76,7 +76,7 @@ export function SectionHeading({
       )}
     >
       {eyebrow ? (
-        <p className={cn("t-eyebrow mb-3", dark ? "text-brand-400" : "text-brand-600")}>{eyebrow}</p>
+        <p className={cn("t-eyebrow mb-3", dark ? "text-brand-400" : "text-brand-700")}>{eyebrow}</p>
       ) : null}
       {title ? (
         <Tag className={cn("t-h2", dark ? "text-white" : "text-ink-900")}>{title}</Tag>
@@ -166,7 +166,18 @@ export function Card({ children, className = "", as: Tag = "div", hover = false,
  * card, so a missing `src` renders a quiet placeholder with the item's initial
  * rather than an empty box or a browser's broken-image icon.
  */
-export function ImageWell({ src, alt = "", fallbackText = "", ratio = "16/9", className = "", zoom = true }) {
+export function ImageWell({
+  src,
+  alt = "",
+  fallbackText = "",
+  ratio = "16/9",
+  className = "",
+  zoom = true,
+  // A hero image is the Largest Contentful Paint. Lazy-loading it means the
+  // browser waits for layout before it even asks for the file, which is the
+  // one place `loading="lazy"` makes a page measurably slower.
+  priority = false,
+}) {
   return (
     <div
       className={cn("relative w-full overflow-hidden bg-ink-100", className)}
@@ -177,8 +188,9 @@ export function ImageWell({ src, alt = "", fallbackText = "", ratio = "16/9", cl
         <img
           src={src}
           alt={alt}
-          loading="lazy"
-          decoding="async"
+          loading={priority ? "eager" : "lazy"}
+          fetchPriority={priority ? "high" : undefined}
+          decoding={priority ? "sync" : "async"}
           className={cn("h-full w-full object-cover", zoom && "aba-zoom")}
         />
       ) : (

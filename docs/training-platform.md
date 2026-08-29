@@ -264,10 +264,16 @@ placeholder copy: those are the client's words to write.
 
 ## Status
 
-Done: data models, domain layer, owner CRUD APIs, registration APIs, public read
-APIs, seed scripts, design system, owner dashboard screens, all public pages,
-navigation wiring, sitemap and robots, catalogue page-builder blocks, template
-library, home-page seed.
+Complete. See **`docs/acceptance-report.md`** for the point-by-point assessment
+against the brief, the four deliberate deviations and their reasoning, the
+performance and accessibility findings, what remains outstanding, and the
+deployment steps.
 
-Remaining: performance and accessibility passes, and a full QA sweep against the
-brief's acceptance criteria.
+Built: data models, domain layer, owner CRUD APIs, registration APIs, public
+read APIs, seed scripts, design system, owner dashboard screens, all public
+pages, navigation wiring, sitemap and robots, catalogue page-builder blocks,
+template library, home-page seed, and the QA/performance/accessibility passes.
+
+Outstanding (none blocking): no click-through against a live database,
+`/resources` needs a content model decision, and there is no global
+cross-entity admin search.
