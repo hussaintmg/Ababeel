@@ -235,6 +235,29 @@ async function seedTrainingPages(db) {
   }
 }
 
+/**
+ * Pages the site no longer offers. Their CMS documents are switched off (never
+ * deleted) so the built-in route stops being CMS-decorated and nothing links
+ * to them; an owner-edited document is left alone like everywhere else.
+ */
+const RETIRED_PAGES = ["resources"];
+
+async function retirePages(db) {
+  const sitecontents = db.collection("sitecontents");
+  console.log("\nRetired pages");
+  for (const key of RETIRED_PAGES) {
+    const existing = await sitecontents.findOne({ key });
+    if (!existing) { console.log(`  ${key.padEnd(18)} not present`); continue; }
+    if (!untouched(existing)) { console.log(`  ${key.padEnd(18)} kept — edited by ${existing.updatedByEmail}`); continue; }
+    if (dryRun) { console.log(`  ${key.padEnd(18)} would be switched off`); continue; }
+    await sitecontents.updateOne(
+      { key },
+      { $set: { enabled: false, showInNav: false, updatedAt: new Date(), updatedByEmail: "ababeel-migrate" } },
+    );
+    console.log(`  ${key.padEnd(18)} switched off`);
+  }
+}
+
 async function seedHomePage(db) {
   const sitecontents = db.collection("sitecontents");
   const current = await sitecontents.findOne({ key: "home" });
@@ -297,6 +320,7 @@ async function main() {
 
     await seedNavigation(db);
     await seedTrainingPages(db);
+    await retirePages(db);
     await seedHomePage(db);
 
     console.log("\n" + "─".repeat(64));

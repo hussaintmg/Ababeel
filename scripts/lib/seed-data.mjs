@@ -109,7 +109,6 @@ export const NAV_LINKS = [
   { name: "Courses", url: "/courses" },
   { name: "Awarding Bodies", url: "/awarding-bodies" },
   { name: "Schedule", url: "/schedule" },
-  { name: "Resources", url: "/resources" },
   { name: "Contact Us", url: "/contact-us" },
   { name: "Register Now", url: "/registration" },
 ];
@@ -121,7 +120,6 @@ export const FOOTER_COLUMNS = [
       { name: "All Courses", href: "/courses" },
       { name: "Training Schedule", href: "/schedule" },
       { name: "Awarding Bodies", href: "/awarding-bodies" },
-      { name: "Resources", href: "/resources" },
     ],
   },
   {
@@ -388,8 +386,18 @@ export function trainingPageDocs() {
     const b = blockFactory("schedule");
     add("schedule", "Schedule", "/schedule", [
       pageHero(b, "Upcoming dates", "Training Schedule",
-        "Upcoming sessions across all of our accredited programmes.",
-        { image: "/7.png", overlay: "64", minHeight: "400" }),
+        "Upcoming sessions across all of our accredited programmes — pick a date below and register in minutes.",
+        { image: "/7.png", overlay: "64", minHeight: "400",
+          badges: "Live dates below | Online, in person or blended | No online payment" }),
+      b("cardGrid", {
+        eyebrow: "How it works", title: "From date to certificate", subtitle: "", columns: "3",
+        accent: BRAND, variant: "numbered",
+        items: [
+          { icon: "", title: "Pick a session below", text: "Use the month navigator to find a date, place and delivery mode that fits.", image: "", href: "" },
+          { icon: "", title: "Register your place", text: "Press Register on the session — the form takes a couple of minutes, nothing is paid online.", image: "", href: "" },
+          { icon: "", title: "We confirm by email", text: "A member of the team confirms your place and the practical arrangements.", image: "", href: "" },
+        ],
+      }, ON_INK),
       b("banner", {
         text: "Can't see a date that works? Tell us what you need and we will schedule a session around your team \u2192",
         href: "/contact-us",
@@ -401,7 +409,8 @@ export function trainingPageDocs() {
     const b = blockFactory("registration");
     add("registration", "Registration", "/registration", [
       pageHero(b, "Enrolment", "Register For Training",
-        "Complete the form below and a member of our training team will confirm your place."),
+        "Complete the form below and a member of our training team will confirm your place.",
+        { image: "/9.png", overlay: "66", minHeight: "380" }),
       b("cardGrid", {
         eyebrow: "", title: "What happens next", subtitle: "", columns: "3",
         accent: BRAND, variant: "numbered",
@@ -411,19 +420,6 @@ export function trainingPageDocs() {
           { icon: "", title: "Attend and get certified", text: "Complete the course and assessment, and your certificate follows from the awarding body.", image: "", href: "" },
         ],
       }, UP),
-    ]);
-  }
-  {
-    const b = blockFactory("resources");
-    add("resources", "Resources", "/resources", [
-      pageHero(b, "Knowledge", "Resources",
-        "Guides, articles and downloads from our training and consultancy work.",
-        { image: "/10.png", overlay: "64", minHeight: "400" }),
-      b("banner", {
-        text: "Looking for something we have not written yet? Suggest a topic \u2192",
-        href: "/contact-us",
-        bgColor: "#f5f7fa", textColor: "#0b1526",
-      }, { animation: "fade" }),
     ]);
   }
   {
@@ -548,7 +544,8 @@ export function trainingPageDocs() {
     const b = blockFactory("accreditations");
     add("accreditations", "Accreditations & Certifications", "/about/accreditations", [
       pageHero(b, "Credentials", "Accreditations & certifications",
-        "The approvals and memberships that stand behind the training we deliver."),
+        "The approvals and memberships that stand behind the training we deliver.",
+        { image: "/8.png", overlay: "64", minHeight: "400" }),
       b("accreditationLogos", {
         eyebrow: "", title: "", subtitle: "", align: "center",
         trustStripOnly: false, layout: "grid", grayscale: false,
@@ -568,16 +565,21 @@ export function trainingPageDocs() {
         accent: BRAND, bgColor: "", badgeValue: "", badgeLabel: "",
         cta: { label: "Verify a certificate", href: "/verify-certificate" },
       }, { ...ON_BLACK, animation: "fade-left" }),
-      b("awardingBodyLogos", {
-        eyebrow: "Qualifications", title: "Who awards our qualifications", subtitle: "",
-        align: "center", layout: "strip", grayscale: true, linkToBody: true,
-        ctaLabel: "All awarding bodies", ctaHref: "/awarding-bodies",
+      b("cardGrid", {
+        eyebrow: "Behind the badge", title: "What actually gets audited", subtitle: "", columns: "4",
+        accent: BRAND, variant: "plain",
+        items: [
+          { icon: "🏫", title: "Delivery", text: "Venues, equipment and course hours checked against the approved specification.", image: "", href: "" },
+          { icon: "👷", title: "Trainers", text: "Qualifications and occupational competence of every person who teaches.", image: "", href: "" },
+          { icon: "📝", title: "Assessment", text: "Marking sampled and moderated so a pass means the same thing everywhere.", image: "", href: "" },
+          { icon: "🗄️", title: "Records", text: "Registration-to-certificate paper trail kept auditable for every learner.", image: "", href: "" },
+        ],
       }, UP),
       b("cta", {
         title: "Check any certificate we have issued",
         text: "Every Ababeel certificate can be verified online in seconds.",
         button: { label: "Verify a certificate", href: "/verify-certificate" },
-        secondaryButton: { label: "Contact us", href: "/contact-us" },
+        secondaryButton: { label: "Our awarding bodies", href: "/awarding-bodies" },
         bgColor: INK, textColor: "#ffffff",
       }, UP),
     ]);

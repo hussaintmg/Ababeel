@@ -334,7 +334,7 @@ function CardGridBlock({ p, s }) {
             </div>
           ) : null}
           {p.title ? <h2 className={`text-2xl md:text-4xl font-bold ${inherit ? "" : "text-gray-900"}`}>{p.title}</h2> : null}
-          {p.subtitle ? <p className={`mt-3 max-w-2xl mx-auto ${inherit ? "opacity-80" : "text-gray-600"}`}>{p.subtitle}</p> : null}
+          {p.subtitle ? <p className={`mt-3 max-w-2xl mx-auto ${inherit ? "opacity-85" : "text-gray-600"}`}>{p.subtitle}</p> : null}
         </Reveal>
       ) : null}
       <motion.div
@@ -427,7 +427,7 @@ function StatsBlock({ p, s }) {
               <h2 className={`text-2xl md:text-3xl font-bold ${inherit ? "" : "text-gray-900"}`}>{p.title}</h2>
             ) : null}
             {p.subtitle ? (
-              <p className={`mt-3 max-w-2xl mx-auto ${inherit ? "opacity-80" : "text-gray-600"}`}>{p.subtitle}</p>
+              <p className={`mt-3 max-w-2xl mx-auto ${inherit ? "opacity-85" : "text-gray-600"}`}>{p.subtitle}</p>
             ) : null}
           </div>
         ) : null}
@@ -462,7 +462,7 @@ function StatsBlock({ p, s }) {
               </div>
               <div
                 className={`mt-2 text-sm md:text-base font-medium ${
-                  it.textColor ? "opacity-90" : inherit ? "opacity-85" : "text-gray-600"
+                  it.textColor ? "opacity-90" : inherit ? "opacity-90" : "text-gray-600"
                 }`}
               >
                 {it.label}
@@ -715,7 +715,7 @@ function BeforeAfterBlock({ p, s: st }) {
             ) : null}
             {p.title ? <h2 className={`text-2xl md:text-4xl font-bold ${inherit ? "" : "text-gray-900"}`}>{p.title}</h2> : null}
             {p.subtitle ? (
-              <p className={`mt-3 max-w-2xl mx-auto ${inherit ? "opacity-80" : "text-gray-600"}`}>{p.subtitle}</p>
+              <p className={`mt-3 max-w-2xl mx-auto ${inherit ? "opacity-85" : "text-gray-600"}`}>{p.subtitle}</p>
             ) : null}
           </Reveal>
         ) : null}
@@ -873,7 +873,7 @@ function SplitBlock({ p, s: st }) {
             ) : null}
             {p.text ? (
               <div
-                className={`cms-prose mt-5 ${inherit ? "opacity-85" : "text-gray-600"}`}
+                className={`cms-prose mt-5 ${inherit ? "opacity-90" : "text-gray-600"}`}
                 dangerouslySetInnerHTML={{ __html: p.text }}
               />
             ) : null}
@@ -934,7 +934,7 @@ function ImageTilesBlock({ p, s: st }) {
             ) : null}
             {p.title ? <h2 className={`text-2xl md:text-4xl font-bold ${inherit ? "" : "text-gray-900"}`}>{p.title}</h2> : null}
             {p.subtitle ? (
-              <p className={`mt-3 max-w-2xl mx-auto ${inherit ? "opacity-80" : "text-gray-600"}`}>{p.subtitle}</p>
+              <p className={`mt-3 max-w-2xl mx-auto ${inherit ? "opacity-85" : "text-gray-600"}`}>{p.subtitle}</p>
             ) : null}
           </Reveal>
         ) : null}
