@@ -374,7 +374,9 @@ export function trainingPageDocs() {
     const b = blockFactory("courses");
     add("courses", "Courses", "/courses", [
       pageHero(b, "Training catalogue", "Accredited safety training, built around competence",
-        "Browse our full catalogue by level, awarding body or duration, and register for an upcoming session."),
+        "Browse our full catalogue by level, awarding body or duration, and register for an upcoming session.",
+        { image: "/3.png", overlay: "64", minHeight: "400",
+          badges: "Accredited qualifications | Verifiable certificates | No online payment" }),
       b("accreditationLogos", {
         eyebrow: "", title: "", subtitle: "", align: "center",
         trustStripOnly: true, layout: "strip", grayscale: true,
@@ -386,12 +388,13 @@ export function trainingPageDocs() {
     const b = blockFactory("schedule");
     add("schedule", "Schedule", "/schedule", [
       pageHero(b, "Upcoming dates", "Training Schedule",
-        "Upcoming sessions across all of our accredited programmes."),
+        "Upcoming sessions across all of our accredited programmes.",
+        { image: "/7.png", overlay: "64", minHeight: "400" }),
       b("banner", {
         text: "Can't see a date that works? Tell us what you need and we will schedule a session around your team \u2192",
         href: "/contact-us",
-        bgColor: INK, textColor: "#ffffff",
-      }, UP),
+        bgColor: "#f5f7fa", textColor: "#0b1526",
+      }, { animation: "fade" }),
     ]);
   }
   {
@@ -414,19 +417,26 @@ export function trainingPageDocs() {
     const b = blockFactory("resources");
     add("resources", "Resources", "/resources", [
       pageHero(b, "Knowledge", "Resources",
-        "Guides, articles and downloads from our training and consultancy work."),
+        "Guides, articles and downloads from our training and consultancy work.",
+        { image: "/10.png", overlay: "64", minHeight: "400" }),
       b("banner", {
         text: "Looking for something we have not written yet? Suggest a topic \u2192",
         href: "/contact-us",
-        bgColor: INK, textColor: "#ffffff",
-      }, UP),
+        bgColor: "#f5f7fa", textColor: "#0b1526",
+      }, { animation: "fade" }),
     ]);
   }
   {
     const b = blockFactory("bodies");
     add("awarding-bodies", "Awarding Bodies", "/awarding-bodies", [
       pageHero(b, "Accreditation", "Our awarding bodies",
-        "Every qualification we deliver is awarded by a recognised organisation. Here is who stands behind each one."),
+        "Every qualification we deliver is awarded by a recognised organisation. Here is who stands behind each one.",
+        { image: "/11.png", overlay: "64", minHeight: "400" }),
+      b("awardingBodyLogos", {
+        eyebrow: "", title: "", subtitle: "", align: "left",
+        layout: "cards", grayscale: false, linkToBody: true,
+        ctaLabel: "", ctaHref: "/awarding-bodies",
+      }, UP),
       b("split", {
         eyebrow: "Why it matters",
         title: "What an awarding body does",
@@ -437,20 +447,20 @@ export function trainingPageDocs() {
           { text: "Approves and audits training centres" },
           { text: "Issues the verifiable certificate" },
         ],
-        image: "", imageAlt: "", imageSide: "right", accent: BRAND,
-        bgColor: "", badgeValue: "", badgeLabel: "",
+        image: "/9.png", imageAlt: "Assessment in progress", imageSide: "right",
+        accent: BRAND, bgColor: "", badgeValue: "", badgeLabel: "",
         cta: { label: "Verify a certificate", href: "/verify-certificate" },
-      }, { animation: "fade-right" }),
-      b("awardingBodyLogos", {
-        eyebrow: "", title: "", subtitle: "", align: "left",
-        layout: "cards", grayscale: false, linkToBody: true,
-        ctaLabel: "", ctaHref: "/awarding-bodies",
+      }, { ...ON_BLACK, animation: "fade-right" }),
+      b("accreditationLogos", {
+        eyebrow: "", title: "Accredited and approved", subtitle: "", align: "center",
+        trustStripOnly: true, layout: "strip", grayscale: true,
+        ctaLabel: "See our accreditations", ctaHref: "/about/accreditations",
       }, UP),
       b("cta", {
         title: "Not sure which qualification you need?",
         text: "Our training team will talk it through and recommend the right course and awarding body.",
         button: { label: "Get advice", href: "/contact-us" },
-        secondaryButton: { label: "", href: "" },
+        secondaryButton: { label: "Browse courses", href: "/courses" },
         bgColor: INK, textColor: "#ffffff",
       }, UP),
     ]);
