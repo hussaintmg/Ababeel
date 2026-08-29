@@ -785,10 +785,12 @@ export const BLOCK_TYPES = {
       mobileSrc: "",
       webmSrc: "",
       poster: "",
-      // "video" seeks an HTML5 video; "frames" draws a pre-extracted image
-      // sequence, which scrubs instantly because no decoding happens while
-      // scrolling. Generated from the video in the block editor.
-      renderMode: "video",
+      // "frames" draws a pre-extracted image sequence, which scrubs instantly
+      // because no decoding happens while scrolling; "video" seeks an HTML5
+      // video, which depends on the file being seekable at all and is the
+      // source of most of this section's failures. A new block starts on
+      // frames, and the editor leads with the animation picker.
+      renderMode: "frames",
       // A saved Scroll Animation (Owner → Scroll Animations). Its ordered frame
       // URLs are copied in on save, so the public page needs no extra lookup.
       animationId: "",
@@ -865,25 +867,25 @@ export const BLOCK_TYPES = {
     },
     fields: [
       /* ---- Source ---- */
-      { group: "Video source", key: "src", type: "video", label: "Video" },
-      { group: "Video source", key: "webmSrc", type: "video", label: "WebM version (optional)", help: "Offered first where the browser supports it — smaller file, same picture." },
-      { group: "Video source", key: "poster", type: "image", label: "Poster frame", help: "Shown while the video loads and to visitors with reduced motion. Set one — it is what stops the section ever being a black rectangle." },
+      { group: "Use a video instead (advanced)", key: "src", type: "video", label: "Video" },
+      { group: "Use a video instead (advanced)", key: "webmSrc", type: "video", label: "WebM version (optional)", help: "Offered first where the browser supports it — smaller file, same picture." },
+      { group: "Scroll animation", key: "poster", type: "image", label: "Poster frame", help: "Shown while the video loads and to visitors with reduced motion. Set one — it is what stops the section ever being a black rectangle." },
       {
         group: "Video source",
         key: "renderMode",
         type: "select",
         label: "Playback source",
-        help: "Frames scrub instantly; video downloads less. Generate frames in the panel above.",
+        help: "Frames are the reliable option: they scrub instantly because nothing is decoded while you scroll. A video has to be seekable, which many exports are not.",
         options: [
-          { value: "video", label: "Video file (seek while scrolling)" },
-          { value: "frames", label: "Frame sequence (smoothest)" },
+          { value: "frames", label: "Frame sequence (recommended)" },
+          { value: "video", label: "Video file (advanced)" },
         ],
       },
-      { group: "Video source", key: "animationId", type: "animation", label: "Scroll animation" },
-      { group: "Video source", key: "preload", type: "select", label: "Preload", options: ["auto", "metadata", "none"] },
-      { group: "Video source", key: "playbackRate", type: "text", label: "Playback speed (0.25–4)" },
-      { group: "Video source", key: "clipStart", type: "text", label: "Start time (seconds)", placeholder: "0", help: "Play only part of the file. Leave both empty to use all of it." },
-      { group: "Video source", key: "clipEnd", type: "text", label: "End time (seconds)", placeholder: "whole clip" },
+      { group: "Scroll animation", key: "animationId", type: "animation", label: "Scroll animation" },
+      { group: "Use a video instead (advanced)", key: "preload", type: "select", label: "Preload", options: ["auto", "metadata", "none"] },
+      { group: "Use a video instead (advanced)", key: "playbackRate", type: "text", label: "Playback speed (0.25–4)" },
+      { group: "Use a video instead (advanced)", key: "clipStart", type: "text", label: "Start time (seconds)", placeholder: "0", help: "Play only part of the file. Leave both empty to use all of it." },
+      { group: "Use a video instead (advanced)", key: "clipEnd", type: "text", label: "End time (seconds)", placeholder: "whole clip" },
 
       /* ---- Scroll ---- */
       { group: "Scroll behaviour", key: "scrollEnabled", type: "boolean", label: "Drive this section with the scroll" },
@@ -977,9 +979,12 @@ export const BLOCK_TYPES = {
         itemLabel: "scene",
         help: "Each scene owns a slice of the scroll and fades in and out inside it, so one section can tell several beats of a story. Leave this empty for a single caption and use the Overlay text below instead.",
         itemDefaults: {
+          startFrame: "",
+          endFrame: "",
           start: "0",
           end: "100",
           animation: "fade-up",
+          exitAnimation: "same",
           ease: "power2.out",
           distance: "40",
           position: "center",
@@ -989,6 +994,8 @@ export const BLOCK_TYPES = {
           textColor: "#ffffff",
         },
         itemFields: [
+          { key: "startFrame", type: "text", label: "From frame", help: "Frame numbers, the way your export names them. Leave both empty to use the percentages instead." },
+          { key: "endFrame", type: "text", label: "To frame" },
           { key: "start", type: "text", label: "Starts at (% of this section)" },
           { key: "end", type: "text", label: "Ends at (%)" },
           { key: "eyebrow", type: "text", label: "Eyebrow" },
@@ -999,7 +1006,8 @@ export const BLOCK_TYPES = {
           { key: "imageAlt", type: "text", label: "Image description (for screen readers)" },
           { key: "ctaLabel", type: "text", label: "Button label" },
           { key: "ctaHref", type: "text", label: "Button link" },
-          { key: "animation", type: "select", label: "Animation", options: SCENE_ANIMATION_OPTIONS },
+          { key: "animation", type: "select", label: "Entry animation", options: SCENE_ANIMATION_OPTIONS },
+          { key: "exitAnimation", type: "select", label: "Exit animation", options: [{ value: "same", label: "Leave the way it arrived" }, ...SCENE_ANIMATION_OPTIONS] },
           { key: "ease", type: "select", label: "Easing", options: EASE_OPTIONS },
           { key: "distance", type: "text", label: "Travel distance (px)" },
           { key: "position", type: "select", label: "Position on the stage", options: SCENE_POSITION_OPTIONS },
@@ -1114,7 +1122,7 @@ export const BLOCK_TYPES = {
         ],
         help: "A long frame sequence over a mobile connection is a real cost. The poster keeps the text and the design without the download.",
       },
-      { group: "Mobile", key: "mobileSrc", type: "video", label: "Mobile video (optional)", help: "A smaller cut of the same clip, used only on phones." },
+      { group: "Use a video instead (advanced)", key: "mobileSrc", type: "video", label: "Mobile video (optional)", help: "A smaller cut of the same clip, used only on phones." },
       { group: "Mobile", key: "mobileStageHeight", type: "text", label: "Mobile stage height", placeholder: "100svh", help: "svh is the height of the screen with the address bar showing — vh is not, which is why 100vh sections start cut off on a phone." },
       { group: "Mobile", key: "mobileScrollDuration", type: "text", label: "Mobile scroll distance (screens)", placeholder: "same as desktop" },
     ],

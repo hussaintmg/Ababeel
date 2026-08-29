@@ -43,6 +43,7 @@ export {
   trackTravel,
   trackHeightCss,
   sceneState,
+  sceneRange,
   sceneStyle,
   scenePlacement,
   overlayStyle,

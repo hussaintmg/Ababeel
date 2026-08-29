@@ -173,7 +173,7 @@ export default function useScrollController({ wrapRef, onProgress, enabled = tru
       if (!snap) return;
       cancelSettle();
       settleTimer = setTimeout(() => {
-        const target = snapTarget(progressRef.current, settings.scenes, { enabled: true });
+        const target = snapTarget(progressRef.current, settings.scenes, { enabled: true, frameCount: settings.frameCount });
         if (target === null) return;
         const { rect, view } = measure();
         const span = rect.height - view.height;

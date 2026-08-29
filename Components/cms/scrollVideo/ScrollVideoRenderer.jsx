@@ -288,8 +288,9 @@ export default function ScrollVideoRenderer({ p = {}, builderProgress = null, ra
       snap: !!p.snap && !reduced,
       snapDuration: p.snapDuration,
       scenes,
+      frameCount,
     }),
-    [p.scrollStart, p.scrollEnd, p.snap, p.snapDuration, scenes, reduced]
+    [p.scrollStart, p.scrollEnd, p.snap, p.snapDuration, scenes, reduced, frameCount]
   );
 
   const { diagnosis } = useScrollController({
@@ -408,13 +409,13 @@ export default function ScrollVideoRenderer({ p = {}, builderProgress = null, ra
         >
           {scenes.map((scene, i) => (
             <div key={i} className="relative h-full" style={{ width: `${100 / scenes.length}%` }}>
-              <VideoScene scene={{ ...scene, start: 0, end: 100, animation: "none" }} progress={1} reduced={gentle} isMobile={isMobile} accent={p.accent} />
+              <VideoScene scene={{ ...scene, start: 0, end: 100, startFrame: "", endFrame: "", animation: "none" }} progress={1} reduced={gentle} isMobile={isMobile} accent={p.accent} />
             </div>
           ))}
         </div>
       ) : (
         scenes.map((scene, i) => (
-          <VideoScene key={i} scene={scene} progress={shownProgress} reduced={gentle} isMobile={isMobile} accent={p.accent} />
+          <VideoScene key={i} scene={scene} progress={shownProgress} reduced={gentle} isMobile={isMobile} accent={p.accent} frameCount={frameCount} />
         ))
       )}
     </>

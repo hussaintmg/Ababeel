@@ -10,6 +10,7 @@ import BlockDataTab from "@/Components/owner/cms/dynamic/BlockDataTab";
 import ScrollVideoStudio from "@/Components/owner/cms/dynamic/ScrollVideoStudio";
 import FrameGenerator from "@/Components/owner/cms/dynamic/FrameGenerator";
 import AnimationPicker from "@/Components/owner/cms/scroll/AnimationPicker";
+import ScrollTimeline from "@/Components/owner/cms/scroll/ScrollTimeline";
 import { SlidersHorizontal, Palette, Database, Code2, ChevronRight } from "lucide-react";
 import CodeTab from "@/Components/owner/cms/CodeTab";
 import DecorationEditor from "@/Components/owner/cms/DecorationEditor";
@@ -138,14 +139,26 @@ export default function BlockEditor({ block, onChange, features = {}, scopeHint 
                 )}
               </div>
               <ReducedMotionNotice props={props} />
+              {/* The timeline is where the section is actually built: scrub to
+                  a frame, add a heading or a button there, say how long it
+                  stays and how it leaves. It comes before the settings because
+                  it is the work; the settings are adjustments to it. */}
+              <ScrollTimeline props={props} onChange={(next) => onChange({ ...block, props: next })} />
               <ScrollVideoStudio props={props} />
-              <FrameGenerator
-                props={props}
-                onApply={(patch) => onChange({ ...block, props: { ...props, ...patch } })}
-              />
+              <details className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+                <summary className="cursor-pointer select-none px-3 py-2.5 bg-gray-50 text-xs font-semibold text-gray-700 hover:bg-gray-100">
+                  Build a sequence from a video file
+                </summary>
+                <div className="p-3">
+                  <FrameGenerator
+                    props={props}
+                    onApply={(patch) => onChange({ ...block, props: { ...props, ...patch } })}
+                  />
+                </div>
+              </details>
             </>
           ) : null}
-          <FieldList fields={def.fields} props={props} setProp={setProp} renderLeaf={renderLeaf} />
+          <FieldList fields={def.fields} props={props} setProp={setProp} renderLeaf={renderLeaf} block={block} />
         </div>
       ) : tab === "code" ? (
         <CodeTab block={block} onChange={onChange} previewDoc={previewDoc} />
@@ -406,7 +419,11 @@ function NumBox({ label, value, onChange, placeholder }) {
  * block renders unchanged. The first group opens by default; the rest stay shut
  * until they are wanted.
  */
-function FieldList({ fields, props, setProp, renderLeaf }) {
+function FieldList({ fields, props, setProp, renderLeaf, block }) {
+  // Scroll Video builds its scenes on the timeline above, so the raw list of
+  // scenes would be the same thing twice — and the one that is harder to use.
+  // Everything else still gets its fields.
+  const usesTimeline = block?.type === "scrollVideo";
   const one = (field) => (
     <div key={field.key}>
       {field.type !== "boolean" && field.type !== "animation" ? <Label>{field.label}</Label> : null}
@@ -415,12 +432,13 @@ function FieldList({ fields, props, setProp, renderLeaf }) {
     </div>
   );
 
-  const grouped = fields.some((f) => f.group);
-  if (!grouped) return <>{fields.map(one)}</>;
+  const shown = usesTimeline ? fields.filter((f) => f.key !== "scenes") : fields;
+  const grouped = shown.some((f) => f.group);
+  if (!grouped) return <>{shown.map(one)}</>;
 
   const order = [];
   const byGroup = new Map();
-  fields.forEach((f) => {
+  shown.forEach((f) => {
     const key = f.group || "Other";
     if (!byGroup.has(key)) {
       byGroup.set(key, []);

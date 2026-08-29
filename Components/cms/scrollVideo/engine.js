@@ -261,13 +261,45 @@ const SCENE_TRANSITION = 0.22;
  * A scene with no explicit range covers the whole section, which is what makes
  * a single-scene section behave like the plain overlay it replaces.
  */
-export function sceneState(scene, progress) {
+/**
+ * A scene's range as two 0–1 positions along the section.
+ *
+ * An author with a frame sequence thinks in frames — "this caption is on from
+ * frame 20 to frame 48" — not in percentages of a scroll distance they never
+ * chose. So a scene may carry `startFrame`/`endFrame`, and those win when the
+ * sequence length is known. Percentages remain for a video, where there are no
+ * frames to count, and for every page saved before frames could be named.
+ */
+export function sceneRange(scene, frameCount = 0) {
+  const frames = Math.max(Number(frameCount) || 0, 0);
+  const hasFrames = frames > 1;
+  const rawFrameStart = scene?.startFrame;
+  const rawFrameEnd = scene?.endFrame;
+  const usesFrameRange =
+    hasFrames &&
+    ((rawFrameStart !== "" && rawFrameStart != null) || (rawFrameEnd !== "" && rawFrameEnd != null));
+
+  if (usesFrameRange) {
+    const last = frames - 1;
+    // Frame numbers are 1-based for the author, because that is how every
+    // export names them; internally everything is a 0-based index.
+    const a = clamp((num(rawFrameStart, 1) || 1) - 1, 0, last);
+    const b = clamp((rawFrameEnd === "" || rawFrameEnd == null ? frames : num(rawFrameEnd, frames)) - 1, 0, last);
+    return { start: Math.min(a, b) / last, end: Math.max(a, b) / last };
+  }
+
   const rawStart = scene?.start === "" || scene?.start == null ? 0 : num(scene.start, 0);
   const rawEnd = scene?.end === "" || scene?.end == null ? 100 : num(scene.end, 100);
   // Authors do get these the wrong way round; swapping is kinder than blanking
   // the scene, and the editor warns about it separately.
-  const start = clamp(Math.min(rawStart, rawEnd), 0, 100) / 100;
-  const end = clamp(Math.max(rawStart, rawEnd), 0, 100) / 100;
+  return {
+    start: clamp(Math.min(rawStart, rawEnd), 0, 100) / 100,
+    end: clamp(Math.max(rawStart, rawEnd), 0, 100) / 100,
+  };
+}
+
+export function sceneState(scene, progress, frameCount = 0) {
+  const { start, end } = sceneRange(scene, frameCount);
   const span = end - start;
 
   const p = clamp(progress, 0, 1);
@@ -303,22 +335,10 @@ export function sceneState(scene, progress) {
  * a scene that slides up on the way in slides back down on the way out without
  * the author configuring anything twice.
  */
-export function sceneStyle(scene, progress, { reduced = false } = {}) {
-  const { active, enter, exit } = sceneState(scene, progress);
-  if (!active) return { active: false, style: { opacity: 0, visibility: "hidden" } };
-
-  const kind = scene?.animation || "fade-up";
-  const ease = scene?.ease || "power2.out";
-  const distance = num(scene?.distance, 40) || 40;
-
-  // 1 = fully in, 0 = fully out. Reduced motion keeps the fade and drops the
-  // travel: appearing is information, sliding is decoration.
-  const shown = applyEase(ease, enter) * (1 - applyEase("power2.in", exit));
-  const away = 1 - shown;
-
-  const style = { opacity: kind === "none" ? 1 : shown };
-  if (reduced || kind === "none" || kind === "fade") return { active: true, style };
-
+/** The transform and filter one animation produces at `away` (0 = fully in). */
+function animationStyle(kind, away, distance) {
+  const style = {};
+  if (kind === "none" || kind === "fade") return style;
   const parts = [];
   if (kind === "fade-up") parts.push(`translate3d(0, ${(away * distance).toFixed(2)}px, 0)`);
   if (kind === "fade-down") parts.push(`translate3d(0, ${(-away * distance).toFixed(2)}px, 0)`);
@@ -328,7 +348,34 @@ export function sceneStyle(scene, progress, { reduced = false } = {}) {
   if (kind === "zoom-out") parts.push(`scale(${(1 + away * 0.14).toFixed(4)})`);
   if (parts.length) style.transform = parts.join(" ");
   if (kind === "blur") style.filter = `blur(${(away * 12).toFixed(2)}px)`;
-  return { active: true, style };
+  return style;
+}
+
+export function sceneStyle(scene, progress, { reduced = false, frameCount = 0 } = {}) {
+  const { active, enter, exit } = sceneState(scene, progress, frameCount);
+  if (!active) return { active: false, style: { opacity: 0, visibility: "hidden" } };
+
+  const kind = scene?.animation || "fade-up";
+  // An exit of its own, when the author set one. Left blank it leaves the way
+  // it arrived, which is what most sections want and what this always did.
+  const exitKind = scene?.exitAnimation && scene.exitAnimation !== "same" ? scene.exitAnimation : kind;
+  const ease = scene?.ease || "power2.out";
+  const distance = num(scene?.distance, 40) || 40;
+
+  const entered = applyEase(ease, enter);
+  const left = applyEase("power2.in", exit);
+  // 1 = fully in, 0 = fully out.
+  const shown = entered * (1 - left);
+
+  const style = { opacity: kind === "none" && exitKind === "none" ? 1 : shown };
+  if (reduced) return { active: true, style };
+
+  // Whichever end it is nearer decides which animation is showing.
+  const leaving = left > 0;
+  const motion = leaving
+    ? animationStyle(exitKind, left, distance)
+    : animationStyle(kind, 1 - entered, distance);
+  return { active: true, style: { ...style, ...motion } };
 }
 
 /** Flex/inset classes for a scene's position on the stage. */
@@ -403,12 +450,13 @@ export function overlayStyle(item, progress, { reduced = false } = {}) {
  * Returns null when nothing is close enough to be worth moving to, which is
  * what stops snapping from feeling like the page fighting the reader.
  */
-export function snapTarget(progress, scenes, { enabled, threshold = 0.12 } = {}) {
+export function snapTarget(progress, scenes, { enabled, threshold = 0.12, frameCount = 0 } = {}) {
   if (!enabled) return null;
   const points = new Set([0, 1]);
   (Array.isArray(scenes) ? scenes : []).forEach((s) => {
-    points.add(clamp(num(s?.start, 0) / 100, 0, 1));
-    points.add(clamp(s?.end === "" || s?.end == null ? 1 : num(s.end, 100) / 100, 0, 1));
+    const { start, end } = sceneRange(s, frameCount);
+    points.add(start);
+    points.add(end);
   });
   let best = null;
   let bestGap = Infinity;

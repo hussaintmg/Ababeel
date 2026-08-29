@@ -508,3 +508,89 @@ describe("what shows while the sequence is still downloading", () => {
     expect(coarseStride(0)).toBe(1);
   });
 });
+
+/* --------------------------------------------------------------------- *
+ * Saying when an element is on, in frames.
+ *
+ * An author with a sequence thinks "the heading is on from frame 12 to
+ * frame 40", not "from 18% to 61% of a scroll distance I never chose".
+ * --------------------------------------------------------------------- */
+import { sceneRange } from "@/Components/cms/ScrollVideo";
+
+describe("frame ranges", () => {
+  test("frame numbers map onto the section, counting from one", () => {
+    // 100 frames: frame 1 is the very start, frame 100 the very end.
+    expect(sceneRange({ startFrame: "1", endFrame: "100" }, 100)).toEqual({ start: 0, end: 1 });
+    const mid = sceneRange({ startFrame: "1", endFrame: "50" }, 100);
+    expect(mid.start).toBe(0);
+    expect(mid.end).toBeCloseTo(49 / 99);
+  });
+
+  test("frames win over percentages when both are set", () => {
+    const r = sceneRange({ startFrame: "10", endFrame: "20", start: "80", end: "90" }, 100);
+    expect(r.start).toBeCloseTo(9 / 99);
+    expect(r.end).toBeCloseTo(19 / 99);
+  });
+
+  test("percentages are still used when no frames are given", () => {
+    expect(sceneRange({ start: "20", end: "60" }, 100)).toEqual({ start: 0.2, end: 0.6 });
+  });
+
+  test("percentages are used for a video, where there are no frames to count", () => {
+    expect(sceneRange({ startFrame: "10", endFrame: "20", start: "20", end: "60" }, 0)).toEqual({ start: 0.2, end: 0.6 });
+  });
+
+  test("only a start frame means 'from here to the end'", () => {
+    const r = sceneRange({ startFrame: "50" }, 100);
+    expect(r.start).toBeCloseTo(49 / 99);
+    expect(r.end).toBe(1);
+  });
+
+  test("frames outside the sequence are clamped rather than breaking the scene", () => {
+    expect(sceneRange({ startFrame: "-5", endFrame: "9999" }, 100)).toEqual({ start: 0, end: 1 });
+  });
+
+  test("frames the wrong way round are swapped", () => {
+    const a = sceneRange({ startFrame: "60", endFrame: "20" }, 100);
+    const b = sceneRange({ startFrame: "20", endFrame: "60" }, 100);
+    expect(a).toEqual(b);
+  });
+
+  test("a scene really is off outside its frames and on inside them", () => {
+    const scene = { startFrame: "20", endFrame: "40" };
+    const at = (f) => sceneState(scene, (f - 1) / 99, 100);
+    expect(at(5).active).toBe(false);
+    expect(at(30).active).toBe(true);
+    expect(at(90).active).toBe(false);
+  });
+});
+
+describe("leaving differently from arriving", () => {
+  const scene = { startFrame: "20", endFrame: "60", animation: "fade-right", exitAnimation: "fade-left", distance: "50" };
+  const at = (f) => sceneStyle(scene, (f - 1) / 99, { frameCount: 100 });
+
+  test("the entry animation runs on the way in", () => {
+    const entering = at(21).style;
+    expect(entering.transform).toMatch(/translate3d\(\d/); // positive x: comes from the right
+  });
+
+  test("the exit animation runs on the way out", () => {
+    const leaving = at(59).style;
+    expect(leaving.transform).toMatch(/translate3d\(-/); // negative x: leaves to the left
+  });
+
+  test("left unset, it leaves the way it arrived", () => {
+    const same = { startFrame: "20", endFrame: "60", animation: "fade-up", exitAnimation: "same", distance: "50" };
+    const leaving = sceneStyle(same, (58 - 1) / 99, { frameCount: 100 }).style;
+    expect(leaving.transform).toMatch(/translate3d\(0, \d/);
+  });
+
+  test("it is fully visible in the middle either way", () => {
+    expect(at(40).style.opacity).toBeCloseTo(1, 1);
+  });
+
+  test("reduced motion keeps the fade and drops both animations", () => {
+    const s = sceneStyle(scene, (58 - 1) / 99, { frameCount: 100, reduced: true }).style;
+    expect(s.transform).toBeUndefined();
+  });
+});

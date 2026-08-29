@@ -17,14 +17,14 @@ import { sceneStyle, scenePlacement } from "./engine";
 
 const ALIGN = { left: "text-left", center: "text-center", right: "text-right" };
 
-export default function VideoScene({ scene, progress, reduced = false, isMobile = false, accent = "#f26722" }) {
+export default function VideoScene({ scene, progress, reduced = false, isMobile = false, accent = "#f26722", frameCount = 0 }) {
   if (!scene) return null;
 
   const visibility = scene.visibility || "both";
   if (visibility === "desktop" && isMobile) return null;
   if (visibility === "mobile" && !isMobile) return null;
 
-  const { active, style } = sceneStyle(scene, progress, { reduced });
+  const { active, style } = sceneStyle(scene, progress, { reduced, frameCount });
   const place = scenePlacement(scene.position);
   const align = ALIGN[scene.align] || ALIGN.center;
   const Heading = ["h1", "h2", "h3", "h4"].includes(scene.headingLevel) ? scene.headingLevel : "h2";
