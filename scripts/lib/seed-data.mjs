@@ -190,24 +190,38 @@ export function homePageBlocks() {
   const up = UP;
 
   return [
+    // A photograph, not a flat panel: the renderer angles a dark scrim from
+    // the text side so the picture stays readable as a picture.
     block("hero", {
       eyebrow: "Accredited safety training",
       title: "Competence you can evidence",
       subtitle:
         "Internationally recognised qualifications, delivered by practitioners who have done the work.",
-      align: "left", bgType: "gradient", bgColor: INK,
-      gradFrom: INK, gradTo: "#22334a", gradAngle: "135", textColor: "#ffffff",
-      minHeight: "560", accent: BRAND, image: "",
+      align: "left", bgType: "solid", bgColor: INK, textColor: "#ffffff",
+      image: "/bannerv2.webp", overlay: "62",
+      minHeight: "620", accent: BRAND,
       badges: "Accredited qualifications | Verifiable certificates | Practitioner trainers",
       primaryCta: { label: "Browse courses", href: "/courses" },
       secondaryCta: { label: "See the schedule", href: "/schedule" },
     }),
 
+    // A dark numbers band running straight out of the hero. Every figure is a
+    // structural fact of the platform, not a marketing claim.
+    block("stats", {
+      title: "", subtitle: "", accent: BRAND, bgColor: "#060d18",
+      items: [
+        { value: "100%", label: "Certificates verifiable online" },
+        { value: "4", label: "Course levels, beginner to professional" },
+        { value: "3", label: "Delivery modes — online, in person, blended" },
+        { value: "1", label: "Named contact for every booking" },
+      ],
+    }, { textColor: "#ffffff", animation: "fade" }),
+
     block("accreditationLogos", {
       eyebrow: "", title: "Accredited and approved", subtitle: "", align: "center",
       trustStripOnly: true, layout: "strip", grayscale: true,
       ctaLabel: "", ctaHref: "/about/accreditations",
-    }, { bgColor: INK_MIST, animation: "fade" }),
+    }, { animation: "fade" }),
 
     block("split", {
       eyebrow: "Who we are",
@@ -219,9 +233,10 @@ export function homePageBlocks() {
         { text: "Delivered by working practitioners" },
         { text: "Online, in person or blended" },
       ],
-      image: "", imageAlt: "", imageSide: "right", accent: BRAND,
+      image: "/2.png", imageAlt: "Trainers working on site", imageSide: "right",
+      accent: BRAND, bgColor: "", badgeValue: "UK", badgeLabel: "Registered company",
       cta: { label: "More about us", href: "/about-us" },
-    }, { animation: "fade-right" }),
+    }, { bgColor: INK_MIST, animation: "fade-right" }),
 
     block("courseGrid", {
       eyebrow: "Training", title: "Featured courses",
@@ -240,10 +255,11 @@ export function homePageBlocks() {
         { icon: "", title: "Pick a date", text: "Every course lists its upcoming sessions. Choose the one that fits and press Register.", image: "", href: "/schedule" },
         { icon: "", title: "Register — no online payment", text: "Send the registration form and our team confirms your place and the arrangements by email.", image: "", href: "/registration" },
       ],
-    }, up),
+    }, { bgColor: INK_MIST, animation: "fade-up" }),
 
     block("cardGrid", {
-      title: "Why Ababeel", subtitle: "", columns: "4",
+      eyebrow: "", title: "Why Ababeel", subtitle: "", columns: "4",
+      accent: BRAND, variant: "plain",
       items: [
         { icon: "🎓", title: "Accredited", text: "Qualifications awarded by recognised bodies, not certificates of attendance.", image: "", href: "/about/accreditations" },
         { icon: "🛠️", title: "Practitioner-led", text: "Taught by people who have managed the risks they are teaching about.", image: "", href: "" },
@@ -256,7 +272,7 @@ export function homePageBlocks() {
       eyebrow: "Accreditation", title: "Who awards our qualifications", subtitle: "",
       align: "center", layout: "strip", grayscale: true, linkToBody: true,
       ctaLabel: "All awarding bodies", ctaHref: "/awarding-bodies",
-    }, up),
+    }, { bgColor: INK_MIST, animation: "fade-up" }),
 
     block("scheduleList", {
       eyebrow: "Dates", title: "Upcoming sessions", subtitle: "", align: "left",
