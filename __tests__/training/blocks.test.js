@@ -1,0 +1,125 @@
+import { BLOCK_TYPES, LIVE_BLOCK_TYPES } from "@/Components/cms/blockSchemas";
+import { TRAINING_TEMPLATES } from "@/Components/cms/trainingTemplates";
+import { TEMPLATES } from "@/Components/cms/templates";
+import { TRAINING_BLOCK_TYPES as DATA_BLOCK_TYPES } from "@/lib/cms/trainingBlocks";
+import { TRAINING_RENDERERS } from "@/Components/cms/TrainingBlocks";
+
+/**
+ * Guards for the catalogue blocks and the templates built on them.
+ *
+ * The prop-name check exists because a template that sets `description` on a
+ * block whose prop is `text` renders a heading with nothing under it — valid
+ * JavaScript, a real block type, and silently broken. That is what happened
+ * while these templates were being written, and only the styling test caught
+ * it, by accident.
+ */
+
+describe("catalogue blocks are wired end to end", () => {
+  const schemaKeys = [...LIVE_BLOCK_TYPES].sort();
+
+  test("every live block has a schema, a renderer and a data loader", () => {
+    expect(schemaKeys.length).toBeGreaterThanOrEqual(7);
+    expect(Object.keys(TRAINING_RENDERERS).sort()).toEqual(schemaKeys);
+    // A block the loader does not know about would render permanently empty.
+    expect([...DATA_BLOCK_TYPES].sort()).toEqual(schemaKeys);
+  });
+
+  test("each one declares an empty-state message", () => {
+    for (const type of schemaKeys) {
+      const def = BLOCK_TYPES[type];
+      // Logo strips fall back to a built-in line; the rest let the owner say
+      // what would fill the section.
+      if (type === "awardingBodyLogos" || type === "accreditationLogos") continue;
+      expect(typeof def.defaults.emptyMessage).toBe("string");
+      expect(def.defaults.emptyMessage.length).toBeGreaterThan(0);
+    }
+  });
+
+  test("none of them ships an author-typed items list", () => {
+    // Their content comes from the database. An `items` default would imply
+    // otherwise and would be silently overwritten by `_items`.
+    for (const type of schemaKeys) {
+      expect(BLOCK_TYPES[type].defaults.items).toBeUndefined();
+    }
+  });
+});
+
+describe("template props match their block's schema", () => {
+  // Props the resolver adds, which no template should set by hand.
+  const RESERVED = new Set(["_items"]);
+
+  const check = (templates) => {
+    const problems = [];
+    for (const template of templates) {
+      for (const spec of template.blocks || []) {
+        const def = BLOCK_TYPES[spec.type];
+        if (!def) {
+          problems.push(`${template.id}: unknown block "${spec.type}"`);
+          continue;
+        }
+        const known = new Set(Object.keys(def.defaults || {}));
+        for (const key of Object.keys(spec.props || {})) {
+          if (RESERVED.has(key)) {
+            problems.push(`${template.id}: sets reserved prop "${key}"`);
+          } else if (!known.has(key)) {
+            problems.push(`${template.id}: "${spec.type}" has no prop "${key}"`);
+          }
+        }
+      }
+    }
+    expect(problems).toEqual([]);
+  };
+
+  test("the ABA templates set only props their blocks have", () => {
+    check(TRAINING_TEMPLATES);
+  });
+
+  test("every template in the library does", () => {
+    check(TEMPLATES);
+  });
+});
+
+describe("ABA templates", () => {
+  test("cover the sections the brief asks for", () => {
+    const byCategory = (name) => TRAINING_TEMPLATES.filter((t) => t.category === name);
+    expect(byCategory("ABA — Heroes").length).toBeGreaterThanOrEqual(6);
+    expect(byCategory("ABA — Call To Action").length).toBeGreaterThanOrEqual(6);
+    expect(byCategory("ABA — Reviews").length).toBeGreaterThanOrEqual(5);
+    expect(byCategory("ABA — Courses").length).toBeGreaterThanOrEqual(5);
+    expect(byCategory("ABA — People").length).toBeGreaterThanOrEqual(5);
+    expect(byCategory("ABA — Schedule").length).toBeGreaterThanOrEqual(3);
+    expect(byCategory("ABA — Accreditation").length).toBeGreaterThanOrEqual(3);
+  });
+
+  test("the review templates cover five distinct layouts", () => {
+    const layouts = TRAINING_TEMPLATES.filter((t) => t.category === "ABA — Reviews").flatMap((t) =>
+      t.blocks.map((b) => b.props.layout),
+    );
+    expect(new Set(layouts).size).toBeGreaterThanOrEqual(5);
+  });
+
+  test("the full home page assembles the sections the brief lists", () => {
+    const home = TRAINING_TEMPLATES.find((t) => t.id === "aba-page-home");
+    expect(home).toBeDefined();
+    const types = home.blocks.map((b) => b.type);
+    for (const required of [
+      "hero",
+      "accreditationLogos",
+      "split",
+      "courseGrid",
+      "cardGrid",
+      "awardingBodyLogos",
+      "scheduleList",
+      "consultantList",
+      "reviewWall",
+      "cta",
+    ]) {
+      expect(types).toContain(required);
+    }
+  });
+
+  test("no template promises a payment step", () => {
+    const text = JSON.stringify(TRAINING_TEMPLATES).toLowerCase();
+    expect(text).not.toMatch(/checkout|pay now|add to cart|buy now|card details/);
+  });
+});

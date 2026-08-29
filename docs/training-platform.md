@@ -206,12 +206,68 @@ awarding bodies, and published custom CMS pages, minus anything the owner has
 hidden or marked `seo.noIndex`. `/registration` is excluded and sets `noindex` —
 it is a form that needs a course in its query string to mean anything.
 
+## Page-builder blocks
+
+Seven blocks read the live catalogue: `courseGrid`, `scheduleList`,
+`awardingBodyLogos`, `accreditationLogos`, `consultantList`, `teamGrid` and
+`reviewWall`.
+
+The dynamic CMS could already bind a block to a saved query, but that asks an
+owner to configure a data source, choose a model, add filters and get the
+publication rules right before a "Featured courses" section shows one course.
+These declare what they need in their props, and `lib/cms/trainingBlocks.js`
+resolves it server-side before the block reaches the browser — so the renderers
+are presentational, the publication rules stay in one place, and three sections
+asking for featured courses is one query.
+
+`hasTrainingBlocks` is deliberately separate from `hasDynamicContent`: catalogue
+data is identical for every visitor, so such a page resolves on the server but
+its response stays shared-cacheable. Conflating them would either leave the
+blocks empty or make every page carrying one uncacheable.
+
+Guarded by `__tests__/training/blocks.test.js`, which checks each block has a
+schema, a renderer *and* a data loader, and that every template sets only props
+its block actually has — a template setting `description` where the block reads
+`text` renders a heading with nothing under it, which is valid JavaScript and
+silently broken.
+
+## Template library
+
+`Components/cms/trainingTemplates.js` adds 30+ sections in nine "ABA —"
+categories: 6 heroes, 6 CTAs, 5 review layouts, 5 course sections, 5 people
+sections, 3 schedule, 3 accreditation, 4 content, and one full home page.
+
+## Variables
+
+The registry discovers the new models automatically — registering them in the
+model barrel was the whole job — and follows references, so
+`{{trainingCourse.awardingBody.name}}` and `{{courseReferenceSession.course.name}}`
+resolve. Names follow the existing camelised-model convention
+(`trainingCourse`, `courseReferenceSession`) rather than the brief's shorthand.
+
+`Registration` and `RegistrationField` are correctly absent.
+`__tests__/training/variables.test.js` asserts both halves, and that
+`TrainingCourse` still exposes no price field.
+
+## Seeding the home page
+
+```
+npm run seed:training-home -- --dry-run    # show what would change
+npm run seed:training-home                 # write it, DISABLED
+npm run seed:training-home -- --publish    # write it and enable it
+```
+
+It backs up the existing home page to JSON first and leaves the new one
+disabled unless `--publish` is passed, so the current site keeps rendering until
+someone has looked at the new page in the CMS. The prose panels carry
+placeholder copy: those are the client's words to write.
+
 ## Status
 
 Done: data models, domain layer, owner CRUD APIs, registration APIs, public read
-APIs, seed script, design system, owner dashboard screens, all public pages,
-navigation wiring, sitemap and robots.
+APIs, seed scripts, design system, owner dashboard screens, all public pages,
+navigation wiring, sitemap and robots, catalogue page-builder blocks, template
+library, home-page seed.
 
-Remaining: page-builder blocks and template-library additions (heroes, CTAs,
-testimonial layouts, course/schedule/consultant sections), a home-page assembly,
-and the performance and accessibility passes.
+Remaining: performance and accessibility passes, and a full QA sweep against the
+brief's acceptance criteria.

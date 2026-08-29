@@ -25,6 +25,8 @@ export const SCENE_POSITION_OPTIONS = SCENE_POSITIONS;
 export const OVERLAY_KIND_OPTIONS = OVERLAY_KINDS;
 export const VISIBILITY_OPTIONS = VISIBILITY;
 
+import { TRAINING_BLOCK_TYPES } from "@/Components/cms/trainingBlockSchemas";
+
 let _uid = 0;
 export function newId() {
   _uid += 1;
@@ -1143,6 +1145,15 @@ export const BLOCK_TYPES = {
     ],
   },
 };
+
+// The catalogue blocks live in their own file — they read published courses,
+// sessions and people from the database rather than asking the author to type
+// their content, which makes them a different kind of block worth reading as
+// one group. Merged here so the builder treats them like any other.
+Object.assign(BLOCK_TYPES, TRAINING_BLOCK_TYPES);
+
+/** Blocks whose content comes from the training catalogue, not from props. */
+export const LIVE_BLOCK_TYPES = new Set(Object.keys(TRAINING_BLOCK_TYPES));
 
 export const BLOCK_TYPE_LIST = Object.entries(BLOCK_TYPES).map(([type, def]) => ({
   type,
