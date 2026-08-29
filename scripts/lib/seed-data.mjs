@@ -184,16 +184,15 @@ function blockFactory(prefix) {
 }
 
 const UP = { animation: "fade-up" };
+const BLACK = "#060d18";
+const ON_INK = { bgColor: INK, textColor: "#ffffff", animation: "fade-up" };
+const ON_BLACK = { bgColor: BLACK, textColor: "#ffffff", animation: "fade-up" };
 
 export function homePageBlocks() {
   const block = blockFactory("home");
   const up = UP;
-  const BLACK = "#060d18";
-  // Sections alternate strictly down the page: dark, light, black, white —
-  // the dark bands set a text colour so every renderer flips to its light
-  // heading and button forms.
-  const onInk = { bgColor: INK, textColor: "#ffffff", animation: "fade-up" };
-  const onBlack = { bgColor: BLACK, textColor: "#ffffff", animation: "fade-up" };
+  const onInk = ON_INK;
+  const onBlack = ON_BLACK;
 
   return [
     // 1 — DARK. A photograph, not a flat panel: the renderer angles a dark
@@ -467,6 +466,26 @@ export function trainingPageDocs() {
         ctaLabel: "", ctaHref: "/about/team",
         emptyMessage: "Team profiles are on their way.",
       }, UP),
+      b("split", {
+        eyebrow: "How we work",
+        title: "Practitioners first",
+        text:
+          "<p>Replace this with a short account of how your trainers keep one foot in industry — the audits, the site days, the incident work. It is what separates a lesson from a war story with a syllabus.</p>",
+        bullets: [
+          { text: "Every trainer holds a current industry role or licence" },
+          { text: "Course material reviewed after every delivery" },
+          { text: "Assessment moderated by the awarding body" },
+        ],
+        image: "/8.png", imageAlt: "Trainer at work on site", imageSide: "left",
+        accent: BRAND, bgColor: "", badgeValue: "", badgeLabel: "",
+        cta: { label: "Meet our consultants", href: "/about/consultants" },
+      }, { ...ON_BLACK, animation: "fade-left" }),
+      b("consultantList", {
+        eyebrow: "Specialists", title: "Consultants behind the courses", subtitle: "",
+        align: "center", display: "cards", limit: "3", columns: "3",
+        ctaLabel: "All consultants", ctaHref: "/about/consultants",
+        emptyMessage: "Consultant profiles are on their way.",
+      }, UP),
       b("cta", {
         title: "Want to talk to the people who will actually train you?",
         text: "Ask us anything about a course, a date or a qualification route.",
@@ -497,10 +516,22 @@ export function trainingPageDocs() {
           { text: "Risk assessment and method statements" },
           { text: "Competence and training-needs analysis" },
         ],
-        image: "", imageAlt: "", imageSide: "left", accent: BRAND,
-        bgColor: "", badgeValue: "", badgeLabel: "",
+        image: "/10.png", imageAlt: "Consultant auditing a site", imageSide: "right",
+        accent: BRAND, bgColor: "", badgeValue: "", badgeLabel: "",
         cta: { label: "Discuss your project", href: "/contact-us" },
-      }, { animation: "fade-left" }),
+      }, { ...ON_BLACK, animation: "fade-right" }),
+      b("reviewWall", {
+        eyebrow: "Reviews", title: "What clients say", subtitle: "", align: "center",
+        layout: "google", limit: "3", columns: "3", featuredOnly: false,
+        emptyMessage: "Reviews will appear here once they are published.",
+      }, UP),
+      b("cta", {
+        title: "Put a specialist on your problem",
+        text: "Tell us what you are dealing with and we will match the right consultant to it.",
+        button: { label: "Start a conversation", href: "/contact-us" },
+        secondaryButton: { label: "", href: "" },
+        bgColor: INK, textColor: "#ffffff",
+      }, UP),
     ]);
   }
   {
@@ -513,6 +544,20 @@ export function trainingPageDocs() {
         trustStripOnly: false, layout: "grid", grayscale: false,
         ctaLabel: "", ctaHref: "/about/accreditations",
       }, UP),
+      b("split", {
+        eyebrow: "Why it matters",
+        title: "What accreditation actually means",
+        text:
+          "<p>An accreditation is a standing audit: an external body checks how we train, assess and keep records, and keeps checking. It is the difference between a certificate that says you attended and a qualification someone else will stake their name on.</p>",
+        bullets: [
+          { text: "Externally audited delivery and assessment" },
+          { text: "Qualified, monitored trainers" },
+          { text: "Certificates any employer can verify" },
+        ],
+        image: "/9.png", imageAlt: "Assessment in progress", imageSide: "left",
+        accent: BRAND, bgColor: "", badgeValue: "", badgeLabel: "",
+        cta: { label: "Verify a certificate", href: "/verify-certificate" },
+      }, { ...ON_BLACK, animation: "fade-left" }),
       b("awardingBodyLogos", {
         eyebrow: "Qualifications", title: "Who awards our qualifications", subtitle: "",
         align: "center", layout: "strip", grayscale: true, linkToBody: true,
@@ -523,6 +568,81 @@ export function trainingPageDocs() {
         text: "Every Ababeel certificate can be verified online in seconds.",
         button: { label: "Verify a certificate", href: "/verify-certificate" },
         secondaryButton: { label: "Contact us", href: "/contact-us" },
+        bgColor: INK, textColor: "#ffffff",
+      }, UP),
+    ]);
+  }
+
+  // The About page itself — the page the dropdown is named after.
+  {
+    const b = blockFactory("about");
+    add("about-us", "About Us", "/about-us", [
+      b("hero", {
+        eyebrow: "Who we are",
+        title: "About Ababeel",
+        subtitle:
+          "A UK-based training and certification platform, built by practitioners who believe competence should be provable.",
+        align: "left", bgType: "solid", bgColor: INK, textColor: "#ffffff",
+        image: "/9.png", overlay: "62",
+        minHeight: "480", accent: BRAND,
+        badges: "",
+        primaryCta: { label: "Browse courses", href: "/courses" },
+        secondaryCta: { label: "Contact us", href: "/contact-us" },
+      }),
+      b("split", {
+        eyebrow: "Our story",
+        title: "Where Ababeel comes from",
+        text:
+          "<p>Replace this with your own story — who founded Ababeel, why, and what you set out to fix about safety training. Two short paragraphs are plenty; sincerity beats length.</p>",
+        bullets: [
+          { text: "Accredited by recognised awarding bodies" },
+          { text: "Delivered by working practitioners" },
+          { text: "Online, in person or blended" },
+        ],
+        image: "/2.png", imageAlt: "The Ababeel team on site", imageSide: "right",
+        accent: BRAND, bgColor: "", badgeValue: "UK", badgeLabel: "Registered company",
+        cta: { label: "", href: "" },
+      }, { animation: "fade-right" }),
+      b("stats", {
+        title: "", subtitle: "", accent: BRAND, bgColor: BLACK,
+        items: [
+          { value: "100%", label: "Certificates verifiable online" },
+          { value: "4", label: "Course levels, beginner to professional" },
+          { value: "3", label: "Delivery modes — online, in person, blended" },
+          { value: "1", label: "Named contact for every booking" },
+        ],
+      }, { textColor: "#ffffff", animation: "fade" }),
+      b("cardGrid", {
+        eyebrow: "What we hold ourselves to", title: "Our values", subtitle: "", columns: "4",
+        accent: BRAND, variant: "plain",
+        items: [
+          { icon: "🤝", title: "Integrity", text: "Qualifications awarded on evidence, with transparency and independence.", image: "", href: "" },
+          { icon: "✅", title: "Quality assurance", text: "Rigorous approval and monitoring, so the standard holds everywhere we deliver.", image: "", href: "" },
+          { icon: "📋", title: "Compliance", text: "Frameworks aligned with UK regulatory standards and kept current.", image: "", href: "" },
+          { icon: "🛡️", title: "Accountability", text: "We stand behind every certificate that carries our name.", image: "", href: "" },
+        ],
+      }, UP),
+      b("teamGrid", {
+        eyebrow: "People", title: "The people behind it", subtitle: "",
+        align: "center", limit: "4", columns: "4", leadershipOnly: false, showBio: false,
+        ctaLabel: "Meet the whole team", ctaHref: "/about/team",
+        emptyMessage: "Team profiles are on their way.",
+      }, ON_INK),
+      b("accreditationLogos", {
+        eyebrow: "", title: "Accredited and approved", subtitle: "", align: "center",
+        trustStripOnly: true, layout: "strip", grayscale: true,
+        ctaLabel: "See our accreditations", ctaHref: "/about/accreditations",
+      }, UP),
+      b("reviewWall", {
+        eyebrow: "Reviews", title: "What our learners say", subtitle: "", align: "center",
+        layout: "google", limit: "3", columns: "3", featuredOnly: false,
+        emptyMessage: "Reviews will appear here once they are published.",
+      }, ON_BLACK),
+      b("cta", {
+        title: "Get to know us properly",
+        text: "The quickest way is a conversation about the training you actually need.",
+        button: { label: "Contact us", href: "/contact-us" },
+        secondaryButton: { label: "Why Ababeel", href: "/why-ababeel" },
         bgColor: INK, textColor: "#ffffff",
       }, UP),
     ]);
@@ -547,7 +667,8 @@ export function whyAbabeelDoc() {
       pageHero(b, "Why Ababeel", "Training that holds up where it matters",
         "What working with Ababeel actually gets you — replace this line with your own words in the CMS."),
       b("cardGrid", {
-        title: "Why Ababeel", subtitle: "", columns: "4",
+        eyebrow: "", title: "Why Ababeel", subtitle: "", columns: "4",
+        accent: BRAND, variant: "plain",
         items: [
           { icon: "🎓", title: "Accredited", text: "Qualifications awarded by recognised bodies, not certificates of attendance.", image: "", href: "/about/accreditations" },
           { icon: "🛠️", title: "Practitioner-led", text: "Taught by people who have managed the risks they are teaching about.", image: "", href: "" },
@@ -565,10 +686,10 @@ export function whyAbabeelDoc() {
           { text: "Certificates verifiable online" },
           { text: "No online payment — a person confirms every booking" },
         ],
-        image: "", imageAlt: "", imageSide: "right", accent: BRAND,
-        bgColor: "", badgeValue: "", badgeLabel: "",
+        image: "/11.png", imageAlt: "Practical training in progress", imageSide: "right",
+        accent: BRAND, bgColor: "", badgeValue: "", badgeLabel: "",
         cta: { label: "See our accreditations", href: "/about/accreditations" },
-      }, { animation: "fade-right" }),
+      }, { ...ON_BLACK, animation: "fade-right" }),
       b("courseGrid", {
         eyebrow: "Training", title: "Start with a course",
         subtitle: "The programmes we run most often.",
@@ -581,7 +702,16 @@ export function whyAbabeelDoc() {
         eyebrow: "Reviews", title: "What our learners say", subtitle: "", align: "center",
         layout: "google", limit: "3", columns: "3", featuredOnly: false,
         emptyMessage: "Reviews will appear here once they are published.",
-      }, { bgColor: INK_MIST, animation: "fade-up" }),
+      }, ON_INK),
+      b("faq", {
+        title: "Common questions", subtitle: "", columns: "2", accent: BRAND,
+        items: [
+          { q: "How do I register for a course?", a: "Open the course, choose an upcoming date and press Register. The form takes a couple of minutes and our team confirms your place by email." },
+          { q: "Do I pay online?", a: "No. There is no online payment on this site — once you register, our team confirms the arrangements with you directly." },
+          { q: "Who awards the qualification?", a: "Each course names its awarding body on the course page, and the Awarding Bodies page lists every organisation we work with." },
+          { q: "Can you train a whole team?", a: "Yes — tell us what you need through the contact page and we will schedule a dedicated session around your operation." },
+        ],
+      }, UP),
       b("cta", {
         title: "Ready to get your team qualified?",
         text: "Tell us what you need and we will put together a training plan that fits.",
