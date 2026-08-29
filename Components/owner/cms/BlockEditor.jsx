@@ -11,6 +11,7 @@ import ScrollVideoStudio from "@/Components/owner/cms/dynamic/ScrollVideoStudio"
 import FrameGenerator from "@/Components/owner/cms/dynamic/FrameGenerator";
 import AnimationPicker from "@/Components/owner/cms/scroll/AnimationPicker";
 import ScrollTimeline from "@/Components/owner/cms/scroll/ScrollTimeline";
+import VideoRepair from "@/Components/owner/cms/scroll/VideoRepair";
 import { SlidersHorizontal, Palette, Database, Code2, ChevronRight } from "lucide-react";
 import CodeTab from "@/Components/owner/cms/CodeTab";
 import DecorationEditor from "@/Components/owner/cms/DecorationEditor";
@@ -139,6 +140,7 @@ export default function BlockEditor({ block, onChange, features = {}, scopeHint 
                 )}
               </div>
               <ReducedMotionNotice props={props} />
+              <VideoRepair props={props} />
               {/* The timeline is where the section is actually built: scrub to
                   a frame, add a heading or a button there, say how long it
                   stays and how it leaves. It comes before the settings because

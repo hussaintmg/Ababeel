@@ -90,6 +90,12 @@ export default function ScrollVideoRenderer({ p = {}, builderProgress = null, ra
   // A source that turns out not to be playable at all. The section falls back
   // rather than showing a dead <video>.
   const [videoBroken, setVideoBroken] = useState(false);
+  // A video the browser will not seek. Distinct from one that errors: this one
+  // loads, shows its first frame, and simply never reports a duration or a
+  // seekable range — which is what an MP4 whose index sits at the end of the
+  // file does. The scroll then drives nothing at all, silently, and the section
+  // looks frozen with no clue as to why.
+  const [videoUnseekable, setVideoUnseekable] = useState(false);
   // Whether the canvas has drawn a frame yet. Not the same as "a frame has
   // downloaded": on a cold cache there is a window where the element exists,
   // the scroll is already driving it, and it has painted nothing — a blank
@@ -119,7 +125,7 @@ export default function ScrollVideoRenderer({ p = {}, builderProgress = null, ra
 
   const source = useMemo(() => resolveSource(p, { mobile: isMobile }), [p, isMobile]);
   const usesFrames = source.kind === "frames";
-  const hasVideoSrc = source.kind === "video" && !videoBroken;
+  const hasVideoSrc = source.kind === "video" && !videoBroken && !videoUnseekable;
   const src = source.kind === "video" ? source.src : "";
 
   const frameCount = usesFrames ? source.frameCount : 0;
@@ -327,6 +333,35 @@ export default function ScrollVideoRenderer({ p = {}, builderProgress = null, ra
     },
     []
   );
+
+  /* ---- is this video seekable at all? ----
+     Given a few seconds and still no duration and no seekable range, it is not
+     going to become seekable: the browser has whatever it is ever getting.
+     Saying so beats leaving a frozen picture and no explanation. */
+  useEffect(() => {
+    if (usesFrames || !hasVideoSrc) {
+      setVideoUnseekable(false);
+      return undefined;
+    }
+    setVideoUnseekable(false);
+    const started = Date.now();
+    const id = setInterval(() => {
+      const video = videoRef.current;
+      if (!video) return;
+      const usable = Number.isFinite(video.duration) && video.duration > 0 && video.seekable?.length > 0;
+      if (usable) {
+        clearInterval(id);
+        return;
+      }
+      // Long enough for a slow connection to have fetched the header, short
+      // enough that a visitor is still looking at the section.
+      if (Date.now() - started > 8000) {
+        clearInterval(id);
+        setVideoUnseekable(true);
+      }
+    }, 500);
+    return () => clearInterval(id);
+  }, [usesFrames, hasVideoSrc, src]);
 
   // Playback rate only means anything for the ambient (non-scrubbed) case, but
   // setting it is harmless and the property is exposed in the editor.
@@ -559,6 +594,15 @@ export default function ScrollVideoRenderer({ p = {}, builderProgress = null, ra
           <strong>{framesFailed} of {frameCount} frames could not be loaded.</strong> The files are
           missing from the server. Re-create this animation under Scroll Animations, or pick a
           different one.
+        </div>
+      ) : null}
+      {showDiagnostics && videoUnseekable ? (
+        <div className="absolute inset-x-0 top-0 m-3 rounded-lg bg-red-600/95 px-3 py-2 text-[12px] text-white shadow-lg z-20">
+          <strong>The browser will not seek this video, so the scroll cannot drive it.</strong> Almost
+          always this is an MP4 whose index sits at the end of the file — until the browser has that
+          index it does not know the duration and cannot jump to a position. Use “Repair this video
+          for scrolling” in the editor, or build a frame sequence from it instead. The section is
+          showing its poster meanwhile.
         </div>
       ) : null}
       {showDiagnostics && videoBroken ? (
