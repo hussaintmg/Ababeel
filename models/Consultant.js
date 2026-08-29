@@ -6,6 +6,9 @@ import {
   PUBLISH_STATUSES,
   slugify,
 } from "@/lib/models/shared";
+import { CONSULTANT_LAYOUTS } from "@/lib/training/constants";
+
+export { CONSULTANT_LAYOUTS };
 
 /**
  * Consultant
@@ -15,13 +18,6 @@ import {
  * profile keeps its presentation wherever it is rendered — the consultants
  * index, a home-page section, or its own page.
  */
-export const CONSULTANT_LAYOUTS = [
-  "image-left",
-  "image-right",
-  "carousel-left",
-  "content-carousel-content",
-  "featured",
-];
 
 const consultantSchema = new mongoose.Schema(
   {

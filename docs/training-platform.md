@@ -117,12 +117,61 @@ deliberately does not seed courses, awarding bodies, consultants or
 testimonials — those are the client's own content, and plausible placeholders on
 a safety-training site are how invented claims get published.
 
+## Client-safe modules
+
+`lib/training/constants.js` holds every status and mode enumeration, and the
+models import it rather than defining their own. This is not tidiness: card
+components import `registrationCta` from `lib/training/status.js`, and while
+that file imported a Mongoose model it dragged the whole MongoDB driver into
+the browser bundle and failed the production build.
+
+`__tests__/training/clientSafety.test.js` guards the rule at source level,
+because the failure only shows up at bundle time.
+
+Client-safe, and required to stay so:
+
+```
+lib/training/constants.js
+lib/training/status.js
+lib/training/format.js
+lib/training/defaultFields.js
+Components/owner/training/fieldSpecs.js
+```
+
+## Design system
+
+`Components/ui/` — import from `Components/ui/index.js`. Tokens and the
+typography scale are in `app/globals.css` under `@theme`; Tailwind v4 reads its
+theme from CSS, so `tailwind.config.js` has not been read since that upgrade.
+
+`Reveal` reuses the CMS's `[data-cms-anim]` rules rather than adding a second
+animation system — those already honour `prefers-reduced-motion`.
+
+`CourseCard` ships five designs chosen by name from
+`settings.training.courseCardTemplate`.
+
+## Owner screens
+
+`/owner/training/<resource>` — list, create and edit for all nine resources,
+rendered from `Components/owner/training/fieldSpecs.js` and built on the CMS's
+existing field editors (`Components/owner/cms/fields`), so the image picker,
+rich-text editor and list editor are the ones owners already know.
+
+The spec and the server whitelist are separate files on purpose: the whitelist
+in `lib/training/resources.js` is the security boundary, the spec is the user
+interface. A field can be moved or relabelled without changing what the API
+accepts.
+
+`/owner/registrations` — list with status, course and date filters;
+`/owner/registrations/<id>` — the submitted answers (read-only), status, and
+appended internal notes.
+
 ## Status
 
 Done: data models, domain layer, owner CRUD APIs, registration APIs, public read
-APIs, seed script.
+APIs, seed script, design system, owner dashboard screens.
 
-Remaining: owner dashboard screens, public pages (`/courses`, `/courses/[slug]`,
-`/schedule`, `/registration`, `/awarding-bodies`, team/consultants), the
-extended template library, header/footer nav wiring, and the animation and SEO
-passes.
+Remaining: public pages (`/courses`, `/courses/[slug]`, `/schedule`,
+`/registration`, `/awarding-bodies`, team/consultants), the extended template
+library and page-builder blocks, header/footer nav wiring, and the SEO,
+performance and accessibility passes.

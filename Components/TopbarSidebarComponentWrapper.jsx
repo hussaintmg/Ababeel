@@ -87,6 +87,15 @@ const ownerNavLinks = [
       },
     ],
   },
+  {
+    name: "Training",
+    dropdown: [
+      { name: "Courses", url: "/owner/training/courses" },
+      { name: "Course References", url: "/owner/training/sessions" },
+      { name: "Awarding Bodies", url: "/owner/training/awarding-bodies" },
+      { name: "Registrations", url: "/owner/registrations" },
+    ],
+  },
   { name: "Website CMS", url: "/owner/cms" },
 ];
 export default function TopbarSidebarComponentWrapper() {

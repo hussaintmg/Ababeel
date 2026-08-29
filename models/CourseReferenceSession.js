@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { SESSION_MODES, SESSION_STATUSES } from "@/lib/training/constants";
 
 /**
  * CourseReferenceSession — the public "course reference".
@@ -12,23 +13,15 @@ import mongoose from "mongoose";
  * candidates, an invoice and a payment status. The two must not be merged —
  * this one is public marketing/enrolment data with no money in it.
  */
-export const SESSION_MODES = ["online", "physical", "hybrid", "other"];
-
-/**
- * Session lifecycle.
- *  - draft      not on the public site at all
- *  - open       listed, and accepting registrations
- *  - closed     listed, but the register button becomes "Registration Closed"
- *  - cancelled  listed as cancelled; registration refused
- *  - completed  historical; kept for the registrations that point at it
- */
-export const SESSION_STATUSES = ["draft", "open", "closed", "cancelled", "completed"];
-
-/** Statuses a visitor may see on the public schedule. */
-export const PUBLIC_SESSION_STATUSES = ["open", "closed", "cancelled", "completed"];
-
-/** Statuses that accept a new registration. */
-export const REGISTERABLE_SESSION_STATUSES = ["open"];
+// The status lists live in lib/training/constants.js so client components can
+// read them without importing this file — and with it Mongoose — into the
+// browser bundle. Re-exported here so a model consumer has one import.
+export {
+  SESSION_MODES,
+  SESSION_STATUSES,
+  PUBLIC_SESSION_STATUSES,
+  REGISTERABLE_SESSION_STATUSES,
+} from "@/lib/training/constants";
 
 const courseReferenceSessionSchema = new mongoose.Schema(
   {

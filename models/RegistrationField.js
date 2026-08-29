@@ -1,4 +1,8 @@
 import mongoose from "mongoose";
+import { FIELD_TYPES, BOUND_KEYS } from "@/lib/training/constants";
+
+// Re-exported so a consumer of the model has one import to reach for.
+export { FIELD_TYPES, BOUND_KEYS };
 
 /**
  * RegistrationField
@@ -9,34 +13,12 @@ import mongoose from "mongoose";
  * The server rebuilds its validation from these documents on every submission —
  * the browser's copy is a convenience, never the authority.
  */
-export const FIELD_TYPES = [
-  "text",
-  "email",
-  "phone",
-  "number",
-  "select",
-  "radio",
-  "checkbox",
-  "date",
-  "textarea",
-  "file",
-  "country",
-];
 
 /**
  * Fields whose value is copied onto the registration's own columns. A field
  * bound to `email` fills `Registration.email`, which is what list search and
  * owner notifications read.
  */
-export const BOUND_KEYS = [
-  "",
-  "firstName",
-  "lastName",
-  "email",
-  "phone",
-  "company",
-  "country",
-];
 
 const OptionSchema = new mongoose.Schema(
   {

@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { REGISTRATION_STATUSES } from "@/lib/training/constants";
 
 /**
  * Registration
@@ -16,14 +17,9 @@ import mongoose from "mongoose";
  * record of what the registrant actually saw at the time — used for display in
  * lists, never for the relationship itself.
  */
-export const REGISTRATION_STATUSES = [
-  "pending",
-  "contacted",
-  "confirmed",
-  "rejected",
-  "cancelled",
-  "completed",
-];
+// Lives in lib/training/constants.js so the owner screens can import it
+// without pulling Mongoose into the browser bundle.
+export { REGISTRATION_STATUSES } from "@/lib/training/constants";
 
 /** One entry from the CMS-configured form, kept verbatim. */
 const SubmittedFieldSchema = new mongoose.Schema(
