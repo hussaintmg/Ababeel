@@ -2,9 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { Menu, ChevronDown, User, LayoutDashboard, LogOut } from "lucide-react";
-import logo from "@/public/logo.png";
 import { useAuth } from "@/context/AuthContext";
 import axios from "axios";
 import { usePath } from "@/context/PathContext";
@@ -208,27 +206,16 @@ export default function Topbar({ mobileOpen, setMobileOpen, navLinks }) {
           <div className="flex items-center md:flex-none">
             <Link href="/" className="flex items-center">
               <div
-                className="relative h-30 w-30"
-                style={Number.isNaN(logoH) ? undefined : { height: logoH, width: logoH }}
+                className="relative h-30 w-40"
+                style={Number.isNaN(logoH) ? undefined : { height: logoH, width: logoH * 1.5 }}
               >
-                {settings?.logos?.topbar ? (
-                  // CMS-managed logo (may be an uploaded/external URL) so use a
-                  // plain img to avoid next/image domain configuration.
-                  <img
-                    src={settings.logos.topbar}
-                    alt={settings?.brand?.name || "Logo"}
-                    className="h-full w-full object-contain"
-                  />
-                ) : (
-                  <Image
-                    src={logo}
-                    alt="Logo"
-                    fill
-                    className="object-contain"
-                    priority
-                    sizes="(max-width: 160px) 100vw, 160px"
-                  />
-                )}
+                {/* CMS-managed logo (may be an uploaded/external URL) so use a
+                    plain img to avoid next/image domain configuration. */}
+                <img
+                  src={settings?.logos?.topbar || "/ababeel-logo.svg"}
+                  alt={settings?.brand?.name || "Ababeel"}
+                  className="h-full w-full object-contain object-left"
+                />
               </div>
             </Link>
           </div>

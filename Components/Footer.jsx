@@ -4,9 +4,7 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { usePath } from "@/context/PathContext";
-import logo from "@/public/logo-2.png";
 import Link from "next/link";
-import Image from "next/image";
 import webData from "@/constants";
 import { useSiteContent } from "@/context/SiteContentContext";
 
@@ -115,22 +113,11 @@ const Footer = () => {
             <div className="flex items-center md:flex-none">
               <Link href="/" className="flex items-center">
                 <div className="relative h-20 w-40">
-                  {footerLogo ? (
-                    <img
-                      src={footerLogo}
-                      alt={brand.name || "Logo"}
-                      className="h-full w-full object-contain"
-                    />
-                  ) : (
-                    <Image
-                      src={logo}
-                      alt="Logo"
-                      fill
-                      className="object-contain"
-                      priority
-                      sizes="(max-width: 160px) 100vw, 160px"
-                    />
-                  )}
+                  <img
+                    src={footerLogo || "/ababeel-logo-light.svg"}
+                    alt={brand.name || "Ababeel"}
+                    className="h-full w-full object-contain object-left"
+                  />
                 </div>
               </Link>
             </div>

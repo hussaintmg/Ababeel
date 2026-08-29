@@ -97,11 +97,27 @@ async function seedNavigation(db) {
   console.log(`  backup:              ${backupId}`);
   if (dryRun) return;
 
-  // Only the two keys this owns are replaced. Brand, logos, contact details
-  // and every colour the owner chose are left exactly as they are.
+  // Only the two keys this owns are replaced. Brand, contact details and
+  // every colour the owner chose are left exactly as they are.
   const settings = { ...(current?.settings || {}) };
   settings.topbar = { ...(settings.topbar || {}), navLinks: NAV_LINKS };
   settings.footer = { ...(settings.footer || {}), columns: FOOTER_COLUMNS };
+
+  // Logos: repair only the values that still point at the leftover pre-Ababeel
+  // template assets. A logo the owner uploaded or typed themselves is a
+  // different value and is never touched.
+  const LEGACY_LOGOS = {
+    topbar: [["/logo.png", "/ababeel-logo.svg"]],
+    footer: [["/logo-2.png", "/ababeel-logo-light.svg"]],
+    favicon: [["/favicon.ico", "/ababeel-icon.svg"], ["/favicon-default.ico", "/ababeel-icon.svg"]],
+  };
+  const logos = { ...(settings.logos || {}) };
+  for (const [slot, swaps] of Object.entries(LEGACY_LOGOS)) {
+    for (const [from, to] of swaps) {
+      if (!logos[slot] || logos[slot] === from) logos[slot] = to;
+    }
+  }
+  settings.logos = logos;
 
   await sitecontents.updateOne(
     { key: "global" },

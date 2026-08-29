@@ -21,10 +21,10 @@
   },
   "assets": {
     "logos": {
-      "mark": "/logo.png",
-      "full": "/logo-full.png",
-      "secondary": "/logo-2.png",
-      "favicon": "/favicon.ico"
+      "mark": "/ababeel-logo.svg",
+      "full": "/ababeel-logo.svg",
+      "secondary": "/ababeel-logo-light.svg",
+      "favicon": "/ababeel-icon.svg"
     },
     "hero": {
       "primary": "/bannar.webp",

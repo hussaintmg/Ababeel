@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="Ababeel">
+  <defs>
+    <linearGradient id="ab-icon" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fb7c44"/>
+      <stop offset="1" stop-color="#d94f0d"/>
+    </linearGradient>
+  </defs>
+  <rect x="6" y="6" width="108" height="108" rx="26" fill="url(#ab-icon)"/>
+  <path fill="#ffffff" fill-rule="evenodd"
+    d="M60 22 L93 97 L74.5 97 L67.5 79.5 L52.5 79.5 L45.5 97 L27 97 Z M60 42 L67.7 70 L52.3 70 Z"/>
+</svg>

@@ -5,7 +5,7 @@ const SECURITY_HEADERS = {
   "X-Frame-Options": "DENY",
   "X-XSS-Protection": "1; mode=block",
   "Referrer-Policy": "strict-origin-when-cross-origin",
-  "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer()",
+  "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()",
   "X-DNS-Prefetch-Control": "on",
   "Strict-Transport-Security": "max-age=63072000; includeSubDomains; preload",
 };
@@ -13,9 +13,9 @@ const SECURITY_HEADERS = {
 const CSP_DIRECTIVES = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com https://cdnjs.cloudflare.com",
   "img-src 'self' data: blob: https: http:",
-  "font-src 'self' https://fonts.gstatic.com data:",
+  "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:",
   "connect-src 'self'",
   "object-src 'none'",
   "base-uri 'self'",

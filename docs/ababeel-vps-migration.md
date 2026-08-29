@@ -24,7 +24,7 @@ database at all.
 | --- | --- | --- |
 | 1 | Registration form fields (10) | **Additive** — fields that already exist are untouched |
 | 2 | Course levels (4) | **Additive** |
-| 3 | Navigation + footer | Replaced; the previous global settings are backed up first |
+| 3 | Navigation + footer | Replaced; the previous global settings are backed up first. Logo settings still pointing at the leftover pre-Ababeel template assets (`/logo.png`, `/logo-2.png`, `/favicon.ico`) are re-pointed to the Ababeel logo files; a logo the owner uploaded themselves is never touched |
 | 4 | Training CMS pages (8) | Created with real sections, **disabled**; a page any person has edited is never touched |
 | 5 | "Why Ababeel" custom page | Created **enabled** at `/why-ababeel` (it has no built-in fallback) |
 | 6 | Home page | Written with the full Ababeel section stack, **disabled** unless `--publish-home`; the previous home page is backed up first |

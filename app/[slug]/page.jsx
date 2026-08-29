@@ -14,7 +14,15 @@ import { resolveTemplate } from "@/lib/cms/expression";
 export const dynamic = "force-dynamic";
 
 async function loadCustomPage(slug) {
-  const doc = await getCmsDoc(slug);
+  let doc;
+  try {
+    doc = await getCmsDoc(slug);
+  } catch (err) {
+    // Database unreachable. A 404 keeps the rest of the site standing
+    // instead of surfacing a bare 500 for these pages alone.
+    console.error(`custom page lookup failed (${slug}):`, err?.message);
+    return null;
+  }
   if (!doc || !doc.isCustom || !doc.enabled) return null;
   return doc;
 }

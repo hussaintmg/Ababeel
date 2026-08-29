@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 120" role="img" aria-label="Ababeel — Safety Training and Certification">
+  <defs>
+    <linearGradient id="ab-badge-l" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fb7c44"/>
+      <stop offset="1" stop-color="#d94f0d"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Badge -->
+  <rect x="8" y="14" width="92" height="92" rx="22" fill="url(#ab-badge-l)"/>
+  <!-- "A" drawn as paths so it renders identically everywhere -->
+  <path fill="#ffffff" fill-rule="evenodd"
+    d="M54 28 L82 92 L66.5 92 L60.5 77 L47.5 77 L41.5 92 L26 92 Z M54 45 L60.6 69 L47.4 69 Z"/>
+
+
+  <text x="122" y="67" font-family="'Segoe UI','Helvetica Neue',Arial,sans-serif"
+    font-size="46" font-weight="700" letter-spacing="0.5" fill="#ffffff">Ababeel</text>
+  <text x="124" y="93" font-family="'Segoe UI','Helvetica Neue',Arial,sans-serif"
+    font-size="11" font-weight="600" letter-spacing="2.4" fill="#9aabc4">TRAINING &amp; CERTIFICATION</text>
+</svg>

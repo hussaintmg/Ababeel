@@ -11,7 +11,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const PUBLIC_DIR = path.resolve(process.cwd(), "public");
-const DEFAULT_ICON = path.join(PUBLIC_DIR, "favicon-default.ico");
+const DEFAULT_ICON = path.join(PUBLIC_DIR, "ababeel-icon.svg");
 
 const CONTENT_TYPES = {
   ".ico": "image/x-icon",

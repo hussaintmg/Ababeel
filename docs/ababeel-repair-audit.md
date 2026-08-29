@@ -68,7 +68,35 @@ Created as a **custom CMS page** at `/why-ababeel`, served by the existing
 `/[slug]` route — owned and edited entirely inside the CMS, no code route
 behind it. Seeded enabled (it has no built-in fallback to stand behind).
 
-### 6. Global search lacked Pages
+### 6. The shipped logo was another company's
+
+Found by rendering the site and looking at it: the topbar, footer and favicon
+all showed a **"Safetech Qualifications"** logo — leftover assets from the
+template the project began from (`public/logo.png`, `logo-2.png`,
+`favicon-default.ico`). Repaired with a proper Ababeel identity:
+`ababeel-logo.svg` (topbar, dark text), `ababeel-logo-light.svg` (footer,
+light text) and `ababeel-icon.svg` (favicon) — an orange badge mark drawn as
+paths so it renders identically everywhere. `constants/webdata.json`, the
+component fallbacks and the favicon route now point at these. The migration
+re-points a live database's logo settings **only** when they still hold the
+old template paths; a logo the owner uploaded themselves is never touched.
+The old files stay in `public/` so nothing that might reference them breaks.
+
+### 7. Security headers were broken in production
+
+Also found only by running the production server and reading the browser
+console:
+
+- `Permissions-Policy` was malformed (`accelerometer()` missing its `=`), so
+  browsers rejected the entire header.
+- The production `Content-Security-Policy` did not allow
+  `cdnjs.cloudflare.com`, which `app/layout.js` loads Font Awesome from —
+  every icon on the live site was silently blocked. `style-src` and
+  `font-src` now include it.
+
+Both fixed in `proxy.js`; the console is clean on every page.
+
+### 8. Global search lacked Pages
 
 The palette searched eight entities but could not jump to a CMS page. A
 "Pages" group was added, navigating to `/owner/cms/<key>`.
