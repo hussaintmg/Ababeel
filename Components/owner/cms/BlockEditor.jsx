@@ -12,6 +12,7 @@ import FrameGenerator from "@/Components/owner/cms/dynamic/FrameGenerator";
 import AnimationPicker from "@/Components/owner/cms/scroll/AnimationPicker";
 import ScrollTimeline from "@/Components/owner/cms/scroll/ScrollTimeline";
 import VideoRepair from "@/Components/owner/cms/scroll/VideoRepair";
+import ScrollSelfCheck from "@/Components/owner/cms/scroll/ScrollSelfCheck";
 import { SlidersHorizontal, Palette, Database, Code2, ChevronRight } from "lucide-react";
 import CodeTab from "@/Components/owner/cms/CodeTab";
 import DecorationEditor from "@/Components/owner/cms/DecorationEditor";
@@ -115,6 +116,10 @@ export default function BlockEditor({ block, onChange, features = {}, scopeHint 
           ) : null}
           {block.type === "scrollVideo" ? (
             <>
+              {/* Before anything else: does this section's media actually reach
+                  a browser? Every other check runs on the server and cannot
+                  tell. */}
+              <ScrollSelfCheck props={props} />
               {/* The picker comes first. Someone who has already built a
                   sequence under Scroll Animations only needs to choose it, and
                   it used to sit seventh in the list, below the video upload and
