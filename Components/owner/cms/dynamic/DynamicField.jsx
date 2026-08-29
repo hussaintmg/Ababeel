@@ -484,7 +484,7 @@ export default function DynamicField({
               type="text"
               value={fallback ?? ""}
               onChange={(e) => onFallbackChange(e.target.value)}
-              placeholder={field.type === "image" ? "/logo.png" : "—"}
+              placeholder={field.type === "image" ? "/ababeel-logo.svg" : "—"}
               className="flex-1 px-3 py-1.5 border border-gray-300 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500"
             />
             {fallback ? (

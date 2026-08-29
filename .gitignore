@@ -59,7 +59,6 @@ ex
 **/credentials*.json
 **/*-service-account*.json
 public/ababeel-*.json
-public/safetech-*.json
 
 # local file storage
 /storage/

@@ -150,8 +150,30 @@ export default function OwnerLayout({ children }) {
       url: null,
       dropdown: [
         { name: "Pages & Sections", url: "/owner/cms" },
+        { name: "Global Settings", url: "/owner/cms/global" },
         { name: "Variables & Data", url: "/owner/cms/variables" },
         { name: "Scroll Animations", url: "/owner/scroll-animations" },
+      ],
+    },
+    {
+      id: "applications",
+      name: "Applications",
+      icon: <FileChartColumn size={20} />,
+      url: null,
+      dropdown: [
+        { name: "Pending", url: "/owner/applications/pending" },
+        { name: "Approved", url: "/owner/applications/approved" },
+        { name: "Rejected", url: "/owner/applications/rejected" },
+      ],
+    },
+    {
+      id: "admin-approvals",
+      name: "Admin Approvals",
+      icon: <Users size={20} />,
+      url: null,
+      dropdown: [
+        { name: "Pending", url: "/owner/admin-approvals/pending" },
+        { name: "Approved", url: "/owner/admin-approvals/approved" },
       ],
     },
     {

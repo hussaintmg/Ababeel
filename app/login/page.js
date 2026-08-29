@@ -1,7 +1,6 @@
 "use client";
 import React, { useState } from "react";
 import Image from "next/image";
-import bg from "@/public/log.png";
 import { toast } from "react-toastify";
 import axios from "axios";
 import Link from "next/link";
@@ -62,12 +61,10 @@ export default function Page() {
             // eslint-disable-next-line @next/next/no-img-element
             <img src={auth.loginImage} alt="Login background" className="w-full h-full object-cover" />
           ) : (
-            <Image
-              src={bg}
-              alt="Login background"
-              fill
-              className="object-cover"
-              priority
+            <img
+              src="/ababeel-pattern.svg"
+              alt=""
+              className="w-full h-full object-cover"
             />
           )}
         </div>

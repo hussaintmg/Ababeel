@@ -231,6 +231,16 @@ export function homePageBlocks() {
     }, up),
 
     block("cardGrid", {
+      eyebrow: "Getting started", title: "How it works", subtitle: "", columns: "3",
+      accent: BRAND, variant: "numbered",
+      items: [
+        { icon: "", title: "Choose your course", text: "Browse the catalogue by level, awarding body or duration, and open a course to see its content and dates.", image: "", href: "/courses" },
+        { icon: "", title: "Pick a date", text: "Every course lists its upcoming sessions. Choose the one that fits and press Register.", image: "", href: "/schedule" },
+        { icon: "", title: "Register — no online payment", text: "Send the registration form and our team confirms your place and the arrangements by email.", image: "", href: "/registration" },
+      ],
+    }, up),
+
+    block("cardGrid", {
       title: "Why Ababeel", subtitle: "", columns: "4",
       items: [
         { icon: "🎓", title: "Accredited", text: "Qualifications awarded by recognised bodies, not certificates of attendance.", image: "", href: "/about/accreditations" },
@@ -265,6 +275,16 @@ export function homePageBlocks() {
       layout: "google", limit: "3", columns: "3", featuredOnly: false,
       emptyMessage: "Reviews will appear here once they are published.",
     }, { bgColor: INK_MIST, animation: "fade-up" }),
+
+    block("faq", {
+      title: "Common questions", subtitle: "", columns: "2", accent: BRAND,
+      items: [
+        { q: "How do I register for a course?", a: "Open the course, choose an upcoming date and press Register. The form takes a couple of minutes and our team confirms your place by email." },
+        { q: "Do I pay online?", a: "No. There is no online payment on this site — once you register, our team confirms the arrangements with you directly." },
+        { q: "Who awards the qualification?", a: "Each course names its awarding body on the course page, and the Awarding Bodies page lists every organisation we work with." },
+        { q: "Can you train a whole team?", a: "Yes — tell us what you need through the contact page and we will schedule a dedicated session around your operation." },
+      ],
+    }, up),
 
     block("cta", {
       title: "Ready to get your team qualified?",
@@ -317,6 +337,11 @@ export function trainingPageDocs() {
     add("courses", "Courses", "/courses", [
       pageHero(b, "Training catalogue", "Accredited safety training, built around competence",
         "Browse our full catalogue by level, awarding body or duration, and register for an upcoming session."),
+      b("accreditationLogos", {
+        eyebrow: "", title: "", subtitle: "", align: "center",
+        trustStripOnly: true, layout: "strip", grayscale: true,
+        ctaLabel: "", ctaHref: "/about/accreditations",
+      }, { bgColor: INK_MIST, animation: "fade" }),
     ]);
   }
   {
@@ -324,6 +349,11 @@ export function trainingPageDocs() {
     add("schedule", "Schedule", "/schedule", [
       pageHero(b, "Upcoming dates", "Training Schedule",
         "Upcoming sessions across all of our accredited programmes."),
+      b("banner", {
+        text: "Can't see a date that works? Tell us what you need and we will schedule a session around your team \u2192",
+        href: "/contact-us",
+        bgColor: INK, textColor: "#ffffff",
+      }, UP),
     ]);
   }
   {
@@ -331,6 +361,15 @@ export function trainingPageDocs() {
     add("registration", "Registration", "/registration", [
       pageHero(b, "Enrolment", "Register For Training",
         "Complete the form below and a member of our training team will confirm your place."),
+      b("cardGrid", {
+        eyebrow: "", title: "What happens next", subtitle: "", columns: "3",
+        accent: BRAND, variant: "numbered",
+        items: [
+          { icon: "", title: "Send the form", text: "It takes a couple of minutes. No online payment — nothing is charged on this site.", image: "", href: "" },
+          { icon: "", title: "We confirm your place", text: "A member of the training team replies by email with your place and the practical arrangements.", image: "", href: "" },
+          { icon: "", title: "Attend and get certified", text: "Complete the course and assessment, and your certificate follows from the awarding body.", image: "", href: "" },
+        ],
+      }, UP),
     ]);
   }
   {
@@ -338,6 +377,11 @@ export function trainingPageDocs() {
     add("resources", "Resources", "/resources", [
       pageHero(b, "Knowledge", "Resources",
         "Guides, articles and downloads from our training and consultancy work."),
+      b("banner", {
+        text: "Looking for something we have not written yet? Suggest a topic \u2192",
+        href: "/contact-us",
+        bgColor: INK, textColor: "#ffffff",
+      }, UP),
     ]);
   }
   {
@@ -345,6 +389,20 @@ export function trainingPageDocs() {
     add("awarding-bodies", "Awarding Bodies", "/awarding-bodies", [
       pageHero(b, "Accreditation", "Our awarding bodies",
         "Every qualification we deliver is awarded by a recognised organisation. Here is who stands behind each one."),
+      b("split", {
+        eyebrow: "Why it matters",
+        title: "What an awarding body does",
+        text:
+          "<p>An awarding body sets the qualification standard, approves the centres that deliver it, and issues the certificate once the assessment is passed. It is what separates a recognised qualification from a certificate of attendance.</p><p>Every course on this site names its awarding body, and every certificate can be verified.</p>",
+        bullets: [
+          { text: "Sets and quality-assures the standard" },
+          { text: "Approves and audits training centres" },
+          { text: "Issues the verifiable certificate" },
+        ],
+        image: "", imageAlt: "", imageSide: "right", accent: BRAND,
+        bgColor: "", badgeValue: "", badgeLabel: "",
+        cta: { label: "Verify a certificate", href: "/verify-certificate" },
+      }, { animation: "fade-right" }),
       b("awardingBodyLogos", {
         eyebrow: "", title: "", subtitle: "", align: "left",
         layout: "cards", grayscale: false, linkToBody: true,
@@ -370,6 +428,13 @@ export function trainingPageDocs() {
         ctaLabel: "", ctaHref: "/about/team",
         emptyMessage: "Team profiles are on their way.",
       }, UP),
+      b("cta", {
+        title: "Want to talk to the people who will actually train you?",
+        text: "Ask us anything about a course, a date or a qualification route.",
+        button: { label: "Contact the team", href: "/contact-us" },
+        secondaryButton: { label: "Browse courses", href: "/courses" },
+        bgColor: INK, textColor: "#ffffff",
+      }, UP),
     ]);
   }
   {
@@ -383,6 +448,20 @@ export function trainingPageDocs() {
         ctaLabel: "", ctaHref: "/about/consultants",
         emptyMessage: "Consultant profiles are on their way.",
       }, UP),
+      b("split", {
+        eyebrow: "Consultancy",
+        title: "Beyond the classroom",
+        text:
+          "<p>Replace this paragraph with a short account of the consultancy work your team does — audits, risk assessments, competence frameworks, incident investigations. Two or three sentences; the detail belongs in a conversation.</p>",
+        bullets: [
+          { text: "Site audits and inspections" },
+          { text: "Risk assessment and method statements" },
+          { text: "Competence and training-needs analysis" },
+        ],
+        image: "", imageAlt: "", imageSide: "left", accent: BRAND,
+        bgColor: "", badgeValue: "", badgeLabel: "",
+        cta: { label: "Discuss your project", href: "/contact-us" },
+      }, { animation: "fade-left" }),
     ]);
   }
   {
@@ -399,6 +478,13 @@ export function trainingPageDocs() {
         eyebrow: "Qualifications", title: "Who awards our qualifications", subtitle: "",
         align: "center", layout: "strip", grayscale: true, linkToBody: true,
         ctaLabel: "All awarding bodies", ctaHref: "/awarding-bodies",
+      }, UP),
+      b("cta", {
+        title: "Check any certificate we have issued",
+        text: "Every Ababeel certificate can be verified online in seconds.",
+        button: { label: "Verify a certificate", href: "/verify-certificate" },
+        secondaryButton: { label: "Contact us", href: "/contact-us" },
+        bgColor: INK, textColor: "#ffffff",
       }, UP),
     ]);
   }
@@ -429,6 +515,28 @@ export function whyAbabeelDoc() {
           { icon: "🌍", title: "Delivered anywhere", text: "Online, in person or blended, scheduled around your operation.", image: "", href: "/schedule" },
           { icon: "🤝", title: "Supported throughout", text: "A named contact from enquiry to certificate.", image: "", href: "/contact-us" },
         ],
+      }, UP),
+      b("split", {
+        eyebrow: "The difference",
+        title: "Qualifications, not attendance certificates",
+        text:
+          "<p>Replace this with your own words on what makes Ababeel different. The structure is already here: every course below is accredited, every certificate verifiable, every trainer a practitioner.</p>",
+        bullets: [
+          { text: "Named awarding body on every course" },
+          { text: "Certificates verifiable online" },
+          { text: "No online payment — a person confirms every booking" },
+        ],
+        image: "", imageAlt: "", imageSide: "right", accent: BRAND,
+        bgColor: "", badgeValue: "", badgeLabel: "",
+        cta: { label: "See our accreditations", href: "/about/accreditations" },
+      }, { animation: "fade-right" }),
+      b("courseGrid", {
+        eyebrow: "Training", title: "Start with a course",
+        subtitle: "The programmes we run most often.",
+        align: "left", source: "featured", level: "", awardingBody: "", category: "",
+        sort: "recommended", limit: "3", columns: "3", cardTemplate: "standard",
+        ctaLabel: "View all courses", ctaHref: "/courses",
+        emptyMessage: "Courses will appear here once they are published.",
       }, UP),
       b("reviewWall", {
         eyebrow: "Reviews", title: "What our learners say", subtitle: "", align: "center",

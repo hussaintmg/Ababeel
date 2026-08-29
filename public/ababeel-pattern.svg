@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" role="img" aria-label="">
+  <defs>
+    <g id="ab-wm" opacity="0.10">
+      <rect x="0" y="0" width="72" height="72" rx="17" fill="#4a5f7e"/>
+      <path fill="#ffffff" fill-rule="evenodd"
+        d="M36 13 L56 58 L45 58 L40.8 47.5 L31.2 47.5 L27 58 L16 58 Z M36 25 L40.6 42 L31.4 42 Z"/>
+    </g>
+    <pattern id="ab-tile" width="260" height="220" patternUnits="userSpaceOnUse" patternTransform="rotate(-14)">
+      <use href="#ab-wm" x="20" y="20"/>
+      <use href="#ab-wm" x="150" y="120" transform="scale(0.8)"/>
+    </pattern>
+  </defs>
+  <rect width="1920" height="1080" fill="#f5f7fa"/>
+  <rect width="1920" height="1080" fill="url(#ab-tile)"/>
+</svg>
