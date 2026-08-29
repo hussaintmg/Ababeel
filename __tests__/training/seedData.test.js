@@ -226,9 +226,11 @@ describe("the migration script is safe by construction", () => {
     expect(SCRIPT).toMatch(/backup\(db, "home-page"/);
   });
 
-  test("publishing the home page is opt-in", () => {
-    expect(SCRIPT).toMatch(/publishHome = args\.has\("--publish-home"\)/);
+  test("pages and home publish live by default, with --draft to hold them back", () => {
+    expect(SCRIPT).toMatch(/draft = args\.has\("--draft"\)/);
+    expect(SCRIPT).toMatch(/publishHome = !draft/);
     expect(SCRIPT).toMatch(/enabled: !!publishHome/);
+    expect(SCRIPT).toMatch(/enabled: publishHome/);
   });
 
   test("it creates no business content", () => {

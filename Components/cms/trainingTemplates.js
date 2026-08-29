@@ -13,6 +13,7 @@
  * Client-safe: no database, no model imports.
  */
 import { newId, defaultStyle } from "@/Components/cms/blockSchemas";
+import { trainingPageDocs, whyAbabeelDoc } from "@/scripts/lib/seed-data.mjs";
 
 const b = (type, props = {}, style = {}) => ({ type, props, style });
 
@@ -933,7 +934,7 @@ export const TRAINING_TEMPLATES = [
   /* ===== FULL PAGE ===== */
   {
     id: "aba-page-home",
-    name: "Ababeel — Full page, aBA Safety home",
+    name: "Ababeel — Full page, home",
     category: "Full Pages",
     desc: "Hero, trust strip, about, courses, why, bodies, schedule, reviews, CTA",
     blocks: [
@@ -1068,6 +1069,36 @@ export const TRAINING_TEMPLATES = [
     ],
   },
 ];
+
+/*
+ * Every page the migration designs, offered as a one-click template too, so
+ * the owner can re-apply (or start over from) the shipped design of any page
+ * without running a script. One source of truth: the blocks come straight
+ * from the seed data, converted to the template shape (ids are minted on
+ * insert).
+ */
+const seedToTemplateBlocks = (blocks) =>
+  blocks.map((blk) => ({ type: blk.type, props: blk.props, style: blk._style }));
+
+TRAINING_TEMPLATES.push(
+  ...trainingPageDocs().map((page) => ({
+    id: `aba-page-${page.key}`,
+    name: `Ababeel — Full page, ${page.title}`,
+    category: "Full Pages",
+    desc: `The complete ${page.title} page exactly as the Ababeel migration ships it`,
+    blocks: seedToTemplateBlocks(page.blocks),
+  })),
+  (() => {
+    const why = whyAbabeelDoc();
+    return {
+      id: "aba-page-why-ababeel",
+      name: "Ababeel — Full page, Why Ababeel",
+      category: "Full Pages",
+      desc: "The complete Why Ababeel page exactly as the Ababeel migration ships it",
+      blocks: seedToTemplateBlocks(why.blocks),
+    };
+  })(),
+);
 
 /** Same shape as `createBlocksFromTemplate` produces, for the seed script. */
 export function trainingTemplateBlocks(id) {

@@ -195,8 +195,10 @@ export function homePageBlocks() {
       title: "Competence you can evidence",
       subtitle:
         "Internationally recognised qualifications, delivered by practitioners who have done the work.",
-      align: "left", bgType: "solid", bgColor: INK, textColor: "#ffffff",
+      align: "left", bgType: "gradient", bgColor: INK,
+      gradFrom: INK, gradTo: "#22334a", gradAngle: "135", textColor: "#ffffff",
       minHeight: "560", accent: BRAND, image: "",
+      badges: "Accredited qualifications | Verifiable certificates | Practitioner trainers",
       primaryCta: { label: "Browse courses", href: "/courses" },
       secondaryCta: { label: "See the schedule", href: "/schedule" },
     }),
@@ -299,20 +301,24 @@ export function homePageBlocks() {
 /* -------------------------------------------------- training page seeds */
 
 /** A dark hero matching each page's built-in top region. */
-function pageHero(block, eyebrow, title, subtitle) {
+function pageHero(block, eyebrow, title, subtitle, extra = {}) {
   return block("hero", {
     eyebrow,
     title,
     subtitle,
     align: "left",
-    bgType: "solid",
+    bgType: "gradient",
     bgColor: INK,
+    gradFrom: INK,
+    gradTo: "#22334a",
+    gradAngle: "135",
     textColor: "#ffffff",
-    minHeight: "",
+    minHeight: "320",
     accent: BRAND,
     image: "",
     primaryCta: { label: "", href: "" },
     secondaryCta: { label: "", href: "" },
+    ...extra,
   });
 }
 

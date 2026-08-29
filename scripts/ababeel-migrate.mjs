@@ -1,18 +1,18 @@
 /**
  * The Ababeel VPS migration.
  *
- *   npm run migrate:ababeel -- --dry-run        # show what would change
- *   npm run migrate:ababeel                     # write it
- *   npm run migrate:ababeel -- --publish-home   # …and publish the home page
+ *   npm run migrate:ababeel -- --dry-run   # show what would change
+ *   npm run migrate:ababeel                # write it, pages and home LIVE
+ *   npm run migrate:ababeel -- --draft     # …seed everything switched off instead
  *
  * Six things, in order:
  *
  *   1. Registration form fields   (additive — existing fields untouched)
  *   2. Course levels              (additive — existing levels untouched)
  *   3. Navigation and footer      (replaced, backed up first)
- *   4. Training CMS pages         (created with real sections; owner edits win)
+ *   4. Training CMS pages         (written LIVE with real sections; owner edits win)
  *   5. The "Why Ababeel" page     (a custom CMS page, created if missing)
- *   6. Home page                  (replaced, backed up first, left OFF by default)
+ *   6. Home page                  (replaced LIVE, backed up first; --draft leaves it off)
  *
  * WHAT IT WILL NOT DO
  * -------------------
@@ -47,7 +47,9 @@ import {
 
 const args = new Set(process.argv.slice(2));
 const dryRun = args.has("--dry-run");
-const publishHome = args.has("--publish-home");
+const draft = args.has("--draft");
+// Kept for compatibility; publishing is now the default. --draft turns it off.
+const publishHome = !draft || args.has("--publish-home");
 const force = args.has("--force");
 const dbOverride = (process.argv.find((a) => a.startsWith("--db=")) || "").slice(5);
 
@@ -160,7 +162,7 @@ async function seedTrainingPages(db) {
       continue;
     }
     if (dryRun) {
-      console.log(`  ${page.key.padEnd(18)} would write ${page.blocks.length} section(s), disabled`);
+      console.log(`  ${page.key.padEnd(18)} would write ${page.blocks.length} section(s), ${publishHome ? "LIVE" : "disabled (--draft)"}`);
       continue;
     }
     await sitecontents.updateOne(
@@ -169,6 +171,10 @@ async function seedTrainingPages(db) {
         $set: {
           title: page.title,
           blocks: page.blocks,
+          // Live by default so the designed sections actually show; --draft
+          // seeds them switched off for review first. Only untouched or
+          // seed-authored docs ever reach this write.
+          enabled: publishHome,
           updatedAt: new Date(),
           updatedByEmail: "ababeel-migrate",
         },
@@ -176,9 +182,6 @@ async function seedTrainingPages(db) {
           key: page.key,
           settings: {},
           customCss: "",
-          // Disabled: the built-in page keeps rendering until the owner
-          // reviews these sections in the CMS and enables them.
-          enabled: false,
           publicHidden: false,
           isCustom: false,
           route: page.route,
@@ -191,7 +194,7 @@ async function seedTrainingPages(db) {
       },
       { upsert: true },
     );
-    console.log(`  ${page.key.padEnd(18)} wrote ${page.blocks.length} section(s), disabled`);
+    console.log(`  ${page.key.padEnd(18)} wrote ${page.blocks.length} section(s), ${publishHome ? "LIVE" : "disabled (--draft)"}`);
   }
 
   // Why Ababeel is a custom page with no built-in route behind it, so it
@@ -240,7 +243,7 @@ async function seedHomePage(db) {
   console.log("\nHome page");
   console.log(`  current: ${current ? `${current.blocks?.length || 0} block(s), ${current.enabled ? "LIVE" : "not live"}` : "not created yet"}`);
   console.log(`  writing: ${blocks.length} block(s) — ${blocks.map((b) => b.type).join(", ")}`);
-  console.log(`  enabled: ${publishHome ? "YES (--publish-home)" : "no — review it in the CMS, then enable it there"}`);
+  console.log(`  enabled: ${publishHome ? "YES — live immediately (use --draft to seed switched off)" : "no (--draft) — review it in the CMS, then enable it there"}`);
 
   const backupId = await backup(db, "home-page", current);
   console.log(`  backup:  ${backupId}`);
