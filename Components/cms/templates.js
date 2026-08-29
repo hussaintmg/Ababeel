@@ -281,7 +281,7 @@ export const TEMPLATES = [
     desc: "One pinned clip, one line of text",
     blocks: [
       b("scrollVideo", {
-        renderMode: "video", src: "", poster: "", scrollDuration: "2",
+        renderMode: "frames", src: "", poster: "", scrollDuration: "2",
         title: "Scroll to see it play", subtitle: "Attach a scroll animation or a video under “Start here”.",
         textColor: "#ffffff", textAlign: "center", accent: ORANGE,
         overlayType: "solid", overlay: "30", bgColor: "#081f38",
@@ -297,7 +297,7 @@ export const TEMPLATES = [
     desc: "Three beats told over one clip",
     blocks: [
       b("scrollVideo", {
-        renderMode: "video", src: "", poster: "", scrollDuration: "3",
+        renderMode: "frames", src: "", poster: "", scrollDuration: "3",
         accent: ORANGE, overlayType: "gradient", overlayFrom: "rgba(8,31,56,0.25)", overlayTo: "rgba(8,31,56,0.85)", overlayAngle: "180",
         bgColor: "#081f38", sticky: true, snap: false,
         scrollStart: "top top", scrollEnd: "bottom bottom", reducedMotion: "scrub",
@@ -317,7 +317,7 @@ export const TEMPLATES = [
     desc: "Scenes travel sideways as the page scrolls down",
     blocks: [
       b("scrollVideo", {
-        renderMode: "video", src: "", poster: "", scrollDuration: "3", direction: "horizontal",
+        renderMode: "frames", src: "", poster: "", scrollDuration: "3", direction: "horizontal",
         accent: ORANGE, overlayType: "solid", overlay: "40", bgColor: "#0b2a4a",
         sticky: true, scrollStart: "top top", scrollEnd: "bottom bottom",
         reducedMotion: "scrub", mobileMode: "same", mobileStageHeight: "100svh",

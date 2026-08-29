@@ -192,6 +192,10 @@ export default function ScrollVideoStudio({ props }) {
                 }}
                 builderProgress={mapped}
                 forceDevice={device}
+                // A video that loads but cannot be seeked only reveals itself
+                // at runtime, so the preview has to be able to say so — the
+                // validation list underneath cannot know it.
+                showDiagnostics
               />
             </div>
           )}

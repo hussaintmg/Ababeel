@@ -147,7 +147,9 @@ export default function BlockEditor({ block, onChange, features = {}, scopeHint 
                   it is the work; the settings are adjustments to it. */}
               <ScrollTimeline props={props} onChange={(next) => onChange({ ...block, props: next })} />
               <ScrollVideoStudio props={props} />
-              <details className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+              {/* Open by default while the block is still on a video: for that
+                  block, converting to frames is the fix, not an extra. */}
+              <details open={props.renderMode !== "frames"} className="rounded-xl border border-gray-200 bg-white overflow-hidden">
                 <summary className="cursor-pointer select-none px-3 py-2.5 bg-gray-50 text-xs font-semibold text-gray-700 hover:bg-gray-100">
                   Build a sequence from a video file
                 </summary>

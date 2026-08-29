@@ -637,16 +637,17 @@ export function validateScrollVideo(p = {}) {
   const source = resolveSource(p);
 
   if (source.kind === "none") {
+    // One message, not two. A freshly inserted section legitimately has no
+    // sequence yet — the author is about to choose one — so this reads as the
+    // next step rather than as two separate faults.
     err(
-      "This section has nothing to show.",
-      "Choose a ready-made scroll animation, or upload a video, or at least set a poster image so the section is never blank."
+      "No scroll animation chosen yet.",
+      "Pick one under “Start here — choose a ready-made animation”. Until then this section shows its background colour and its text."
     );
-  }
-
-  if (p.renderMode === "frames" && source.kind !== "frames") {
+  } else if (p.renderMode === "frames" && source.kind !== "frames") {
     err(
       "Set to play a frame sequence, but no usable sequence is attached.",
-      "Pick one under “Start here — choose a ready-made animation”, or switch the playback source back to Video file."
+      "Pick one under “Start here — choose a ready-made animation”, or switch the playback source to Video file."
     );
   }
 
@@ -766,8 +767,10 @@ export function validateScrollVideo(p = {}) {
   });
 
   // Overlaps, measured on the range the renderer uses so frame-based and
-  // percentage-based elements are compared on the same scale.
-  for (let i = 1; i < scenes.length; i++) {
+  // percentage-based elements are compared on the same scale. Horizontal lays
+  // its elements side by side on a rail and ignores their ranges entirely, so
+  // there is nothing to overlap.
+  for (let i = 1; p.direction !== "horizontal" && i < scenes.length; i++) {
     const prev = sceneRange(scenes[i - 1], sceneFrames);
     const next = sceneRange(scenes[i], sceneFrames);
     if (next.start < prev.end - 0.01) {
@@ -797,10 +800,20 @@ export function validateScrollVideo(p = {}) {
     );
   }
 
-  if (!p.title && !p.subtitle && !scenes.length && !(Array.isArray(p.overlays) && p.overlays.length)) {
+  // Only worth saying once the section has something to show. On a block that
+  // is not set up yet this piled an SEO warning on top of the error already
+  // telling the author it has no source — two complaints about one unfinished
+  // block, and the less useful one listed second.
+  if (
+    source.kind !== "none" &&
+    !p.title &&
+    !p.subtitle &&
+    !scenes.length &&
+    !(Array.isArray(p.overlays) && p.overlays.length)
+  ) {
     warn(
       "No text anywhere in this section.",
-      "Search engines and screen readers see nothing here. Add a heading — a scene or the overlay title will do."
+      "Search engines and screen readers see nothing here. Add a heading on the timeline — scrub to a frame and press Add Heading."
     );
   }
 
