@@ -456,7 +456,26 @@ export function frameUrl(id, index, ext = "webp") {
  * however few have arrived. Twelve is enough that the picture visibly changes
  * from one end of the section to the other.
  */
-const COARSE_PASS = 12;
+export const COARSE_PASS = 12;
+
+/**
+ * Gap between the frames of the coarse pass. Exported because the renderer
+ * needs the same number: while the sequence is still downloading it shows a
+ * plain <img> of the nearest coarse frame, and picking from the set the loader
+ * is already fetching means the section moves with the scroll immediately
+ * without asking the server for anything extra.
+ */
+export function coarseStride(count) {
+  return Math.max(Math.floor(Number(count) / COARSE_PASS) || 0, 1);
+}
+
+/** Nearest frame of the coarse pass to `index`. */
+export function nearestCoarseFrame(index, count) {
+  const n = Math.max(Number(count) || 0, 1);
+  const stride = coarseStride(n);
+  const snapped = Math.round(Number(index) / stride) * stride;
+  return Math.min(Math.max(snapped, 0), n - 1);
+}
 
 /**
  * Order frames should be fetched in, given where the viewer currently is.
@@ -496,7 +515,7 @@ export function loadOrder(count, current = 0, window = 20) {
   // something to show almost at once. The first and last frames are in here by
   // construction: the first is what anyone scrolling back up sees, and the last
   // is what the section releases on.
-  const stride = Math.max(Math.floor(count / COARSE_PASS), 1);
+  const stride = coarseStride(count);
   for (let i = 0; i < count; i += stride) push(i);
   push(count - 1);
 

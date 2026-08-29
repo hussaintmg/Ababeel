@@ -35,6 +35,7 @@ import {
   resolveSource,
   trackHeightCss,
   frameUrl,
+  nearestCoarseFrame,
   validateScrollVideo,
 } from "./engine";
 import useFrameSequence from "./useFrameSequence";
@@ -335,6 +336,30 @@ export default function ScrollVideoRenderer({ p = {}, builderProgress = null, ra
   }, [p.playbackRate, src]);
 
   const shownProgress = builderProgress === null ? progress : builderProgress;
+
+  /**
+   * The picture to show while the sequence is still downloading.
+   *
+   * This used to be frame one, always — which is why a section looked stuck on
+   * its first frame: until enough images had decoded for the canvas to paint,
+   * the visitor scrolled the whole section and the picture never moved. On a
+   * fast connection that window is a second; on a phone, or with a heavy
+   * sequence, it is the whole visit.
+   *
+   * It now follows the scroll. The frame is snapped to the coarse pass — the
+   * dozen spread across the sequence that the loader fetches first — so the
+   * picture moves with the scroll straight away without asking the server for
+   * anything it was not already going to fetch. A poster, when the author set
+   * one, still wins for the very first paint.
+   */
+  const loadingFrameSrc = (() => {
+    if (!usesFrames) return p.poster || "";
+    const index = nearestCoarseFrame(Math.round(shownProgress * (frameCount - 1)), frameCount);
+    // A poster is the right thing to show before anything has moved; once the
+    // visitor is into the section, the frame they scrolled to is.
+    if (p.poster && index === 0) return p.poster;
+    return frameUrls ? frameUrls[index] : frameUrl(source.framesId, index, source.ext);
+  })();
   const problems = showDiagnostics ? validateScrollVideo(p) : [];
   const dim = backgroundOverlay(p);
   const filter = videoFilter(p);
@@ -468,7 +493,7 @@ export default function ScrollVideoRenderer({ p = {}, builderProgress = null, ra
               most people see it. */}
           {!painted ? (
             <img
-              src={p.poster || (frameUrls ? frameUrls[0] : frameUrl(source.framesId, 0, source.ext))}
+              src={loadingFrameSrc}
               alt=""
               className="absolute inset-0 w-full h-full"
               style={{ objectFit: fit, filter }}

@@ -388,6 +388,7 @@ describe("what the editor warns about", () => {
  * is exactly where a prop resolver quietly stops recursing.
  * --------------------------------------------------------------------- */
 import { resolveProps } from "@/lib/cms/binding";
+import { coarseStride, nearestCoarseFrame } from "@/Components/cms/ScrollVideo";
 
 describe("scenes and overlays go through the existing variable system", () => {
   const ctx = { site: { name: "Ababeel Safety" }, programmeCount: 20, course: { name: "IOSH Managing Safely" } };
@@ -465,5 +466,45 @@ describe("a video format the browser cannot play", () => {
   test("an ordinary MP4 is not flagged", () => {
     const issues = validateScrollVideo({ src: "/uploads/cms/clip.mp4", poster: "/p.webp", title: "x" });
     expect(issues.find((i) => /QuickTime/.test(i.message))).toBeUndefined();
+  });
+});
+
+describe("what shows while the sequence is still downloading", () => {
+  test("the loading frame is picked from the set the loader fetches first", () => {
+    // Anything else would ask the server for images it was not already going
+    // to fetch, on exactly the connection that is already struggling.
+    const stride = coarseStride(120);
+    for (let i = 0; i < 120; i += 7) {
+      expect(nearestCoarseFrame(i, 120) % stride === 0 || nearestCoarseFrame(i, 120) === 119).toBe(true);
+    }
+  });
+
+  test("it follows the scroll rather than staying on frame one", () => {
+    // The bug this replaces: the section showed its first frame until enough
+    // images had decoded to paint the canvas, so on a slow connection a
+    // visitor scrolled the whole section and the picture never moved.
+    const seen = new Set();
+    for (const pct of [0, 0.2, 0.4, 0.6, 0.8, 1]) {
+      seen.add(nearestCoarseFrame(Math.round(pct * 119), 120));
+    }
+    expect(seen.size).toBeGreaterThanOrEqual(5);
+  });
+
+  test("it never leaves the sequence", () => {
+    expect(nearestCoarseFrame(0, 120)).toBe(0);
+    expect(nearestCoarseFrame(119, 120)).toBeLessThanOrEqual(119);
+    expect(nearestCoarseFrame(-5, 120)).toBe(0);
+    expect(nearestCoarseFrame(999, 120)).toBeLessThanOrEqual(119);
+  });
+
+  test("a very short sequence still works", () => {
+    expect(coarseStride(3)).toBe(1);
+    expect(nearestCoarseFrame(1, 3)).toBe(1);
+    expect(nearestCoarseFrame(2, 3)).toBe(2);
+  });
+
+  test("a sequence of one does not divide by zero", () => {
+    expect(nearestCoarseFrame(0, 1)).toBe(0);
+    expect(coarseStride(0)).toBe(1);
   });
 });

@@ -48,6 +48,8 @@ export {
   overlayStyle,
   snapTarget,
   loadOrder,
+  coarseStride,
+  nearestCoarseFrame,
   frameUrl,
   reducedMotionMode,
   resolveSource,

@@ -17,7 +17,7 @@
  *     live page to work out why nothing moves.
  */
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Play, Pause, Film, Monitor, Smartphone, AlertTriangle, AlertCircle, CheckCircle2 } from "lucide-react";
 import ScrollVideo, { useVideoMeta, mapProgress, validateScrollVideo, resolveSource } from "@/Components/cms/ScrollVideo";
 
@@ -38,6 +38,12 @@ export default function ScrollVideoStudio({ props }) {
   const [progress, setProgress] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [device, setDevice] = useState("desktop");
+  // The sequence's real shape, read from its first frame. A fixed-height
+  // preview box crops with `cover`, so a tall or unusually-sized sequence
+  // showed a sliver of itself and looked broken — the author could not see
+  // what they were editing. The box takes the frames' own aspect ratio
+  // instead, and nothing is cropped.
+  const [frameAspect, setFrameAspect] = useState(0);
   const timerRef = useRef(null);
 
   const togglePlay = () => {
@@ -58,6 +64,24 @@ export default function ScrollVideoStudio({ props }) {
       });
     }, 40);
   };
+
+  // Read the shape off the first frame, once per sequence.
+  const firstFrame = Array.isArray(props.frames) && props.frames.length ? props.frames[0] : "";
+  useEffect(() => {
+    if (!firstFrame) {
+      setFrameAspect(0);
+      return undefined;
+    }
+    let alive = true;
+    const img = new Image();
+    img.onload = () => {
+      if (alive && img.naturalHeight) setFrameAspect(img.naturalWidth / img.naturalHeight);
+    };
+    img.src = firstFrame;
+    return () => {
+      alive = false;
+    };
+  }, [firstFrame]);
 
   const problems = validateScrollVideo(props);
   const errors = problems.filter((x) => x.level === "error");
@@ -124,7 +148,18 @@ export default function ScrollVideoStudio({ props }) {
       </div>
 
       <div className="bg-gray-900 p-3 flex justify-center">
-        <div className="relative bg-black overflow-hidden rounded" style={{ height: 240, width: device_.width, maxWidth: "100%" }}>
+        <div
+          className="relative bg-black overflow-hidden rounded"
+          style={
+            // Mobile is previewed at a phone's width, so its shape is the
+            // point and the height follows. Otherwise the box takes the
+            // frames' own aspect ratio, capped so a very tall sequence does
+            // not push everything else off the panel.
+            device === "mobile"
+              ? { width: 390, maxWidth: "100%", height: 420 }
+              : { width: "100%", maxWidth: 560, aspectRatio: frameAspect ? String(frameAspect) : "16 / 9" }
+          }
+        >
           {nothingToShow ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 text-center px-6">
               <AlertCircle size={20} className="text-amber-400" />
@@ -137,9 +172,24 @@ export default function ScrollVideoStudio({ props }) {
             // The preview forces a full-motion, unpinned, fixed-height render so
             // the scrubber owns the position — the section's own pin and scroll
             // hold belong to the page, not to a 240px box.
-            <div className="absolute inset-0 [&_section]:!h-full [&_section>div]:!h-full [&_section>div]:!static">
+            <div className="absolute inset-0 [&_section]:!h-full [&_section>div]:!h-full [&_section>div]:!relative">
               <ScrollVideo
-                p={{ ...props, stageHeight: "240px", mobileStageHeight: "240px", height: "240px", sticky: false, reducedMotion: "full" }}
+                p={{
+                  ...props,
+                  stageHeight: "100%",
+                  mobileStageHeight: "100%",
+                  height: "100%",
+                  // The scrubber owns the position here, so the section must
+                  // not pin: `relative` rather than `static` keeps it a
+                  // containing block, which the overlays and scenes position
+                  // against.
+                  sticky: false,
+                  reducedMotion: "full",
+                  // Show the whole frame. The box already matches the
+                  // sequence's shape, and an author checking their animation
+                  // needs to see all of it rather than the public page's crop.
+                  fit: "contain",
+                }}
                 builderProgress={mapped}
                 forceDevice={device}
               />
