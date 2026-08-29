@@ -34,9 +34,12 @@ import {
  */
 
 /** The shared heading + optional footer link every catalogue block has. */
-function BlockShell({ p, children, footer = true }) {
+function BlockShell({ p, s, children, footer = true }) {
   const align = p.align === "center" ? "center" : "left";
   const hasHeader = p.title || p.subtitle || p.eyebrow;
+  // A text colour set in the Design tab means the section sits on its own
+  // dark band, so the heading and footer button switch to their light forms.
+  const dark = !!s?.textColor;
 
   return (
     <Container className="py-14 sm:py-16">
@@ -46,6 +49,7 @@ function BlockShell({ p, children, footer = true }) {
           title={p.title}
           lead={p.subtitle}
           align={align}
+          dark={dark}
           className="mb-10"
         />
       ) : null}
@@ -54,7 +58,7 @@ function BlockShell({ p, children, footer = true }) {
 
       {footer && p.ctaLabel && p.ctaHref ? (
         <div className={cn("mt-10 flex", align === "center" ? "justify-center" : "justify-start")}>
-          <LinkButton href={p.ctaHref} variant="outline">
+          <LinkButton href={p.ctaHref} variant={dark ? "outlineLight" : "outline"}>
             {p.ctaLabel}
             <ArrowRight size={15} aria-hidden="true" className="aba-arrow" />
           </LinkButton>
@@ -80,10 +84,10 @@ function gridClass(columns) {
 
 /* ------------------------------------------------------------------ courses */
 
-export function CourseGridBlock({ p }) {
+export function CourseGridBlock({ p, s }) {
   const items = Array.isArray(p._items) ? p._items : [];
   return (
-    <BlockShell p={p}>
+    <BlockShell p={p} s={s}>
       {items.length ? (
         <RevealStagger className={gridClass(p.columns)}>
           {items.map((course) => (
@@ -102,10 +106,10 @@ export function CourseGridBlock({ p }) {
 
 /* ----------------------------------------------------------------- schedule */
 
-export function ScheduleListBlock({ p }) {
+export function ScheduleListBlock({ p, s }) {
   const items = Array.isArray(p._items) ? p._items : [];
   return (
-    <BlockShell p={p}>
+    <BlockShell p={p} s={s}>
       {items.length ? (
         <RevealStagger className="space-y-4">
           {items.map((session) => (
@@ -135,10 +139,10 @@ export function ScheduleListBlock({ p }) {
  * logo strip is drawn, so the difference lives in the props rather than in a
  * second copy of this layout.
  */
-function LogoBlock({ p, items, hrefFor, detailCard }) {
+function LogoBlock({ p, s, items, hrefFor, detailCard }) {
   if (!items.length) {
     return (
-      <BlockShell p={p}>
+      <BlockShell p={p} s={s}>
         <Nothing message={p.emptyMessage} fallback="Logos will appear here once they are published." />
       </BlockShell>
     );
@@ -146,7 +150,7 @@ function LogoBlock({ p, items, hrefFor, detailCard }) {
 
   if (p.layout === "cards" && detailCard) {
     return (
-      <BlockShell p={p}>
+      <BlockShell p={p} s={s}>
         <RevealStagger className={gridClass(3)}>
           {items.map((item) => detailCard(item))}
         </RevealStagger>
@@ -155,6 +159,7 @@ function LogoBlock({ p, items, hrefFor, detailCard }) {
   }
 
   const grayscale = p.grayscale !== false;
+  const dark = !!s?.textColor;
 
   const logo = (item) => (
     <LogoTile
@@ -162,7 +167,8 @@ function LogoBlock({ p, items, hrefFor, detailCard }) {
       alt=""
       name={item.name}
       className={cn(
-        "h-16 border-0 bg-transparent px-3 transition",
+        "h-16 px-3 transition",
+        dark ? "border-0 bg-white/95 rounded-lg" : "border-0 bg-transparent",
         // Some brand marks are unreadable desaturated, which is why this is a
         // choice rather than always on.
         grayscale && "opacity-70 grayscale hover:opacity-100 hover:grayscale-0",
@@ -183,7 +189,7 @@ function LogoBlock({ p, items, hrefFor, detailCard }) {
 
   if (p.layout === "grid") {
     return (
-      <BlockShell p={p}>
+      <BlockShell p={p} s={s}>
         <RevealStagger className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-5">
           {items.map(wrapped)}
         </RevealStagger>
@@ -192,7 +198,7 @@ function LogoBlock({ p, items, hrefFor, detailCard }) {
   }
 
   return (
-    <BlockShell p={p}>
+    <BlockShell p={p} s={s}>
       <Reveal>
         <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-6">
           {items.map(wrapped)}
@@ -202,11 +208,12 @@ function LogoBlock({ p, items, hrefFor, detailCard }) {
   );
 }
 
-export function AwardingBodyLogosBlock({ p }) {
+export function AwardingBodyLogosBlock({ p, s }) {
   const items = Array.isArray(p._items) ? p._items : [];
   return (
     <LogoBlock
       p={p}
+      s={s}
       items={items}
       hrefFor={(item) => (p.linkToBody !== false && item.slug ? `/awarding-bodies/${item.slug}` : "")}
       detailCard={(item) => <AwardingBodyCard key={item._id} body={item} />}
@@ -214,23 +221,23 @@ export function AwardingBodyLogosBlock({ p }) {
   );
 }
 
-export function AccreditationLogosBlock({ p }) {
+export function AccreditationLogosBlock({ p, s }) {
   const items = Array.isArray(p._items) ? p._items : [];
   // No per-logo link: an accreditation mark is evidence, not navigation, and
   // sending someone off to a third-party site mid-page is not what the strip is
   // for. The block's own CTA points at /about/accreditations, where the details
   // and the verification links live.
-  return <LogoBlock p={p} items={items} />;
+  return <LogoBlock p={p} s={s} items={items} />;
 }
 
 /* ----------------------------------------------------------------- people */
 
-export function ConsultantListBlock({ p }) {
+export function ConsultantListBlock({ p, s }) {
   const items = Array.isArray(p._items) ? p._items : [];
 
   if (!items.length) {
     return (
-      <BlockShell p={p}>
+      <BlockShell p={p} s={s}>
         <Nothing message={p.emptyMessage} fallback="Consultant profiles are on their way." />
       </BlockShell>
     );
@@ -238,7 +245,7 @@ export function ConsultantListBlock({ p }) {
 
   if (p.display === "cards") {
     return (
-      <BlockShell p={p}>
+      <BlockShell p={p} s={s}>
         <RevealStagger className={gridClass(p.columns)}>
           {items.map((person) => (
             <PersonCard key={person._id} person={person} />
@@ -249,7 +256,7 @@ export function ConsultantListBlock({ p }) {
   }
 
   return (
-    <BlockShell p={p}>
+    <BlockShell p={p} s={s}>
       <div className="space-y-16 lg:space-y-24">
         {items.map((consultant, index) => (
           <ConsultantProfile key={consultant._id} consultant={consultant} index={index} />
@@ -259,12 +266,12 @@ export function ConsultantListBlock({ p }) {
   );
 }
 
-export function TeamGridBlock({ p }) {
+export function TeamGridBlock({ p, s }) {
   const all = Array.isArray(p._items) ? p._items : [];
   const items = p.leadershipOnly ? all.filter((m) => m.leadership) : all;
 
   return (
-    <BlockShell p={p}>
+    <BlockShell p={p} s={s}>
       {items.length ? (
         <RevealStagger className={gridClass(p.columns)}>
           {items.map((person) => (
@@ -280,13 +287,13 @@ export function TeamGridBlock({ p }) {
 
 /* ------------------------------------------------------------- testimonials */
 
-export function ReviewWallBlock({ p }) {
+export function ReviewWallBlock({ p, s }) {
   const all = Array.isArray(p._items) ? p._items : [];
   const items = p.featuredOnly ? all.filter((t) => t.featured) : all;
 
   if (!items.length) {
     return (
-      <BlockShell p={p} footer={false}>
+      <BlockShell p={p} s={s} footer={false}>
         <Nothing
           message={p.emptyMessage}
           fallback="Reviews will appear here once they are published in the dashboard."
@@ -298,7 +305,7 @@ export function ReviewWallBlock({ p }) {
   if (p.layout === "featured" || p.layout === "editorial") {
     const [first, ...rest] = items;
     return (
-      <BlockShell p={p} footer={false}>
+      <BlockShell p={p} s={s} footer={false}>
         <Reveal>
           <div className="mx-auto max-w-3xl">
             <TestimonialCard testimonial={first} variant="featured" />
@@ -320,7 +327,7 @@ export function ReviewWallBlock({ p }) {
     // read, and text that slides away mid-sentence is worse than one someone
     // can push along themselves. Scroll-snap makes it feel deliberate.
     return (
-      <BlockShell p={p} footer={false}>
+      <BlockShell p={p} s={s} footer={false}>
         <div className="aba-scroll-x -mx-5 px-5 pb-2" style={{ scrollSnapType: "x mandatory" }}>
           <div className="flex min-w-max gap-6">
             {items.map((t) => (
@@ -342,7 +349,7 @@ export function ReviewWallBlock({ p }) {
   // mark and the verification label, which is what makes one look like the
   // other.
   return (
-    <BlockShell p={p} footer={false}>
+    <BlockShell p={p} s={s} footer={false}>
       <RevealStagger className={gridClass(p.columns)}>
         {items.map((t) => (
           <TestimonialCard key={t._id} testimonial={t} />

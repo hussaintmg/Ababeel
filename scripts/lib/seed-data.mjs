@@ -188,10 +188,16 @@ const UP = { animation: "fade-up" };
 export function homePageBlocks() {
   const block = blockFactory("home");
   const up = UP;
+  const BLACK = "#060d18";
+  // Sections alternate strictly down the page: dark, light, black, white —
+  // the dark bands set a text colour so every renderer flips to its light
+  // heading and button forms.
+  const onInk = { bgColor: INK, textColor: "#ffffff", animation: "fade-up" };
+  const onBlack = { bgColor: BLACK, textColor: "#ffffff", animation: "fade-up" };
 
   return [
-    // A photograph, not a flat panel: the renderer angles a dark scrim from
-    // the text side so the picture stays readable as a picture.
+    // 1 — DARK. A photograph, not a flat panel: the renderer angles a dark
+    // scrim from the text side so the picture stays readable as a picture.
     block("hero", {
       eyebrow: "Accredited safety training",
       title: "Competence you can evidence",
@@ -205,10 +211,17 @@ export function homePageBlocks() {
       secondaryCta: { label: "See the schedule", href: "/schedule" },
     }),
 
-    // A dark numbers band running straight out of the hero. Every figure is a
-    // structural fact of the platform, not a marketing claim.
+    // 2 — LIGHT.
+    block("accreditationLogos", {
+      eyebrow: "", title: "Accredited and approved", subtitle: "", align: "center",
+      trustStripOnly: true, layout: "strip", grayscale: true,
+      ctaLabel: "", ctaHref: "/about/accreditations",
+    }, { animation: "fade" }),
+
+    // 3 — BLACK. Every figure is a structural fact of the platform, not a
+    // marketing claim.
     block("stats", {
-      title: "", subtitle: "", accent: BRAND, bgColor: "#060d18",
+      title: "", subtitle: "", accent: BRAND, bgColor: BLACK,
       items: [
         { value: "100%", label: "Certificates verifiable online" },
         { value: "4", label: "Course levels, beginner to professional" },
@@ -217,12 +230,7 @@ export function homePageBlocks() {
       ],
     }, { textColor: "#ffffff", animation: "fade" }),
 
-    block("accreditationLogos", {
-      eyebrow: "", title: "Accredited and approved", subtitle: "", align: "center",
-      trustStripOnly: true, layout: "strip", grayscale: true,
-      ctaLabel: "", ctaHref: "/about/accreditations",
-    }, { animation: "fade" }),
-
+    // 4 — WHITE.
     block("split", {
       eyebrow: "Who we are",
       title: "About Ababeel",
@@ -236,8 +244,20 @@ export function homePageBlocks() {
       image: "/2.png", imageAlt: "Trainers working on site", imageSide: "right",
       accent: BRAND, bgColor: "", badgeValue: "UK", badgeLabel: "Registered company",
       cta: { label: "More about us", href: "/about-us" },
-    }, { bgColor: INK_MIST, animation: "fade-right" }),
+    }, { animation: "fade-right" }),
 
+    // 5 — DARK.
+    block("cardGrid", {
+      eyebrow: "Getting started", title: "How it works", subtitle: "", columns: "3",
+      accent: BRAND, variant: "numbered",
+      items: [
+        { icon: "", title: "Choose your course", text: "Browse the catalogue by level, awarding body or duration, and open a course to see its content and dates.", image: "", href: "/courses" },
+        { icon: "", title: "Pick a date", text: "Every course lists its upcoming sessions. Choose the one that fits and press Register.", image: "", href: "/schedule" },
+        { icon: "", title: "Register — no online payment", text: "Send the registration form and our team confirms your place and the arrangements by email.", image: "", href: "/registration" },
+      ],
+    }, onInk),
+
+    // 6 — WHITE.
     block("courseGrid", {
       eyebrow: "Training", title: "Featured courses",
       subtitle: "A selection of the programmes we run most often.",
@@ -247,16 +267,7 @@ export function homePageBlocks() {
       emptyMessage: "Courses will appear here once they are published.",
     }, up),
 
-    block("cardGrid", {
-      eyebrow: "Getting started", title: "How it works", subtitle: "", columns: "3",
-      accent: BRAND, variant: "numbered",
-      items: [
-        { icon: "", title: "Choose your course", text: "Browse the catalogue by level, awarding body or duration, and open a course to see its content and dates.", image: "", href: "/courses" },
-        { icon: "", title: "Pick a date", text: "Every course lists its upcoming sessions. Choose the one that fits and press Register.", image: "", href: "/schedule" },
-        { icon: "", title: "Register — no online payment", text: "Send the registration form and our team confirms your place and the arrangements by email.", image: "", href: "/registration" },
-      ],
-    }, { bgColor: INK_MIST, animation: "fade-up" }),
-
+    // 7 — BLACK.
     block("cardGrid", {
       eyebrow: "", title: "Why Ababeel", subtitle: "", columns: "4",
       accent: BRAND, variant: "plain",
@@ -266,21 +277,24 @@ export function homePageBlocks() {
         { icon: "🌍", title: "Delivered anywhere", text: "Online, in person or blended, scheduled around your operation.", image: "", href: "/schedule" },
         { icon: "🤝", title: "Supported throughout", text: "A named contact from enquiry to certificate.", image: "", href: "/contact-us" },
       ],
-    }, up),
+    }, onBlack),
 
+    // 8 — WHITE.
     block("awardingBodyLogos", {
       eyebrow: "Accreditation", title: "Who awards our qualifications", subtitle: "",
       align: "center", layout: "strip", grayscale: true, linkToBody: true,
       ctaLabel: "All awarding bodies", ctaHref: "/awarding-bodies",
-    }, { bgColor: INK_MIST, animation: "fade-up" }),
+    }, up),
 
+    // 9 — DARK.
     block("scheduleList", {
       eyebrow: "Dates", title: "Upcoming sessions", subtitle: "", align: "left",
       mode: "", months: "3", limit: "3", showCourseName: true,
       ctaLabel: "See the full schedule", ctaHref: "/schedule",
       emptyMessage: "No training sessions are currently scheduled.",
-    }, up),
+    }, onInk),
 
+    // 10 — WHITE.
     block("consultantList", {
       eyebrow: "Expertise", title: "Our consultants", subtitle: "", align: "center",
       display: "cards", limit: "3", columns: "3",
@@ -288,12 +302,14 @@ export function homePageBlocks() {
       emptyMessage: "Consultant profiles are on their way.",
     }, up),
 
+    // 11 — BLACK.
     block("reviewWall", {
       eyebrow: "Reviews", title: "What our learners say", subtitle: "", align: "center",
       layout: "google", limit: "3", columns: "3", featuredOnly: false,
       emptyMessage: "Reviews will appear here once they are published.",
-    }, { bgColor: INK_MIST, animation: "fade-up" }),
+    }, onBlack),
 
+    // 12 — WHITE.
     block("faq", {
       title: "Common questions", subtitle: "", columns: "2", accent: BRAND,
       items: [
@@ -304,6 +320,7 @@ export function homePageBlocks() {
       ],
     }, up),
 
+    // 13 — DARK.
     block("cta", {
       title: "Ready to get your team qualified?",
       text: "Tell us what you need and we will put together a training plan that fits.",

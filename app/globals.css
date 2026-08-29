@@ -400,6 +400,15 @@ button{cursor: pointer;}
   color: inherit;
 }
 
+/* A light card sitting on a dark CMS band is its own surface: its text keeps
+   the ink hierarchy the card was designed with instead of inheriting the
+   band's colour. `revert-layer` rolls back to the layered (utility) styles as
+   if the rule above did not exist. */
+.cms-inherit-color .aba-card,
+.cms-inherit-color .aba-card :is(h1, h2, h3, h4, h5, h6, p, li, span, dt, dd, blockquote, strong, em, small) {
+  color: revert-layer;
+}
+
 /* ---------------------------------------------------------------------------
    Scroll Video section
    The stage is pinned with position: sticky, so nothing in the ancestor chain

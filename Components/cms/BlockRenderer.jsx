@@ -350,9 +350,16 @@ function CardGridBlock({ p, s }) {
               variants={reveal}
               // Each card may override the block's colours; an untouched card
               // inherits them, so nothing changes until an author asks it to.
-              className={`group/card relative h-full rounded-2xl border shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all p-7 overflow-hidden ${
-                it.bgColor ? "" : "bg-white"
-              } ${it.bgColor ? "border-transparent" : "border-gray-100"}`}
+              // On a dark band (a Design-tab text colour is set) the cards go
+              // glassy — translucent surfaces whose inherited light text is
+              // exactly what the band wants. On light bands they stay white.
+              className={`group/card relative h-full rounded-2xl border transition-all p-7 overflow-hidden hover:-translate-y-1 ${
+                it.bgColor
+                  ? "border-transparent"
+                  : inherit
+                  ? "bg-white/[0.06] border-white/15 backdrop-blur-sm hover:bg-white/[0.1]"
+                  : "bg-white border-gray-100 shadow-sm hover:shadow-xl"
+              }`}
               style={{ backgroundColor: it.bgColor || undefined, color: it.textColor || undefined }}
             >
               {/* A rule in the accent colour that fills out on hover — enough to

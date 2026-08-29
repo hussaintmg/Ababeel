@@ -148,7 +148,9 @@ export function Card({ children, className = "", as: Tag = "div", hover = false,
   return (
     <Tag
       className={cn(
-        "rounded-xl border border-ink-100 bg-white overflow-hidden",
+        // aba-card exempts the card's text from a CMS band's inherited colour:
+        // a white card on a dark band keeps its own ink text.
+        "aba-card rounded-xl border border-ink-100 bg-white overflow-hidden",
         hover && "aba-lift hover:border-ink-200",
         className,
       )}
@@ -284,7 +286,7 @@ export function EmptyState({
   className = "",
 }) {
   return (
-    <div className={cn("rounded-xl border border-dashed border-ink-200 bg-ink-50/50 px-6 py-14 text-center", className)}>
+    <div className={cn("aba-card rounded-xl border border-dashed border-ink-200 bg-ink-50/50 px-6 py-14 text-center", className)}>
       <Icon size={30} className="mx-auto mb-4 text-ink-300" aria-hidden="true" />
       <p className="t-h4 text-ink-900">{title}</p>
       {message ? <p className="t-small mt-2 mx-auto max-w-md text-ink-500">{message}</p> : null}
