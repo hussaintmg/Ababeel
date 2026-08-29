@@ -54,7 +54,7 @@ import { uniqueReference } from "@/lib/training/reference";
 
 const HAS_DB = process.env.LIVE_DB === "1";
 const RUN = `qa-${Date.now().toString(36)}`;
-const TAG = "QA Test — ABA Safety";
+const TAG = "QA Test — Ababeel";
 
 /** Everything created, so cleanup removes exactly this and nothing else. */
 const created = { levels: [], bodies: [], courses: [], sessions: [], registrations: [], resources: [], testimonials: [] };

@@ -94,6 +94,7 @@ export function levelDoc(level, index) {
  * expandable item in the mobile drawer.
  */
 export const NAV_LINKS = [
+  { name: "Home", url: "/" },
   {
     name: "About",
     url: "/about-us",
@@ -102,15 +103,15 @@ export const NAV_LINKS = [
       { name: "Our Team", url: "/about/team" },
       { name: "Our Consultants", url: "/about/consultants" },
       { name: "Accreditations & Certifications", url: "/about/accreditations" },
+      { name: "Why Ababeel", url: "/why-ababeel" },
     ],
   },
   { name: "Courses", url: "/courses" },
   { name: "Awarding Bodies", url: "/awarding-bodies" },
   { name: "Schedule", url: "/schedule" },
   { name: "Resources", url: "/resources" },
-  { name: "Qualifications", url: "/qualification" },
-  { name: "Certificate Verification", url: "/verify-certificate" },
   { name: "Contact Us", url: "/contact-us" },
+  { name: "Register Now", url: "/registration" },
 ];
 
 export const FOOTER_COLUMNS = [
@@ -162,7 +163,7 @@ const STYLE = {
 /**
  * The home page blocks.
  *
- * Mirrors the "ABA Safety — home" template in
+ * Mirrors the "Ababeel — home" template in
  * `Components/cms/trainingTemplates.js`. The catalogue sections fill
  * themselves from the database, so publishing a course puts it on the home
  * page without anyone editing the home page again.
@@ -171,16 +172,22 @@ const STYLE = {
  * words to write, and inventing claims about a safety company is how invented
  * claims get published.
  */
-export function homePageBlocks() {
+function blockFactory(prefix) {
   let n = 0;
   const stamp = Date.now().toString(36);
-  const block = (type, props, style = {}) => ({
-    id: `seed_home_${stamp}_${(n += 1)}`,
+  return (type, props, style = {}) => ({
+    id: `seed_${prefix}_${stamp}_${(n += 1)}`,
     type,
     props,
     _style: { ...STYLE, ...style },
   });
-  const up = { animation: "fade-up" };
+}
+
+const UP = { animation: "fade-up" };
+
+export function homePageBlocks() {
+  const block = blockFactory("home");
+  const up = UP;
 
   return [
     block("hero", {
@@ -202,9 +209,9 @@ export function homePageBlocks() {
 
     block("split", {
       eyebrow: "Who we are",
-      title: "About ABA Safety",
+      title: "About Ababeel",
       text:
-        "<p>Replace this paragraph with your own account of who ABA Safety is and what you do. Two or three sentences is plenty — the detail belongs on the About page.</p>",
+        "<p>Replace this paragraph with your own account of who Ababeel is and what you do. Two or three sentences is plenty — the detail belongs on the About page.</p>",
       bullets: [
         { text: "Accredited by recognised awarding bodies" },
         { text: "Delivered by working practitioners" },
@@ -224,7 +231,7 @@ export function homePageBlocks() {
     }, up),
 
     block("cardGrid", {
-      title: "Why ABA Safety", subtitle: "", columns: "4",
+      title: "Why Ababeel", subtitle: "", columns: "4",
       items: [
         { icon: "🎓", title: "Accredited", text: "Qualifications awarded by recognised bodies, not certificates of attendance.", image: "", href: "/about/accreditations" },
         { icon: "🛠️", title: "Practitioner-led", text: "Taught by people who have managed the risks they are teaching about.", image: "", href: "" },
@@ -267,4 +274,174 @@ export function homePageBlocks() {
       bgColor: INK, textColor: "#ffffff",
     }, up),
   ];
+}
+
+/* -------------------------------------------------- training page seeds */
+
+/** A dark hero matching each page's built-in top region. */
+function pageHero(block, eyebrow, title, subtitle) {
+  return block("hero", {
+    eyebrow,
+    title,
+    subtitle,
+    align: "left",
+    bgType: "solid",
+    bgColor: INK,
+    textColor: "#ffffff",
+    minHeight: "",
+    accent: BRAND,
+    image: "",
+    primaryCta: { label: "", href: "" },
+    secondaryCta: { label: "", href: "" },
+  });
+}
+
+/**
+ * Initial CMS sections for every training page.
+ *
+ * These are what the owner sees the first time they open the page in Website
+ * CMS: real, editable sections rather than an empty shell. Each doc ships
+ * DISABLED, so the built-in page keeps rendering until the owner reviews and
+ * enables it — the same safety the home page seed has.
+ *
+ * The hero-only pages (courses, schedule, registration, resources) keep their
+ * working tool below the CMS slot, so their seed is the hero; the content
+ * pages get their full section stack, built from the live catalogue blocks.
+ */
+export function trainingPageDocs() {
+  const pages = [];
+  const add = (key, title, route, blocks) => pages.push({ key, title, route, blocks });
+
+  {
+    const b = blockFactory("courses");
+    add("courses", "Courses", "/courses", [
+      pageHero(b, "Training catalogue", "Accredited safety training, built around competence",
+        "Browse our full catalogue by level, awarding body or duration, and register for an upcoming session."),
+    ]);
+  }
+  {
+    const b = blockFactory("schedule");
+    add("schedule", "Schedule", "/schedule", [
+      pageHero(b, "Upcoming dates", "Training Schedule",
+        "Upcoming sessions across all of our accredited programmes."),
+    ]);
+  }
+  {
+    const b = blockFactory("registration");
+    add("registration", "Registration", "/registration", [
+      pageHero(b, "Enrolment", "Register For Training",
+        "Complete the form below and a member of our training team will confirm your place."),
+    ]);
+  }
+  {
+    const b = blockFactory("resources");
+    add("resources", "Resources", "/resources", [
+      pageHero(b, "Knowledge", "Resources",
+        "Guides, articles and downloads from our training and consultancy work."),
+    ]);
+  }
+  {
+    const b = blockFactory("bodies");
+    add("awarding-bodies", "Awarding Bodies", "/awarding-bodies", [
+      pageHero(b, "Accreditation", "Our awarding bodies",
+        "Every qualification we deliver is awarded by a recognised organisation. Here is who stands behind each one."),
+      b("awardingBodyLogos", {
+        eyebrow: "", title: "", subtitle: "", align: "left",
+        layout: "cards", grayscale: false, linkToBody: true,
+        ctaLabel: "", ctaHref: "/awarding-bodies",
+      }, UP),
+      b("cta", {
+        title: "Not sure which qualification you need?",
+        text: "Our training team will talk it through and recommend the right course and awarding body.",
+        button: { label: "Get advice", href: "/contact-us" },
+        secondaryButton: { label: "", href: "" },
+        bgColor: INK, textColor: "#ffffff",
+      }, UP),
+    ]);
+  }
+  {
+    const b = blockFactory("team");
+    add("our-team", "Our Team", "/about/team", [
+      pageHero(b, "People", "Our team",
+        "Practitioners, trainers and assessors who have done the work they teach."),
+      b("teamGrid", {
+        eyebrow: "", title: "", subtitle: "", align: "center",
+        limit: "12", columns: "4", leadershipOnly: false, showBio: true,
+        ctaLabel: "", ctaHref: "/about/team",
+        emptyMessage: "Team profiles are on their way.",
+      }, UP),
+    ]);
+  }
+  {
+    const b = blockFactory("consultants");
+    add("our-consultants", "Our Consultants", "/about/consultants", [
+      pageHero(b, "Expertise", "Our consultants",
+        "Subject-matter specialists who advise, audit and train across industry."),
+      b("consultantList", {
+        eyebrow: "", title: "", subtitle: "", align: "left",
+        display: "profiles", limit: "12", columns: "3",
+        ctaLabel: "", ctaHref: "/about/consultants",
+        emptyMessage: "Consultant profiles are on their way.",
+      }, UP),
+    ]);
+  }
+  {
+    const b = blockFactory("accreditations");
+    add("accreditations", "Accreditations & Certifications", "/about/accreditations", [
+      pageHero(b, "Credentials", "Accreditations & certifications",
+        "The approvals and memberships that stand behind the training we deliver."),
+      b("accreditationLogos", {
+        eyebrow: "", title: "", subtitle: "", align: "center",
+        trustStripOnly: false, layout: "grid", grayscale: false,
+        ctaLabel: "", ctaHref: "/about/accreditations",
+      }, UP),
+      b("awardingBodyLogos", {
+        eyebrow: "Qualifications", title: "Who awards our qualifications", subtitle: "",
+        align: "center", layout: "strip", grayscale: true, linkToBody: true,
+        ctaLabel: "All awarding bodies", ctaHref: "/awarding-bodies",
+      }, UP),
+    ]);
+  }
+
+  return pages;
+}
+
+/**
+ * The "Why Ababeel" page — a custom CMS page served by the /[slug] route, so
+ * it is created, owned and edited entirely inside the CMS with no code route
+ * behind it. Ships ENABLED, because unlike the pages above it has no built-in
+ * fallback to stand behind.
+ */
+export function whyAbabeelDoc() {
+  const b = blockFactory("why");
+  return {
+    key: "why-ababeel",
+    title: "Why Ababeel",
+    route: "/why-ababeel",
+    blocks: [
+      pageHero(b, "Why Ababeel", "Training that holds up where it matters",
+        "What working with Ababeel actually gets you — replace this line with your own words in the CMS."),
+      b("cardGrid", {
+        title: "Why Ababeel", subtitle: "", columns: "4",
+        items: [
+          { icon: "🎓", title: "Accredited", text: "Qualifications awarded by recognised bodies, not certificates of attendance.", image: "", href: "/about/accreditations" },
+          { icon: "🛠️", title: "Practitioner-led", text: "Taught by people who have managed the risks they are teaching about.", image: "", href: "" },
+          { icon: "🌍", title: "Delivered anywhere", text: "Online, in person or blended, scheduled around your operation.", image: "", href: "/schedule" },
+          { icon: "🤝", title: "Supported throughout", text: "A named contact from enquiry to certificate.", image: "", href: "/contact-us" },
+        ],
+      }, UP),
+      b("reviewWall", {
+        eyebrow: "Reviews", title: "What our learners say", subtitle: "", align: "center",
+        layout: "google", limit: "3", columns: "3", featuredOnly: false,
+        emptyMessage: "Reviews will appear here once they are published.",
+      }, { bgColor: INK_MIST, animation: "fade-up" }),
+      b("cta", {
+        title: "Ready to get your team qualified?",
+        text: "Tell us what you need and we will put together a training plan that fits.",
+        button: { label: "Start a conversation", href: "/contact-us" },
+        secondaryButton: { label: "Browse courses", href: "/courses" },
+        bgColor: INK, textColor: "#ffffff",
+      }, UP),
+    ],
+  };
 }

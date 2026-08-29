@@ -1,4 +1,4 @@
-# ABA Safety platform — acceptance report
+# Ababeel platform — acceptance report
 
 Assessed against the 84-point brief. Written after the final QA pass.
 
@@ -81,10 +81,10 @@ copied. The palette, typography scale and components are original.
 | 5 | Centralised design system | ✅ | `Components/ui/`, tokens in `globals.css` |
 | 6 | Global header + About dropdown | ✅ | CMS-editable, nested; mobile drawer |
 | 7 | Modular CMS home page | ✅ | Template + `npm run seed:training-home` |
-| 8 | 6+ hero templates | ✅ | 6 in "ABA — Heroes" |
-| 9 | 6+ CTA templates | ✅ | 6 in "ABA — Call To Action" |
+| 8 | 6+ hero templates | ✅ | 6 in "Heroes" |
+| 9 | 6+ CTA templates | ✅ | 6 in "Call To Action" |
 | 10 | Testimonials, no Google API | ✅ | Manual entry; no API anywhere |
-| 11 | Template library by category | ✅ | 30+ ABA sections in 9 categories |
+| 11 | Template library by category | ✅ | 30+ Ababeel sections in the shared categories |
 | 12 | CMS page builder | ✅ | Pre-existing; extended, not replaced |
 | 13 | Course fields; no price | ⚠️ | See deviation 1 |
 | 14 | Featured image + gallery | ✅ | Upload, reorder, media library |
@@ -122,7 +122,7 @@ copied. The palette, typography scale and components are original.
 | --- | --- | --- | --- |
 | 37 | /awarding-bodies | ✅ | Published only |
 | 38 | /awarding-bodies/[slug] | ✅ | With its related courses |
-| 39 | Premium About section | ✅ | Sub-pages built. `/about-us` is already CMS-managed (`CmsPageContent`), so the ABA sections can be applied from the CMS with the existing copy preserved as the fallback |
+| 39 | Premium About section | ✅ | Sub-pages built. `/about-us` is already CMS-managed (`CmsPageContent`), so the Ababeel sections can be applied from the CMS with the existing copy preserved as the fallback |
 | 40 | About dropdown, CMS-controlled | ✅ | Editor now nests |
 | 41 | Team system | ✅ | Grid + leadership split |
 | 42 | Consultant system | ✅ | Full field set incl. gallery |

@@ -1,4 +1,5 @@
 import { Section, Container, Breadcrumb } from "@/Components/ui";
+import CmsSlot from "@/Components/cms/CmsSlot";
 import { getPublicCourseById, getPublicSessionById } from "@/lib/training/queries";
 import { getFormFields, toPublicField } from "@/lib/training/registrationForm";
 import { getRegistrationPanel, getTrainingSettings } from "@/lib/training/settings";
@@ -22,7 +23,7 @@ export async function generateMetadata() {
   return trainingMetadata("Register For Training", null, {
     title: "Register For Training",
     description:
-      "Register for an upcoming ABA Safety training session. Our team will confirm your place.",
+      "Register for an upcoming Ababeel training session. Our team will confirm your place.",
     // A form has nothing to offer a search index, and an indexed one collects
     // stray submissions with no course attached.
   }).then((meta) => ({ ...meta, robots: { index: false, follow: true } }));
@@ -52,27 +53,29 @@ export default async function RegistrationPage({ searchParams }) {
 
   return (
     <>
-      <Section tone="dark" size="sm" className="pt-10">
-        <Container>
-          <Breadcrumb
-            dark
-            items={[
-              { label: "Home", href: "/" },
-              { label: "Courses", href: "/courses" },
-              { label: "Register" },
-            ]}
-            className="mb-6"
-          />
-          <p className="t-eyebrow mb-3 text-brand-400">Enrolment</p>
-          <h1 className="t-h1 max-w-3xl text-white">
-            {copy.introTitle || "Register For Training"}
-          </h1>
-          <p className="t-body-lg mt-4 max-w-2xl text-ink-200">
-            {copy.introText ||
-              "Complete the form below and a member of our training team will confirm your place."}
-          </p>
-        </Container>
-      </Section>
+      <CmsSlot pageKey="registration">
+  <Section tone="dark" size="sm" className="pt-10">
+          <Container>
+            <Breadcrumb
+              dark
+              items={[
+                { label: "Home", href: "/" },
+                { label: "Courses", href: "/courses" },
+                { label: "Register" },
+              ]}
+              className="mb-6"
+            />
+            <p className="t-eyebrow mb-3 text-brand-400">Enrolment</p>
+            <h1 className="t-h1 max-w-3xl text-white">
+              {copy.introTitle || "Register For Training"}
+            </h1>
+            <p className="t-body-lg mt-4 max-w-2xl text-ink-200">
+              {copy.introText ||
+                "Complete the form below and a member of our training team will confirm your place."}
+            </p>
+          </Container>
+        </Section>
+      </CmsSlot>
 
       <RegistrationForm
         data={{

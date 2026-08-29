@@ -1,16 +1,18 @@
 /**
- * Sets up the whole training platform in one command.
+ * The Ababeel VPS migration.
  *
- *   node scripts/seed-cms-bootstrap.mjs --dry-run       # show what would change
- *   node scripts/seed-cms-bootstrap.mjs                 # write it
- *   node scripts/seed-cms-bootstrap.mjs --publish-home  # …and publish the home page
+ *   npm run migrate:ababeel -- --dry-run        # show what would change
+ *   npm run migrate:ababeel                     # write it
+ *   npm run migrate:ababeel -- --publish-home   # …and publish the home page
  *
- * Four things, in order:
+ * Six things, in order:
  *
  *   1. Registration form fields   (additive — existing fields untouched)
  *   2. Course levels              (additive — existing levels untouched)
  *   3. Navigation and footer      (replaced, backed up first)
- *   4. Home page                  (replaced, backed up first, left OFF by default)
+ *   4. Training CMS pages         (created with real sections; owner edits win)
+ *   5. The "Why Ababeel" page     (a custom CMS page, created if missing)
+ *   6. Home page                  (replaced, backed up first, left OFF by default)
  *
  * WHAT IT WILL NOT DO
  * -------------------
@@ -39,6 +41,8 @@ import {
   NAV_LINKS,
   FOOTER_COLUMNS,
   homePageBlocks,
+  trainingPageDocs,
+  whyAbabeelDoc,
 } from "./lib/seed-data.mjs";
 
 const args = new Set(process.argv.slice(2));
@@ -54,7 +58,7 @@ async function backup(db, label, document) {
   const { insertedId } = await db.collection("cmsbackups").insertOne({
     label,
     takenAt: new Date(),
-    takenBy: "seed-cms-bootstrap",
+    takenBy: "ababeel-migrate",
     document,
   });
   return String(insertedId);
@@ -102,7 +106,7 @@ async function seedNavigation(db) {
   await sitecontents.updateOne(
     { key: "global" },
     {
-      $set: { settings, updatedAt: new Date(), updatedByEmail: "seed-cms-bootstrap" },
+      $set: { settings, updatedAt: new Date(), updatedByEmail: "ababeel-migrate" },
       $setOnInsert: {
         key: "global", title: "Global Site Settings", blocks: [], enabled: true,
         customCss: "", publicHidden: false, isCustom: false, route: "/",
@@ -112,6 +116,104 @@ async function seedNavigation(db) {
     },
     { upsert: true },
   );
+}
+
+/**
+ * True when a CMS document has never been touched by a person.
+ *
+ * The owner editor stamps `updatedByEmail` with the editing owner's address;
+ * the seeds stamp their own names; the auto-seed on first public read leaves
+ * it empty. So a doc is safe to overwrite exactly when that field is empty or
+ * one of ours — a single owner edit makes it theirs, permanently.
+ */
+const SEED_AUTHORS = new Set(["", "ababeel-migrate", "seed-cms-bootstrap", "api/setup/bootstrap"]);
+function untouched(doc) {
+  return !doc || SEED_AUTHORS.has(String(doc.updatedByEmail || ""));
+}
+
+async function seedTrainingPages(db) {
+  const sitecontents = db.collection("sitecontents");
+  const pages = [...trainingPageDocs()];
+  const why = whyAbabeelDoc();
+
+  console.log("\nTraining CMS pages");
+  for (const page of pages) {
+    const existing = await sitecontents.findOne({ key: page.key });
+    if (!untouched(existing)) {
+      console.log(`  ${page.key.padEnd(18)} kept — edited by ${existing.updatedByEmail}`);
+      continue;
+    }
+    if (dryRun) {
+      console.log(`  ${page.key.padEnd(18)} would write ${page.blocks.length} section(s), disabled`);
+      continue;
+    }
+    await sitecontents.updateOne(
+      { key: page.key },
+      {
+        $set: {
+          title: page.title,
+          blocks: page.blocks,
+          updatedAt: new Date(),
+          updatedByEmail: "ababeel-migrate",
+        },
+        $setOnInsert: {
+          key: page.key,
+          settings: {},
+          customCss: "",
+          // Disabled: the built-in page keeps rendering until the owner
+          // reviews these sections in the CMS and enables them.
+          enabled: false,
+          publicHidden: false,
+          isCustom: false,
+          route: page.route,
+          navLabel: "",
+          showInNav: false,
+          dataSources: [],
+          dynamicRoute: null,
+          createdAt: new Date(),
+        },
+      },
+      { upsert: true },
+    );
+    console.log(`  ${page.key.padEnd(18)} wrote ${page.blocks.length} section(s), disabled`);
+  }
+
+  // Why Ababeel is a custom page with no built-in route behind it, so it
+  // ships enabled — otherwise it would be a link to a 404.
+  const existingWhy = await sitecontents.findOne({ key: why.key });
+  if (!untouched(existingWhy)) {
+    console.log(`  ${why.key.padEnd(18)} kept — edited by ${existingWhy.updatedByEmail}`);
+  } else if (dryRun) {
+    console.log(`  ${why.key.padEnd(18)} would write ${why.blocks.length} section(s), enabled (custom page)`);
+  } else {
+    await sitecontents.updateOne(
+      { key: why.key },
+      {
+        $set: {
+          title: why.title,
+          blocks: why.blocks,
+          enabled: true,
+          updatedAt: new Date(),
+          updatedByEmail: "ababeel-migrate",
+        },
+        $setOnInsert: {
+          key: why.key,
+          settings: {},
+          customCss: "",
+          publicHidden: false,
+          isCustom: true,
+          route: why.route,
+          navLabel: why.title,
+          showInNav: false,
+          dataSources: [],
+          dynamicRoute: null,
+          createdAt: new Date(),
+        },
+      },
+      { upsert: true },
+    );
+    console.log(`  ${why.key.padEnd(18)} wrote ${why.blocks.length} section(s), enabled (custom page)`);
+  }
 }
 
 async function seedHomePage(db) {
@@ -136,7 +238,7 @@ async function seedHomePage(db) {
         blocks,
         enabled: !!publishHome,
         updatedAt: new Date(),
-        updatedByEmail: "seed-cms-bootstrap",
+        updatedByEmail: "ababeel-migrate",
       },
       $setOnInsert: {
         key: "home", settings: {}, customCss: "", publicHidden: false,
@@ -153,7 +255,7 @@ async function main() {
     uri: "",
     db: dbOverride,
     force,
-    script: "the CMS bootstrap",
+    script: "the Ababeel migration",
   });
 
   try {
@@ -175,6 +277,7 @@ async function main() {
     );
 
     await seedNavigation(db);
+    await seedTrainingPages(db);
     await seedHomePage(db);
 
     console.log("\n" + "─".repeat(64));

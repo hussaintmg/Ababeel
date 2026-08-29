@@ -1,13 +1,13 @@
 /**
- * Publishes the ABA Safety home page.
+ * Publishes the Ababeel home page.
  *
  *   node scripts/seed-training-homepage.mjs --dry-run   # show what would change
  *   node scripts/seed-training-homepage.mjs             # write it (as a draft)
  *   node scripts/seed-training-homepage.mjs --publish   # write it and enable it
  *
- * The page is assembled from the "Full page — ABA Safety home" template: a
+ * The page is assembled from the "Full page — Ababeel home" template: a
  * hero, the accreditation trust strip, an about panel, featured courses, why
- * ABA Safety, the awarding bodies, upcoming sessions, consultants, reviews and
+ * Ababeel, the awarding bodies, upcoming sessions, consultants, reviews and
  * a closing call to action.
  *
  * The catalogue sections fill themselves from the database — publishing a
@@ -80,9 +80,9 @@ const BLOCKS = [
 
   block("split", {
     eyebrow: "Who we are",
-    title: "About ABA Safety",
+    title: "About Ababeel",
     text:
-      "<p>Replace this paragraph with your own account of who ABA Safety is and what you do. Two or three sentences is plenty — the detail belongs on the About page.</p>",
+      "<p>Replace this paragraph with your own account of who Ababeel is and what you do. Two or three sentences is plenty — the detail belongs on the About page.</p>",
     bullets: [
       { text: "Accredited by recognised awarding bodies" },
       { text: "Delivered by working practitioners" },
@@ -102,7 +102,7 @@ const BLOCKS = [
   }, up),
 
   block("cardGrid", {
-    title: "Why ABA Safety", subtitle: "", columns: "4",
+    title: "Why Ababeel", subtitle: "", columns: "4",
     items: [
       { icon: "🎓", title: "Accredited", text: "Qualifications awarded by recognised bodies, not certificates of attendance.", image: "", href: "/about/accreditations" },
       { icon: "🛠️", title: "Practitioner-led", text: "Taught by people who have managed the risks they are teaching about.", image: "", href: "" },

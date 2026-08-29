@@ -1,5 +1,5 @@
 /**
- * The ABA Safety design system.
+ * The Ababeel design system.
  *
  * Import from here rather than from the individual files, so a component can be
  * split or renamed without touching every page that uses it.

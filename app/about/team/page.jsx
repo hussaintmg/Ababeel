@@ -8,6 +8,7 @@ import {
   SectionHeading,
   RevealStagger,
 } from "@/Components/ui";
+import CmsSlot from "@/Components/cms/CmsSlot";
 import { listTeamMembers } from "@/lib/training/queries";
 import { trainingMetadata } from "@/lib/training/metadata";
 
@@ -22,7 +23,7 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata() {
   return trainingMetadata("Our Team", null, {
     title: "Our Team",
-    description: "The people behind ABA Safety's training and consultancy work.",
+    description: "The people behind Ababeel's training and consultancy work.",
   });
 }
 
@@ -32,7 +33,7 @@ export default async function TeamPage() {
   const rest = members.filter((m) => !m.leadership);
 
   return (
-    <>
+    <CmsSlot pageKey="our-team">
       <Section tone="dark" size="sm" className="pt-10">
         <Container>
           <Breadcrumb
@@ -85,6 +86,6 @@ export default async function TeamPage() {
           )}
         </Container>
       </Section>
-    </>
+    </CmsSlot>
   );
 }

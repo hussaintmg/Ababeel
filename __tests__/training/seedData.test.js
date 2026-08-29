@@ -6,6 +6,8 @@ import {
   NAV_LINKS,
   FOOTER_COLUMNS,
   homePageBlocks,
+  trainingPageDocs,
+  whyAbabeelDoc,
   registrationFieldDoc,
   levelDoc,
 } from "@/scripts/lib/seed-data.mjs";
@@ -152,9 +154,66 @@ describe("home page blocks", () => {
   });
 });
 
-describe("the bootstrap script is safe by construction", () => {
+describe("the training page seeds", () => {
+  const pages = trainingPageDocs();
+
+  test("every seeded page is a managed CMS page with a matching route", () => {
+    // A seed for a key the CMS does not manage would write a document nothing
+    // ever lists or serves.
+    const { MANAGED_PAGES } = require("@/lib/cmsDefaults");
+    const byKey = new Map(MANAGED_PAGES.map((m) => [m.key, m]));
+    for (const page of pages) {
+      const managed = byKey.get(page.key);
+      expect(managed).toBeDefined();
+      expect(managed.route).toBe(page.route);
+    }
+  });
+
+  test("every page ships real sections, not an empty shell", () => {
+    for (const page of pages) {
+      expect(page.blocks.length).toBeGreaterThanOrEqual(1);
+    }
+    // The content pages carry their live section, not just a hero.
+    const byKey = new Map(pages.map((p) => [p.key, p]));
+    expect(byKey.get("our-team").blocks.map((b) => b.type)).toContain("teamGrid");
+    expect(byKey.get("our-consultants").blocks.map((b) => b.type)).toContain("consultantList");
+    expect(byKey.get("accreditations").blocks.map((b) => b.type)).toContain("accreditationLogos");
+    expect(byKey.get("awarding-bodies").blocks.map((b) => b.type)).toContain("awardingBodyLogos");
+  });
+
+  test("every seeded block is valid against the block schemas", () => {
+    const problems = [];
+    const all = [...pages.flatMap((p) => p.blocks), ...whyAbabeelDoc().blocks];
+    for (const block of all) {
+      const def = BLOCK_TYPES[block.type];
+      if (!def) {
+        problems.push(`unknown block ${block.type}`);
+        continue;
+      }
+      const known = new Set(Object.keys(def.defaults || {}));
+      for (const key of Object.keys(block.props)) {
+        if (!known.has(key)) problems.push(`${block.type}.${key}`);
+      }
+    }
+    expect(problems).toEqual([]);
+  });
+
+  test("the Why Ababeel page matches the nav link that points at it", () => {
+    const why = whyAbabeelDoc();
+    expect(why.route).toBe("/why-ababeel");
+    const about = NAV_LINKS.find((l) => l.name === "About");
+    expect(about.dropdown.map((d) => d.url)).toContain("/why-ababeel");
+  });
+
+  test("no seed carries the old brand", () => {
+    const text = JSON.stringify([pages, whyAbabeelDoc(), homePageBlocks(), NAV_LINKS, FOOTER_COLUMNS]);
+    expect(text).not.toMatch(/ABA Safety/);
+  });
+});
+
+describe("the migration script is safe by construction", () => {
   const SCRIPT = fs.readFileSync(
-    path.join(process.cwd(), "scripts", "seed-cms-bootstrap.mjs"),
+    path.join(process.cwd(), "scripts", "ababeel-migrate.mjs"),
     "utf8",
   );
 
@@ -191,6 +250,20 @@ describe("the bootstrap script is safe by construction", () => {
       (m) => m[1],
     );
     expect(seeded.sort()).toEqual(["courselevels", "registrationfields"]);
+  });
+
+  test("it never overwrites a page a person has edited", () => {
+    // The owner editor stamps updatedByEmail; the script only writes over
+    // empty or seed-authored documents. One human edit makes a page theirs.
+    expect(SCRIPT).toMatch(/function untouched/);
+    expect(SCRIPT).toMatch(/SEED_AUTHORS/);
+    expect(SCRIPT).toMatch(/if \(!untouched\(existing\)\)/);
+  });
+
+  test("page writes are keyed upserts, so running twice cannot duplicate", () => {
+    expect(SCRIPT).toMatch(/updateOne\(\s*\{ key: page\.key \}/);
+    expect(SCRIPT).toMatch(/upsert: true/);
+    expect(SCRIPT).not.toMatch(/insertOne\(\s*\{\s*key:/);
   });
 
   test("--dry-run writes nothing", () => {

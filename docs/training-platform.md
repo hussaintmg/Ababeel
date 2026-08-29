@@ -236,14 +236,14 @@ silently broken.
 `Components/cms/trainingTemplates.js` adds 30+ sections, **appended to the
 existing library rather than beside it**: they are spread into the same
 `TEMPLATES` array, and each one sits in the category that already describes its
-section type — an ABA hero appears under "Heroes" with the existing heroes, not
-in an "ABA — Heroes" list of its own.
+section type — an Ababeel hero appears under "Heroes" with the existing heroes, not
+in an "Heroes" list of its own.
 
 Two categories were added, "Courses" and "Schedule", because the library had no
 section of either kind. Both are named for what they are, so any future
 template can use them.
 
-The templates carry the brand in their names (`ABA Safety — Hero, split
+The templates carry the brand in their names (`Ababeel — Hero, split
 screen`) so they stay identifiable inside a shared category.
 
 Nothing was duplicated: one `TEMPLATES` array, one `BLOCK_TYPES`, one
@@ -315,7 +315,7 @@ page, behind the same guard, has the rest.
 lines are the built-in *fallback*, shown only while the CMS page is not enabled.
 
 So the upgrade path already exists and needed no code: open **Website CMS →
-About Us**, insert the ABA sections from the template library, and enable the
+About Us**, insert the Ababeel sections from the template library, and enable the
 page. The original content stays underneath as the fallback and is never
 overwritten. It was left as it is because rewriting live client copy was not
 asked for.

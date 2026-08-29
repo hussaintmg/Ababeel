@@ -70,7 +70,7 @@ describe("template props match their block's schema", () => {
     expect(problems).toEqual([]);
   };
 
-  test("the ABA templates set only props their blocks have", () => {
+  test("the Ababeel templates set only props their blocks have", () => {
     check(TRAINING_TEMPLATES);
   });
 
@@ -79,7 +79,7 @@ describe("template props match their block's schema", () => {
   });
 });
 
-describe("the ABA templates are inside the existing library", () => {
+describe("the Ababeel templates are inside the existing library", () => {
   const byId = (id) => TEMPLATES.find((t) => t.id === id);
 
   test("they are in the same registry the existing patterns use", () => {
@@ -90,7 +90,7 @@ describe("the ABA templates are inside the existing library", () => {
     }
   });
 
-  test("an ABA hero sits in Heroes, beside the existing heroes", () => {
+  test("an Ababeel hero sits in Heroes, beside the existing heroes", () => {
     const heroes = TEMPLATES.filter((t) => t.category === "Heroes");
     const aba = heroes.filter((t) => t.id.startsWith("aba-"));
     const existing = heroes.filter((t) => !t.id.startsWith("aba-"));
@@ -102,7 +102,7 @@ describe("the ABA templates are inside the existing library", () => {
   test("no category exists only to hold ABA templates", () => {
     // A brand-named category is what makes a shared registry read as two
     // separate libraries, which is the thing this integration undid.
-    const brandNamed = TEMPLATE_CATEGORIES.filter((c) => /\bABA\b/i.test(c));
+    const brandNamed = TEMPLATE_CATEGORIES.filter((c) => /\b(aba|ababeel)\b/i.test(c));
     expect(brandNamed).toEqual([]);
 
     // The two categories the ABA work did add name a section kind the library
@@ -121,7 +121,7 @@ describe("the ABA templates are inside the existing library", () => {
   test("they are identifiable by name inside a shared category", () => {
     // Sharing a category only works if a user can tell which is which.
     for (const t of TRAINING_TEMPLATES) {
-      expect(t.name).toMatch(/^ABA Safety/);
+      expect(t.name).toMatch(/^Ababeel/);
     }
   });
 

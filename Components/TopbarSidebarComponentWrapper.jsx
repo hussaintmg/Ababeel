@@ -37,6 +37,7 @@ import MaintenanceBar from "@/Components/cms/MaintenanceBar";
 // CMS. Kept in step with DEFAULT_GLOBAL_SETTINGS.topbar.navLinks so a site that
 // has never opened the CMS and one that has both show the same menu.
 const navLinks = [
+  { name: "Home", url: "/" },
   {
     name: "About",
     url: "/about-us",
@@ -45,15 +46,15 @@ const navLinks = [
       { name: "Our Team", url: "/about/team" },
       { name: "Our Consultants", url: "/about/consultants" },
       { name: "Accreditations & Certifications", url: "/about/accreditations" },
+      { name: "Why Ababeel", url: "/why-ababeel" },
     ],
   },
   { name: "Courses", url: "/courses" },
   { name: "Awarding Bodies", url: "/awarding-bodies" },
   { name: "Schedule", url: "/schedule" },
   { name: "Resources", url: "/resources" },
-  { name: "Qualifications", url: "/qualification" },
-  { name: "Certificate Verification", url: "/verify-certificate" },
   { name: "Contact Us", url: "/contact-us" },
+  { name: "Register Now", url: "/registration" },
 ];
 const dashNavLinks = [
   { name: "Dashboard", url: "/dashboard" },

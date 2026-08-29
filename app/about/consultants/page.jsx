@@ -6,6 +6,7 @@ import {
   EmptyState,
   LinkButton,
 } from "@/Components/ui";
+import CmsSlot from "@/Components/cms/CmsSlot";
 import { listConsultants } from "@/lib/training/queries";
 import { trainingMetadata } from "@/lib/training/metadata";
 
@@ -22,7 +23,7 @@ export async function generateMetadata() {
   return trainingMetadata("Our Consultants", null, {
     title: "Our Consultants",
     description:
-      "Independent safety consultants and subject-matter experts working with ABA Safety.",
+      "Independent safety consultants and subject-matter experts working with Ababeel.",
   });
 }
 
@@ -30,7 +31,7 @@ export default async function ConsultantsPage() {
   const consultants = await listConsultants();
 
   return (
-    <>
+    <CmsSlot pageKey="our-consultants">
       <Section tone="dark" size="sm" className="pt-10">
         <Container>
           <Breadcrumb
@@ -67,6 +68,6 @@ export default async function ConsultantsPage() {
           )}
         </Container>
       </Section>
-    </>
+    </CmsSlot>
   );
 }

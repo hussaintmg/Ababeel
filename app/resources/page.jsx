@@ -1,4 +1,5 @@
 import { Section, Container, Breadcrumb, ResourceCard, Reveal } from "@/Components/ui";
+import CmsSlot from "@/Components/cms/CmsSlot";
 import { listPublicResources, getResourceTypes } from "@/lib/training/queries";
 import { trainingMetadata } from "@/lib/training/metadata";
 import ResourcesBrowser from "@/app/resources/ResourcesBrowser";
@@ -32,20 +33,22 @@ export default async function ResourcesPage() {
 
   return (
     <>
-      <Section tone="dark" size="sm" className="pt-10">
-        <Container>
-          <Breadcrumb
-            dark
-            items={[{ label: "Home", href: "/" }, { label: "Resources" }]}
-            className="mb-6"
-          />
-          <p className="t-eyebrow mb-3 text-brand-400">Knowledge</p>
-          <h1 className="t-h1 max-w-3xl text-white">Resources</h1>
-          <p className="t-body-lg mt-4 max-w-2xl text-ink-200">
-            Guides, articles and downloads from our training and consultancy work.
-          </p>
-        </Container>
-      </Section>
+      <CmsSlot pageKey="resources">
+  <Section tone="dark" size="sm" className="pt-10">
+          <Container>
+            <Breadcrumb
+              dark
+              items={[{ label: "Home", href: "/" }, { label: "Resources" }]}
+              className="mb-6"
+            />
+            <p className="t-eyebrow mb-3 text-brand-400">Knowledge</p>
+            <h1 className="t-h1 max-w-3xl text-white">Resources</h1>
+            <p className="t-body-lg mt-4 max-w-2xl text-ink-200">
+              Guides, articles and downloads from our training and consultancy work.
+            </p>
+          </Container>
+        </Section>
+      </CmsSlot>
 
       {featured ? (
         <Section tone="muted" size="sm">

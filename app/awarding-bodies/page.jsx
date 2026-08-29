@@ -7,6 +7,7 @@ import {
   LinkButton,
   RevealStagger,
 } from "@/Components/ui";
+import CmsSlot from "@/Components/cms/CmsSlot";
 import { listAwardingBodies } from "@/lib/training/queries";
 import { trainingMetadata } from "@/lib/training/metadata";
 
@@ -28,7 +29,7 @@ export default async function AwardingBodiesPage() {
   const bodies = await listAwardingBodies();
 
   return (
-    <>
+    <CmsSlot pageKey="awarding-bodies">
       <Section tone="dark" size="sm" className="pt-10">
         <Container>
           <Breadcrumb
@@ -62,6 +63,6 @@ export default async function AwardingBodiesPage() {
           )}
         </Container>
       </Section>
-    </>
+    </CmsSlot>
   );
 }

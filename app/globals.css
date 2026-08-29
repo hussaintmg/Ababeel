@@ -13,7 +13,7 @@
 }
 
 /* ---------------------------------------------------------------------------
-   ABA Safety design tokens
+   Ababeel design tokens
    ---------------------------------------------------------------------------
    Tailwind v4 reads its theme from CSS, not from tailwind.config.js — this
    block is what generates `bg-ink-900`, `text-brand-600` and the rest. The

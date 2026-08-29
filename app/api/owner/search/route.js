@@ -11,6 +11,7 @@ import Consultant from "@/models/Consultant";
 import TeamMember from "@/models/TeamMember";
 import Testimonial from "@/models/Testimonial";
 import Resource from "@/models/Resource";
+import SiteContent from "@/models/SiteContent";
 
 /**
  * Global owner search.
@@ -104,6 +105,17 @@ const GROUPS = [
     href: (d) => `/owner/training/testimonials/${d._id}`,
     title: (d) => d.name,
     meta: (d) => [d.company, d.status].filter(Boolean).join(" · "),
+  },
+  {
+    key: "pages",
+    label: "Pages",
+    Model: SiteContent,
+    fields: ["title", "key", "navLabel"],
+    select: "key title enabled isCustom route",
+    href: (d) => `/owner/cms/${d.key}`,
+    title: (d) => d.title || d.key,
+    meta: (d) =>
+      [d.route || `/${d.key}`, d.enabled ? "enabled" : "built-in content"].join(" · "),
   },
   {
     key: "resources",

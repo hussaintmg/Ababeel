@@ -1,5 +1,5 @@
 /**
- * Section templates in the ABA Safety design language.
+ * Section templates in the Ababeel design language.
  *
  * Two kinds live here:
  *
@@ -98,7 +98,7 @@ export const TRAINING_TEMPLATES = [
   /* ===== HEROES (6) ===== */
   {
     id: "aba-hero-statement",
-    name: "ABA Safety — Hero, large statement",
+    name: "Ababeel — Hero, large statement",
     category: "Heroes",
     desc: "Big typography on ink, two actions",
     blocks: [
@@ -113,12 +113,12 @@ export const TRAINING_TEMPLATES = [
   },
   {
     id: "aba-hero-editorial",
-    name: "ABA Safety — Hero, editorial image",
+    name: "Ababeel — Hero, editorial image",
     category: "Heroes",
     desc: "Photo background, soft overlay, left aligned",
     blocks: [
       b("hero", {
-        eyebrow: "ABA Safety",
+        eyebrow: "Ababeel",
         title: "Training that holds up on site",
         subtitle: "Add a background image in the Content tab to finish this hero.",
         align: "left",
@@ -135,7 +135,7 @@ export const TRAINING_TEMPLATES = [
   },
   {
     id: "aba-hero-split",
-    name: "ABA Safety — Hero, split screen",
+    name: "Ababeel — Hero, split screen",
     category: "Heroes",
     desc: "Statement beside a supporting panel",
     blocks: [
@@ -164,7 +164,7 @@ export const TRAINING_TEMPLATES = [
   },
   {
     id: "aba-hero-full",
-    name: "ABA Safety — Hero, full-bleed visual",
+    name: "Ababeel — Hero, full-bleed visual",
     category: "Heroes",
     desc: "Edge-to-edge image, centred text",
     blocks: [
@@ -186,7 +186,7 @@ export const TRAINING_TEMPLATES = [
   },
   {
     id: "aba-hero-corporate",
-    name: "ABA Safety — Hero, dark corporate",
+    name: "Ababeel — Hero, dark corporate",
     category: "Heroes",
     desc: "Restrained, centred, with claims underneath",
     blocks: [
@@ -209,7 +209,7 @@ export const TRAINING_TEMPLATES = [
   },
   {
     id: "aba-hero-course",
-    name: "ABA Safety — Hero, course focused",
+    name: "Ababeel — Hero, course focused",
     category: "Heroes",
     desc: "Hero with the next available sessions underneath",
     blocks: [
@@ -243,14 +243,14 @@ export const TRAINING_TEMPLATES = [
   /* ===== COURSES ===== */
   {
     id: "aba-courses-featured",
-    name: "ABA Safety — Courses, featured grid",
+    name: "Ababeel — Courses, featured grid",
     category: "Courses",
     desc: "Three featured courses, pulled live",
     blocks: [courseSection("Featured courses")],
   },
   {
     id: "aba-courses-editorial",
-    name: "ABA Safety — Courses, editorial cards",
+    name: "Ababeel — Courses, editorial cards",
     category: "Courses",
     desc: "Larger cards with generous typography",
     blocks: [
@@ -263,7 +263,7 @@ export const TRAINING_TEMPLATES = [
   },
   {
     id: "aba-courses-minimal",
-    name: "ABA Safety — Courses, minimal list",
+    name: "Ababeel — Courses, minimal list",
     category: "Courses",
     desc: "Typographic cards, no images needed",
     blocks: [
@@ -277,7 +277,7 @@ export const TRAINING_TEMPLATES = [
   },
   {
     id: "aba-courses-spotlight",
-    name: "ABA Safety — Courses, spotlight",
+    name: "Ababeel — Courses, spotlight",
     category: "Courses",
     desc: "One dark featured card beside two standard ones",
     blocks: [
@@ -286,7 +286,7 @@ export const TRAINING_TEMPLATES = [
   },
   {
     id: "aba-courses-by-level",
-    name: "ABA Safety — Courses, by level",
+    name: "Ababeel — Courses, by level",
     category: "Courses",
     desc: "Filtered to one level (set the slug in Content)",
     blocks: [
@@ -303,7 +303,7 @@ export const TRAINING_TEMPLATES = [
   /* ===== SCHEDULE ===== */
   {
     id: "aba-schedule-upcoming",
-    name: "ABA Safety — Schedule, upcoming sessions",
+    name: "Ababeel — Schedule, upcoming sessions",
     category: "Schedule",
     desc: "The next few dates, pulled live",
     blocks: [
@@ -328,7 +328,7 @@ export const TRAINING_TEMPLATES = [
   },
   {
     id: "aba-schedule-online",
-    name: "ABA Safety — Schedule, online only",
+    name: "Ababeel — Schedule, online only",
     category: "Schedule",
     desc: "Filtered to online delivery",
     blocks: [
@@ -353,7 +353,7 @@ export const TRAINING_TEMPLATES = [
   },
   {
     id: "aba-schedule-cta",
-    name: "ABA Safety — Schedule, dates then CTA",
+    name: "Ababeel — Schedule, dates then CTA",
     category: "Schedule",
     desc: "Session list followed by a dark call to action",
     blocks: [
@@ -385,7 +385,7 @@ export const TRAINING_TEMPLATES = [
   /* ===== REVIEWS (5) ===== */
   {
     id: "aba-reviews-google",
-    name: "ABA Safety — Reviews, review cards",
+    name: "Ababeel — Reviews, review cards",
     category: "Testimonials",
     desc: "Star ratings and source marks, entered in the dashboard",
     blocks: [
@@ -408,7 +408,7 @@ export const TRAINING_TEMPLATES = [
   },
   {
     id: "aba-reviews-carousel",
-    name: "ABA Safety — Reviews, swipeable row",
+    name: "Ababeel — Reviews, swipeable row",
     category: "Testimonials",
     desc: "Horizontal scroller with snap",
     blocks: [
@@ -431,7 +431,7 @@ export const TRAINING_TEMPLATES = [
   },
   {
     id: "aba-reviews-grid",
-    name: "ABA Safety — Reviews, grid on mist",
+    name: "Ababeel — Reviews, grid on mist",
     category: "Testimonials",
     desc: "Four-column grid on a light band",
     blocks: [
@@ -454,7 +454,7 @@ export const TRAINING_TEMPLATES = [
   },
   {
     id: "aba-reviews-featured",
-    name: "ABA Safety — Reviews, single featured",
+    name: "Ababeel — Reviews, single featured",
     category: "Testimonials",
     desc: "One large quote",
     blocks: [
@@ -477,7 +477,7 @@ export const TRAINING_TEMPLATES = [
   },
   {
     id: "aba-reviews-editorial",
-    name: "ABA Safety — Reviews, featured plus grid",
+    name: "Ababeel — Reviews, featured plus grid",
     category: "Testimonials",
     desc: "One large quote above a supporting grid",
     blocks: [
@@ -502,7 +502,7 @@ export const TRAINING_TEMPLATES = [
   /* ===== PEOPLE ===== */
   {
     id: "aba-team-grid",
-    name: "ABA Safety — Team, grid",
+    name: "Ababeel — Team, grid",
     category: "Team",
     desc: "Published team members, four across",
     blocks: [
@@ -527,7 +527,7 @@ export const TRAINING_TEMPLATES = [
   },
   {
     id: "aba-team-leadership",
-    name: "ABA Safety — Team, leadership",
+    name: "Ababeel — Team, leadership",
     category: "Team",
     desc: "Leadership only, with short bios",
     blocks: [
@@ -552,7 +552,7 @@ export const TRAINING_TEMPLATES = [
   },
   {
     id: "aba-consultants-profiles",
-    name: "ABA Safety — Consultants, editorial profiles",
+    name: "Ababeel — Consultants, editorial profiles",
     category: "Team",
     desc: "Each profile in the layout it is set to",
     blocks: [
@@ -576,7 +576,7 @@ export const TRAINING_TEMPLATES = [
   },
   {
     id: "aba-consultants-cards",
-    name: "ABA Safety — Consultants, card grid",
+    name: "Ababeel — Consultants, card grid",
     category: "Team",
     desc: "A uniform grid rather than editorial layouts",
     blocks: [
@@ -600,7 +600,7 @@ export const TRAINING_TEMPLATES = [
   },
   {
     id: "aba-consultants-featured",
-    name: "ABA Safety — Consultants, single featured",
+    name: "Ababeel — Consultants, single featured",
     category: "Team",
     desc: "One profile, in its own layout",
     blocks: [
@@ -626,7 +626,7 @@ export const TRAINING_TEMPLATES = [
   /* ===== ACCREDITATION ===== */
   {
     id: "aba-trust-strip",
-    name: "ABA Safety — Accreditation, trust strip",
+    name: "Ababeel — Accreditation, trust strip",
     category: "Logos",
     desc: "Quiet logo row for near the top of a page",
     blocks: [
@@ -649,7 +649,7 @@ export const TRAINING_TEMPLATES = [
   },
   {
     id: "aba-bodies-strip",
-    name: "ABA Safety — Awarding bodies, logo strip",
+    name: "Ababeel — Awarding bodies, logo strip",
     category: "Logos",
     desc: "Logos linked to each body's page",
     blocks: [
@@ -672,7 +672,7 @@ export const TRAINING_TEMPLATES = [
   },
   {
     id: "aba-bodies-cards",
-    name: "ABA Safety — Awarding bodies, cards",
+    name: "Ababeel — Awarding bodies, cards",
     category: "Logos",
     desc: "Logo, description and a link to the courses",
     blocks: [
@@ -697,7 +697,7 @@ export const TRAINING_TEMPLATES = [
   /* ===== CALL TO ACTION (6) ===== */
   {
     id: "aba-cta-dark",
-    name: "ABA Safety — CTA, dark band",
+    name: "Ababeel — CTA, dark band",
     category: "Call To Action",
     desc: "Ink background, one action",
     blocks: [
@@ -710,7 +710,7 @@ export const TRAINING_TEMPLATES = [
   },
   {
     id: "aba-cta-two",
-    name: "ABA Safety — CTA, two actions",
+    name: "Ababeel — CTA, two actions",
     category: "Call To Action",
     desc: "Primary and secondary side by side",
     blocks: [
@@ -724,7 +724,7 @@ export const TRAINING_TEMPLATES = [
   },
   {
     id: "aba-cta-registration",
-    name: "ABA Safety — CTA, register now",
+    name: "Ababeel — CTA, register now",
     category: "Call To Action",
     desc: "Points at the schedule, where a session can be chosen",
     blocks: [
@@ -745,7 +745,7 @@ export const TRAINING_TEMPLATES = [
   },
   {
     id: "aba-cta-light",
-    name: "ABA Safety — CTA, light band",
+    name: "Ababeel — CTA, light band",
     category: "Call To Action",
     desc: "Mist background, restrained",
     blocks: [
@@ -765,7 +765,7 @@ export const TRAINING_TEMPLATES = [
   },
   {
     id: "aba-cta-statement",
-    name: "ABA Safety — CTA, large typography",
+    name: "Ababeel — CTA, large typography",
     category: "Call To Action",
     desc: "A single strong line",
     blocks: [
@@ -785,7 +785,7 @@ export const TRAINING_TEMPLATES = [
   },
   {
     id: "aba-cta-corporate",
-    name: "ABA Safety — CTA, corporate enquiry",
+    name: "Ababeel — CTA, corporate enquiry",
     category: "Call To Action",
     desc: "For organisations booking a group",
     blocks: [
@@ -801,14 +801,14 @@ export const TRAINING_TEMPLATES = [
   /* ===== CONTENT ===== */
   {
     id: "aba-why",
-    name: "ABA Safety — Content, why choose us",
+    name: "Ababeel — Content, why choose us",
     category: "Features",
     desc: "Four reasons as cards",
     blocks: [
       b(
         "cardGrid",
         {
-          title: "Why ABA Safety",
+          title: "Why Ababeel",
           subtitle: "",
           columns: "4",
           items: [
@@ -848,7 +848,7 @@ export const TRAINING_TEMPLATES = [
   },
   {
     id: "aba-about-split",
-    name: "ABA Safety — Content, about with image",
+    name: "Ababeel — Content, about with image",
     category: "Content",
     desc: "Text beside an image",
     blocks: [
@@ -856,7 +856,7 @@ export const TRAINING_TEMPLATES = [
         "split",
         {
           eyebrow: "Who we are",
-          title: "About ABA Safety",
+          title: "About Ababeel",
           text: "<p>Replace this with a short account of who you are and what you do. Two or three paragraphs is plenty — the detail belongs on the About page.</p>",
           bullets: [
             { text: "Accredited by recognised awarding bodies" },
@@ -875,7 +875,7 @@ export const TRAINING_TEMPLATES = [
   },
   {
     id: "aba-stats",
-    name: "ABA Safety — Content, stats band",
+    name: "Ababeel — Content, stats band",
     category: "Stats",
     desc: "Four numbers on ink",
     blocks: [
@@ -898,7 +898,7 @@ export const TRAINING_TEMPLATES = [
   },
   {
     id: "aba-faq",
-    name: "ABA Safety — Content, fAQ",
+    name: "Ababeel — Content, fAQ",
     category: "FAQ",
     desc: "Common questions about enrolling",
     blocks: [
@@ -933,7 +933,7 @@ export const TRAINING_TEMPLATES = [
   /* ===== FULL PAGE ===== */
   {
     id: "aba-page-home",
-    name: "ABA Safety — Full page, aBA Safety home",
+    name: "Ababeel — Full page, aBA Safety home",
     category: "Full Pages",
     desc: "Hero, trust strip, about, courses, why, bodies, schedule, reviews, CTA",
     blocks: [
@@ -963,7 +963,7 @@ export const TRAINING_TEMPLATES = [
         "split",
         {
           eyebrow: "Who we are",
-          title: "About ABA Safety",
+          title: "About Ababeel",
           text: "<p>Replace this with a short account of who you are and what you do.</p>",
           bullets: [
             { text: "Accredited by recognised awarding bodies" },
@@ -984,7 +984,7 @@ export const TRAINING_TEMPLATES = [
       b(
         "cardGrid",
         {
-          title: "Why ABA Safety",
+          title: "Why Ababeel",
           subtitle: "",
           columns: "4",
           items: [

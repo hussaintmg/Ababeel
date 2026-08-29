@@ -4,7 +4,7 @@ import { PUBLISH_STATUSES, slugify } from "@/lib/models/shared";
 /**
  * Accreditation
  * -------------
- * A credential ABA Safety itself holds — memberships, approvals, registrations
+ * A credential Ababeel itself holds — memberships, approvals, registrations
  * — shown on /about/accreditations and as the trust logo strip.
  *
  * Distinct from `AwardingBody`, which is who awards a *learner's*

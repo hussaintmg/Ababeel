@@ -12,13 +12,14 @@ import {
   Reveal,
   RevealStagger,
 } from "@/Components/ui";
+import CmsSlot from "@/Components/cms/CmsSlot";
 import { listAccreditations, listAwardingBodies } from "@/lib/training/queries";
 import { trainingMetadata } from "@/lib/training/metadata";
 
 /**
  * Accreditations and certifications.
  *
- * Two distinct things on one page: what ABA Safety itself holds
+ * Two distinct things on one page: what Ababeel itself holds
  * (Accreditation records), and who awards the qualifications learners earn
  * (AwardingBody records). Conflating them would overstate the first.
  */
@@ -28,7 +29,7 @@ export async function generateMetadata() {
   return trainingMetadata("Accreditations & Certifications", null, {
     title: "Accreditations & Certifications",
     description:
-      "The approvals, memberships and awarding-body relationships behind ABA Safety's training.",
+      "The approvals, memberships and awarding-body relationships behind Ababeel's training.",
   });
 }
 
@@ -39,7 +40,7 @@ export default async function AccreditationsPage() {
   ]);
 
   return (
-    <>
+    <CmsSlot pageKey="accreditations">
       <Section tone="dark" size="sm" className="pt-10">
         <Container>
           <Breadcrumb
@@ -146,6 +147,6 @@ export default async function AccreditationsPage() {
           </Container>
         </Section>
       ) : null}
-    </>
+    </CmsSlot>
   );
 }

@@ -1,4 +1,5 @@
 import { Section, Container, Breadcrumb } from "@/Components/ui";
+import CmsSlot from "@/Components/cms/CmsSlot";
 import { listPublicCourses, getCourseFilterOptions } from "@/lib/training/queries";
 import { getTrainingSettings } from "@/lib/training/settings";
 import { trainingMetadata } from "@/lib/training/metadata";
@@ -34,23 +35,25 @@ export default async function CoursesPage() {
 
   return (
     <>
-      <Section tone="dark" size="sm" className="pt-10">
-        <Container>
-          <Breadcrumb
-            dark
-            items={[{ label: "Home", href: "/" }, { label: "Courses" }]}
-            className="mb-6"
-          />
-          <p className="t-eyebrow mb-3 text-brand-400">Training catalogue</p>
-          <h1 className="t-h1 max-w-3xl text-white">
-            Accredited safety training, built around competence
-          </h1>
-          <p className="t-body-lg mt-4 max-w-2xl text-ink-200">
-            Browse our full catalogue by level, awarding body or duration, and register for an
-            upcoming session.
-          </p>
-        </Container>
-      </Section>
+      <CmsSlot pageKey="courses">
+  <Section tone="dark" size="sm" className="pt-10">
+          <Container>
+            <Breadcrumb
+              dark
+              items={[{ label: "Home", href: "/" }, { label: "Courses" }]}
+              className="mb-6"
+            />
+            <p className="t-eyebrow mb-3 text-brand-400">Training catalogue</p>
+            <h1 className="t-h1 max-w-3xl text-white">
+              Accredited safety training, built around competence
+            </h1>
+            <p className="t-body-lg mt-4 max-w-2xl text-ink-200">
+              Browse our full catalogue by level, awarding body or duration, and register for an
+              upcoming session.
+            </p>
+          </Container>
+        </Section>
+      </CmsSlot>
 
       <CoursesBrowser
         initial={initial}

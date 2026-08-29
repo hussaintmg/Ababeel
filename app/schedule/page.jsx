@@ -1,4 +1,5 @@
 import { Section, Container, Breadcrumb } from "@/Components/ui";
+import CmsSlot from "@/Components/cms/CmsSlot";
 import {
   getScheduleForMonth,
   getScheduleMonths,
@@ -44,20 +45,22 @@ export default async function SchedulePage() {
 
   return (
     <>
-      <Section tone="dark" size="sm" className="pt-10">
-        <Container>
-          <Breadcrumb
-            dark
-            items={[{ label: "Home", href: "/" }, { label: "Schedule" }]}
-            className="mb-6"
-          />
-          <p className="t-eyebrow mb-3 text-brand-400">Upcoming dates</p>
-          <h1 className="t-h1 max-w-3xl text-white">{copy.title || "Training Schedule"}</h1>
-          <p className="t-body-lg mt-4 max-w-2xl text-ink-200">
-            {copy.intro || "Upcoming sessions across all of our accredited programmes."}
-          </p>
-        </Container>
-      </Section>
+      <CmsSlot pageKey="schedule">
+  <Section tone="dark" size="sm" className="pt-10">
+          <Container>
+            <Breadcrumb
+              dark
+              items={[{ label: "Home", href: "/" }, { label: "Schedule" }]}
+              className="mb-6"
+            />
+            <p className="t-eyebrow mb-3 text-brand-400">Upcoming dates</p>
+            <h1 className="t-h1 max-w-3xl text-white">{copy.title || "Training Schedule"}</h1>
+            <p className="t-body-lg mt-4 max-w-2xl text-ink-200">
+              {copy.intro || "Upcoming sessions across all of our accredited programmes."}
+            </p>
+          </Container>
+        </Section>
+      </CmsSlot>
 
       <ScheduleBrowser
         initial={{ year, month, sessions, months }}
