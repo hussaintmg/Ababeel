@@ -21,6 +21,7 @@ const CLIENT_SAFE = [
   "lib/training/status.js",
   "lib/training/format.js",
   "lib/training/defaultFields.js",
+  "lib/training/countries.js",
   "Components/owner/training/fieldSpecs.js",
 ];
 

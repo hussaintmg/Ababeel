@@ -177,12 +177,26 @@ export default function GlobalSettingsEditor({ meta }) {
                 <Toggle value={s.topbar?.showLogin !== false} onChange={(v) => set(["topbar", "showLogin"], v)} label="Show login/dashboard button" />
               </F>
               <F label="Menu links">
+                {/* A link with sub-links renders as a dropdown in the header and
+                    as an expandable item in the mobile menu — both already
+                    understand the shape, so this only had to become editable.
+                    Leave "Sub-links" empty for an ordinary link. */}
                 <ListEditor
                   field={{
                     itemLabel: "Link",
                     itemFields: [
                       { key: "name", type: "text", label: "Label" },
                       { key: "url", type: "text", label: "URL" },
+                      {
+                        key: "dropdown",
+                        type: "list",
+                        label: "Sub-links (makes this a dropdown)",
+                        itemLabel: "Sub-link",
+                        itemFields: [
+                          { key: "name", type: "text", label: "Label" },
+                          { key: "url", type: "text", label: "URL" },
+                        ],
+                      },
                     ],
                   }}
                   value={s.topbar?.navLinks}

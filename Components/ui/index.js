@@ -65,3 +65,5 @@ export {
   TestimonialCard,
   PersonCard,
 } from "@/Components/ui/DomainCards";
+
+export { ConsultantProfile } from "@/Components/ui/ConsultantProfile";

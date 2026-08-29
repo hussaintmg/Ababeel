@@ -166,12 +166,52 @@ accepts.
 `/owner/registrations/<id>` — the submitted answers (read-only), status, and
 appended internal notes.
 
+## Public pages
+
+Server-rendered through `lib/training/queries.js`, with a client island only
+where a page is actually interactive:
+
+| Route | Server | Client island |
+| --- | --- | --- |
+| `/courses` | first page of results + filter options | `CoursesBrowser` — filters, sort, paging |
+| `/courses/[slug]` | whole page | — |
+| `/schedule` | the current month | `ScheduleBrowser` — month nav, mode/body filters |
+| `/registration` | course + session summary, CMS form definition | `RegistrationForm` |
+| `/awarding-bodies`, `/awarding-bodies/[slug]` | whole page | — |
+| `/about/team`, `/about/consultants`, `/about/accreditations` | whole page | — |
+
+The islands start by rendering exactly what the server produced and fetch
+nothing until the visitor touches a control, so the catalogue is in the HTML
+for crawlers and appears without a loading state.
+
+Every section of a course page is omitted when its field is empty. A course
+filled in over several sittings is the normal case, and a page of empty headings
+looks worse than a short one.
+
+### Navigation
+
+`Topbar` and the mobile `Sidebar` already understood a `dropdown` array on a nav
+link; the CMS just could not author one. The nav editor now nests, and the
+default navigation ships the About dropdown. `withCustomNav` prunes hidden pages
+out of dropdown children too, and drops a parent left with nothing to open.
+
+`__tests__/training/navigation.test.js` walks `app/` and asserts every built-in
+nav and footer link resolves to a real route — a typo in a default href is
+invisible in review and ships a 404 into the site's own menu.
+
+### SEO
+
+`app/sitemap.js` derives everything: static routes, published courses and
+awarding bodies, and published custom CMS pages, minus anything the owner has
+hidden or marked `seo.noIndex`. `/registration` is excluded and sets `noindex` —
+it is a form that needs a course in its query string to mean anything.
+
 ## Status
 
 Done: data models, domain layer, owner CRUD APIs, registration APIs, public read
-APIs, seed script, design system, owner dashboard screens.
+APIs, seed script, design system, owner dashboard screens, all public pages,
+navigation wiring, sitemap and robots.
 
-Remaining: public pages (`/courses`, `/courses/[slug]`, `/schedule`,
-`/registration`, `/awarding-bodies`, team/consultants), the extended template
-library and page-builder blocks, header/footer nav wiring, and the SEO,
-performance and accessibility passes.
+Remaining: page-builder blocks and template-library additions (heroes, CTAs,
+testimonial layouts, course/schedule/consultant sections), a home-page assembly,
+and the performance and accessibility passes.
