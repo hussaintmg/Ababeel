@@ -16,7 +16,8 @@
     "cms:qualification": "node scripts/seed-qualification-page.mjs",
     "cms:fixvideos": "node scripts/fix-scroll-videos.mjs",
     "seed:training": "node scripts/seed-training-platform.mjs",
-    "seed:training-home": "node scripts/seed-training-homepage.mjs"
+    "seed:training-home": "node scripts/seed-training-homepage.mjs",
+    "seed:cms": "node scripts/seed-cms-bootstrap.mjs"
   },
   "dependencies": {
     "@tailwindcss/browser": "^4.3.3",

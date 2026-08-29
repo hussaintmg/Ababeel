@@ -294,22 +294,32 @@ the partner deposit flow; public registration never reaches it.
 Resources and global search need no configuration — they use the existing
 media library, permissions and dashboard.
 
+**One command sets everything up:**
 
 ```bash
-npm run seed:training -- --dry-run   # inspect
-npm run seed:training                # registration form fields + 4 course levels
+npm run seed:cms -- --dry-run        # show what would change, write nothing
+npm run seed:cms                     # apply it
+npm run seed:cms -- --publish-home   # …and publish the home page immediately
 ```
 
-Idempotent and additive — it never overwrites an owner's edits.
+It does four things: registration form fields, course levels, navigation and
+footer, and the home page. Additive for the first two — existing fields and
+levels are left alone. The navigation and home page are replaced, and whatever
+they replaced is copied into the `cmsbackups` collection first.
+
+The home page is written **disabled** unless `--publish-home` is passed, so the
+current one keeps rendering until someone reviews the new one under
+**Website CMS → Home Page**.
+
+It creates no courses, awarding bodies, consultants or testimonials. Those are
+claims about a real business and they are yours to write.
+
+Note that the navigation already ships as a code default, so this step only
+matters if a custom navigation was previously saved in the CMS — a saved value
+wins over the default.
+
+The two narrower scripts still exist if you want only part of it:
+`npm run seed:training` (fields + levels) and `npm run seed:training-home`.
 
 Then, in the owner dashboard: create awarding bodies → create courses → add
 course references with dates → publish. The public pages fill themselves.
-
-Optionally, for the new home page:
-
-```bash
-npm run seed:training-home -- --dry-run
-npm run seed:training-home           # writes it, DISABLED
-```
-
-Review it under Website CMS → Home Page and enable it there.
