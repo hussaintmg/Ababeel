@@ -688,7 +688,10 @@ export function validateScrollVideo(p = {}) {
     warn("The poster does not look like an image file.", "Use a WebP, JPEG or PNG.");
   }
 
-  if (!p.poster && source.kind !== "poster") {
+  // Only a video needs a poster. A frame sequence already has one — its own
+  // first frame, which the renderer shows until the canvas paints — so warning
+  // about it was telling the author to fix something that was not broken.
+  if (!p.poster && source.kind === "video") {
     warn(
       "No poster image.",
       "The poster is what shows while the video loads, and what a visitor with reduced motion sees. Without one the section starts as a black rectangle."
@@ -720,27 +723,58 @@ export function validateScrollVideo(p = {}) {
   }
 
   const scenes = Array.isArray(p.scenes) ? p.scenes : [];
+  // How the renderer itself reads a scene's range, so the editor can never
+  // complain about a range the section is actually honouring. An element built
+  // on the timeline carries frames and leaves the percentages empty, and
+  // reading those empty percentages as numbers is how a perfectly good element
+  // came back as "starts at 0% and ends at 0%".
+  const sceneFrames = source.kind === "frames" ? source.frameCount : 0;
+  const inFrames = (s) =>
+    sceneFrames > 1 &&
+    ((s?.startFrame !== "" && s?.startFrame != null) || (s?.endFrame !== "" && s?.endFrame != null));
+
   scenes.forEach((s, i) => {
-    const label = s?.heading ? `“${String(s.heading).slice(0, 30)}”` : `Scene ${i + 1}`;
-    const a = Number(s?.start ?? 0);
-    const b = Number(s?.end ?? 100);
-    if (!Number.isFinite(a) || !Number.isFinite(b)) {
-      err(`${label} has a scroll range that is not a number.`, "Start and End are percentages of this section, e.g. 0 and 30.");
-      return;
+    const label = s?.heading ? `“${String(s.heading).slice(0, 30)}”` : `Element ${i + 1}`;
+
+    if (inFrames(s)) {
+      const from = s.startFrame === "" || s.startFrame == null ? 1 : Number(s.startFrame);
+      const to = s.endFrame === "" || s.endFrame == null ? sceneFrames : Number(s.endFrame);
+      if (!Number.isFinite(from) || !Number.isFinite(to)) {
+        err(`${label} has a frame range that is not a number.`, `Use frame numbers between 1 and ${sceneFrames}.`);
+      } else if (from === to) {
+        err(`${label} is on for a single frame.`, "Drag its end further along the timeline so it is on screen long enough to read.");
+      } else if (from > to) {
+        err(`${label} runs from frame ${from} back to frame ${to}.`, "The first number must be the smaller one.");
+      } else if (from < 1 || to > sceneFrames) {
+        warn(`${label} is set outside frames 1–${sceneFrames}.`, "Anything beyond the sequence is clamped to its ends.");
+      }
+    } else {
+      const a = Number(s?.start ?? 0);
+      const b = Number(s?.end ?? 100);
+      if (!Number.isFinite(a) || !Number.isFinite(b)) {
+        err(`${label} has a scroll range that is not a number.`, "Start and End are percentages of this section, e.g. 0 and 30.");
+        return;
+      }
+      if (a >= b) err(`${label} starts at ${a}% and ends at ${b}%.`, "The start must be a smaller number than the end, or the element never shows.");
+      if (a < 0 || b > 100) warn(`${label} is set outside 0–100%.`, "Values outside that range are clamped.");
     }
-    if (a >= b) err(`${label} starts at ${a}% and ends at ${b}%.`, "The start must be a smaller number than the end, or the scene never shows.");
-    if (a < 0 || b > 100) warn(`${label} is set outside 0–100%.`, "Values outside that range are clamped.");
+
     if (!s?.heading && !s?.text && !s?.image && !s?.ctaLabel) {
       warn(`${label} is empty.`, "Give it a heading, some text, an image or a button — or remove it.");
     }
     if (s?.image && !looksLikeUrl(s.image)) err(`${label} has an image address that is not a usable URL.`, "It should start with / or https://.");
   });
 
+  // Overlaps, measured on the range the renderer uses so frame-based and
+  // percentage-based elements are compared on the same scale.
   for (let i = 1; i < scenes.length; i++) {
-    const prev = Number(scenes[i - 1]?.end ?? 100);
-    const next = Number(scenes[i]?.start ?? 0);
-    if (Number.isFinite(prev) && Number.isFinite(next) && next < prev - 1) {
-      warn(`Scene ${i} and scene ${i + 1} overlap.`, "They will be on screen together. Set scene " + (i + 1) + " to start at " + prev + "% to hand over cleanly.");
+    const prev = sceneRange(scenes[i - 1], sceneFrames);
+    const next = sceneRange(scenes[i], sceneFrames);
+    if (next.start < prev.end - 0.01) {
+      warn(
+        `Element ${i} and element ${i + 1} overlap.`,
+        "They will be on screen together. Move the second one's start past where the first one ends to hand over cleanly."
+      );
       break;
     }
   }
@@ -749,8 +783,8 @@ export function validateScrollVideo(p = {}) {
     const label = `Overlay ${i + 1}`;
     if (o?.image && !looksLikeUrl(o.image)) err(`${label} has an image address that is not a usable URL.`, "It should start with / or https://.");
     if (!o?.text && !o?.image && !o?.html) warn(`${label} is empty.`, "Give it content or remove it.");
-    const a = Number(o?.start ?? 0);
-    const b = Number(o?.end ?? 100);
+    const a = o?.start === "" || o?.start == null ? 0 : Number(o.start);
+    const b = o?.end === "" || o?.end == null ? 100 : Number(o.end);
     if (Number.isFinite(a) && Number.isFinite(b) && a > b) {
       err(`${label} starts at ${a}% and ends at ${b}%.`, "Its animation would run backwards; swap the two.");
     }
