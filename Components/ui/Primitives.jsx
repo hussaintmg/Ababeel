@@ -215,7 +215,7 @@ export function LogoTile({ src, alt, name = "", className = "" }) {
     >
       {src ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={src} alt={alt || name} loading="lazy" className="max-h-12 w-auto object-contain" />
+        <img src={src} alt={alt || name} loading="lazy" className="h-12 w-auto max-w-full object-contain" />
       ) : (
         <span className="t-h4 text-ink-400">{name}</span>
       )}

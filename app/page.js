@@ -3,7 +3,6 @@
 import CmsPageContent from "@/Components/cms/CmsPageContent";
 import React, { useState, useEffect, useCallback } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import bannar from "@/public/bannar.webp";
 import bannarV2 from "@/public/bannerv2.webp";
 import FAQ from "@/Components/FAQ";
 import { motion } from "framer-motion";
@@ -63,7 +62,7 @@ const HomePageInner = () => {
     },
     {
       id: 2,
-      image: bannar,
+      image: bannarV2,
       text: "Recognised. Regulated. Respected.",
       subtext:
         "Independent qualification frameworks designed to ensure quality, compliance, and professional credibility.",

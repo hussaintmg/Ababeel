@@ -154,7 +154,36 @@ function HeroBlock({ p }) {
             }}
           />
         </>
-      ) : null}
+      ) : (
+        // No photograph: give the flat panel some depth — a brand-coloured
+        // glow up in one corner, a cool counter-glow in the other, and a
+        // whisper of a dot grid. Decorative only, so screen readers skip it.
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+          <div
+            className="absolute inset-0"
+            style={{
+              background: `radial-gradient(720px 480px at 88% 12%, ${tint(accentOf(p), 0.18)}, transparent 70%)`,
+            }}
+          />
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "radial-gradient(640px 420px at 8% 95%, rgba(255,255,255,0.07), transparent 70%)",
+            }}
+          />
+          <div
+            className="absolute inset-0 opacity-[0.35]"
+            style={{
+              backgroundImage:
+                "radial-gradient(rgba(255,255,255,0.14) 1px, transparent 1px)",
+              backgroundSize: "28px 28px",
+              maskImage: "linear-gradient(115deg, transparent 40%, black 100%)",
+              WebkitMaskImage: "linear-gradient(115deg, transparent 40%, black 100%)",
+            }}
+          />
+        </div>
+      )}
       <div
         className={`relative ${p.align === "left" ? "max-w-6xl" : "max-w-5xl"} mx-auto px-6 flex flex-col ${align} ${Number.isNaN(minH) ? "py-20 md:py-28" : "flex-1 justify-center py-16"}`}
         style={{ paddingTop: padY, paddingBottom: padY, minHeight: Number.isNaN(minH) ? undefined : "inherit" }}
@@ -175,7 +204,7 @@ function HeroBlock({ p }) {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight max-w-3xl"
+          className="text-3xl sm:text-4xl md:text-5xl lg:text-[3.4rem] font-bold leading-[1.08] tracking-tight max-w-3xl"
         >
           {p.title}
         </motion.h1>
