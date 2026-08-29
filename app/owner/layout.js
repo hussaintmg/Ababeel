@@ -8,6 +8,7 @@ import { usePathname } from "next/navigation";
 import { CourseProvider } from "@/context/CourseContext";
 import { usePath } from "@/context/PathContext";
 import DashboardTheme from "@/Components/cms/DashboardTheme";
+import GlobalSearch from "@/Components/owner/GlobalSearch";
 
 import {
   BookOpen,
@@ -131,6 +132,7 @@ export default function OwnerLayout({ children }) {
         { name: "Testimonials", url: "/owner/training/testimonials" },
         { name: "Team", url: "/owner/training/team" },
         { name: "Consultants", url: "/owner/training/consultants" },
+        { name: "Resources", url: "/owner/training/resources" },
         { name: "Registration Form", url: "/owner/training/registration-fields" },
       ],
     },
@@ -191,6 +193,12 @@ export default function OwnerLayout({ children }) {
                     sidebarOpen ? "lg:ml-64" : "lg:ml-20"
                   }`}
                 >
+                  {/* One search across every dashboard entity. Sits above the
+                      page rather than inside each screen, so it is reachable
+                      from wherever the owner happens to be. */}
+                  <div className="px-4 pt-4 md:px-6 lg:pl-8">
+                    <GlobalSearch />
+                  </div>
                   <div className="p-4 md:p-6 lg:pl-8">{children}</div>
                 </main>
               </div>

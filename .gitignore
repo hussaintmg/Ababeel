@@ -43,7 +43,10 @@ yarn-error.log*
 next-env.d.ts
 /tmp
 app/success-stories
-app/resources
+# app/resources was ignored here alongside a list of routes that were never
+# built (success-stories, instructors, cookie-policy — none of them exist on
+# disk). /resources is now a real feature, so it has to be tracked: left in
+# this list, the pages would build locally and silently never deploy.
 app/instructors
 app/professional-dev/[program]
 app/cookie-policy

@@ -26,18 +26,16 @@ const up = { animation: "fade-up" };
 const right = { animation: "fade-right" };
 const left = { animation: "fade-left" };
 
-/** New categories these templates add to the picker. */
-export const TRAINING_TEMPLATE_CATEGORIES = [
-  "ABA — Full Pages",
-  "ABA — Heroes",
-  "ABA — Courses",
-  "ABA — Schedule",
-  "ABA — Reviews",
-  "ABA — People",
-  "ABA — Accreditation",
-  "ABA — Call To Action",
-  "ABA — Content",
-];
+/**
+ * Categories these templates need that the library did not already have.
+ *
+ * Everything else goes into an existing category — an ABA hero belongs in
+ * "Heroes" beside the others, not in a parallel "ABA — Heroes" list, which is
+ * what makes a shared registry read as two separate libraries. Only section
+ * kinds the library genuinely lacked are added, and they are named for what
+ * they are rather than for the brand.
+ */
+export const TRAINING_TEMPLATE_CATEGORIES = ["Courses", "Schedule"];
 
 /* ------------------------------------------------------------------ pieces */
 
@@ -100,8 +98,8 @@ export const TRAINING_TEMPLATES = [
   /* ===== HEROES (6) ===== */
   {
     id: "aba-hero-statement",
-    name: "Hero — Large statement",
-    category: "ABA — Heroes",
+    name: "ABA Safety — Hero, large statement",
+    category: "Heroes",
     desc: "Big typography on ink, two actions",
     blocks: [
       heroDarkLeft(
@@ -115,8 +113,8 @@ export const TRAINING_TEMPLATES = [
   },
   {
     id: "aba-hero-editorial",
-    name: "Hero — Editorial image",
-    category: "ABA — Heroes",
+    name: "ABA Safety — Hero, editorial image",
+    category: "Heroes",
     desc: "Photo background, soft overlay, left aligned",
     blocks: [
       b("hero", {
@@ -137,8 +135,8 @@ export const TRAINING_TEMPLATES = [
   },
   {
     id: "aba-hero-split",
-    name: "Hero — Split screen",
-    category: "ABA — Heroes",
+    name: "ABA Safety — Hero, split screen",
+    category: "Heroes",
     desc: "Statement beside a supporting panel",
     blocks: [
       heroDarkLeft(
@@ -166,8 +164,8 @@ export const TRAINING_TEMPLATES = [
   },
   {
     id: "aba-hero-full",
-    name: "Hero — Full-bleed visual",
-    category: "ABA — Heroes",
+    name: "ABA Safety — Hero, full-bleed visual",
+    category: "Heroes",
     desc: "Edge-to-edge image, centred text",
     blocks: [
       b("hero", {
@@ -188,8 +186,8 @@ export const TRAINING_TEMPLATES = [
   },
   {
     id: "aba-hero-corporate",
-    name: "Hero — Dark corporate",
-    category: "ABA — Heroes",
+    name: "ABA Safety — Hero, dark corporate",
+    category: "Heroes",
     desc: "Restrained, centred, with claims underneath",
     blocks: [
       b("hero", {
@@ -211,8 +209,8 @@ export const TRAINING_TEMPLATES = [
   },
   {
     id: "aba-hero-course",
-    name: "Hero — Course focused",
-    category: "ABA — Heroes",
+    name: "ABA Safety — Hero, course focused",
+    category: "Heroes",
     desc: "Hero with the next available sessions underneath",
     blocks: [
       heroDarkLeft(
@@ -245,15 +243,15 @@ export const TRAINING_TEMPLATES = [
   /* ===== COURSES ===== */
   {
     id: "aba-courses-featured",
-    name: "Courses — Featured grid",
-    category: "ABA — Courses",
+    name: "ABA Safety — Courses, featured grid",
+    category: "Courses",
     desc: "Three featured courses, pulled live",
     blocks: [courseSection("Featured courses")],
   },
   {
     id: "aba-courses-editorial",
-    name: "Courses — Editorial cards",
-    category: "ABA — Courses",
+    name: "ABA Safety — Courses, editorial cards",
+    category: "Courses",
     desc: "Larger cards with generous typography",
     blocks: [
       courseSection("Our programmes", {
@@ -265,8 +263,8 @@ export const TRAINING_TEMPLATES = [
   },
   {
     id: "aba-courses-minimal",
-    name: "Courses — Minimal list",
-    category: "ABA — Courses",
+    name: "ABA Safety — Courses, minimal list",
+    category: "Courses",
     desc: "Typographic cards, no images needed",
     blocks: [
       courseSection("Every course we run", {
@@ -279,8 +277,8 @@ export const TRAINING_TEMPLATES = [
   },
   {
     id: "aba-courses-spotlight",
-    name: "Courses — Spotlight",
-    category: "ABA — Courses",
+    name: "ABA Safety — Courses, spotlight",
+    category: "Courses",
     desc: "One dark featured card beside two standard ones",
     blocks: [
       courseSection("Start here", { cardTemplate: "featured", columns: "3", limit: "3" }),
@@ -288,8 +286,8 @@ export const TRAINING_TEMPLATES = [
   },
   {
     id: "aba-courses-by-level",
-    name: "Courses — By level",
-    category: "ABA — Courses",
+    name: "ABA Safety — Courses, by level",
+    category: "Courses",
     desc: "Filtered to one level (set the slug in Content)",
     blocks: [
       courseSection("Professional level", {
@@ -305,8 +303,8 @@ export const TRAINING_TEMPLATES = [
   /* ===== SCHEDULE ===== */
   {
     id: "aba-schedule-upcoming",
-    name: "Schedule — Upcoming sessions",
-    category: "ABA — Schedule",
+    name: "ABA Safety — Schedule, upcoming sessions",
+    category: "Schedule",
     desc: "The next few dates, pulled live",
     blocks: [
       b(
@@ -330,8 +328,8 @@ export const TRAINING_TEMPLATES = [
   },
   {
     id: "aba-schedule-online",
-    name: "Schedule — Online only",
-    category: "ABA — Schedule",
+    name: "ABA Safety — Schedule, online only",
+    category: "Schedule",
     desc: "Filtered to online delivery",
     blocks: [
       b(
@@ -355,8 +353,8 @@ export const TRAINING_TEMPLATES = [
   },
   {
     id: "aba-schedule-cta",
-    name: "Schedule — Dates then CTA",
-    category: "ABA — Schedule",
+    name: "ABA Safety — Schedule, dates then CTA",
+    category: "Schedule",
     desc: "Session list followed by a dark call to action",
     blocks: [
       b(
@@ -387,8 +385,8 @@ export const TRAINING_TEMPLATES = [
   /* ===== REVIEWS (5) ===== */
   {
     id: "aba-reviews-google",
-    name: "Reviews — Review cards",
-    category: "ABA — Reviews",
+    name: "ABA Safety — Reviews, review cards",
+    category: "Testimonials",
     desc: "Star ratings and source marks, entered in the dashboard",
     blocks: [
       b(
@@ -410,8 +408,8 @@ export const TRAINING_TEMPLATES = [
   },
   {
     id: "aba-reviews-carousel",
-    name: "Reviews — Swipeable row",
-    category: "ABA — Reviews",
+    name: "ABA Safety — Reviews, swipeable row",
+    category: "Testimonials",
     desc: "Horizontal scroller with snap",
     blocks: [
       b(
@@ -433,8 +431,8 @@ export const TRAINING_TEMPLATES = [
   },
   {
     id: "aba-reviews-grid",
-    name: "Reviews — Grid on mist",
-    category: "ABA — Reviews",
+    name: "ABA Safety — Reviews, grid on mist",
+    category: "Testimonials",
     desc: "Four-column grid on a light band",
     blocks: [
       b(
@@ -456,8 +454,8 @@ export const TRAINING_TEMPLATES = [
   },
   {
     id: "aba-reviews-featured",
-    name: "Reviews — Single featured",
-    category: "ABA — Reviews",
+    name: "ABA Safety — Reviews, single featured",
+    category: "Testimonials",
     desc: "One large quote",
     blocks: [
       b(
@@ -479,8 +477,8 @@ export const TRAINING_TEMPLATES = [
   },
   {
     id: "aba-reviews-editorial",
-    name: "Reviews — Featured plus grid",
-    category: "ABA — Reviews",
+    name: "ABA Safety — Reviews, featured plus grid",
+    category: "Testimonials",
     desc: "One large quote above a supporting grid",
     blocks: [
       b(
@@ -504,8 +502,8 @@ export const TRAINING_TEMPLATES = [
   /* ===== PEOPLE ===== */
   {
     id: "aba-team-grid",
-    name: "Team — Grid",
-    category: "ABA — People",
+    name: "ABA Safety — Team, grid",
+    category: "Team",
     desc: "Published team members, four across",
     blocks: [
       b(
@@ -529,8 +527,8 @@ export const TRAINING_TEMPLATES = [
   },
   {
     id: "aba-team-leadership",
-    name: "Team — Leadership",
-    category: "ABA — People",
+    name: "ABA Safety — Team, leadership",
+    category: "Team",
     desc: "Leadership only, with short bios",
     blocks: [
       b(
@@ -554,8 +552,8 @@ export const TRAINING_TEMPLATES = [
   },
   {
     id: "aba-consultants-profiles",
-    name: "Consultants — Editorial profiles",
-    category: "ABA — People",
+    name: "ABA Safety — Consultants, editorial profiles",
+    category: "Team",
     desc: "Each profile in the layout it is set to",
     blocks: [
       b(
@@ -578,8 +576,8 @@ export const TRAINING_TEMPLATES = [
   },
   {
     id: "aba-consultants-cards",
-    name: "Consultants — Card grid",
-    category: "ABA — People",
+    name: "ABA Safety — Consultants, card grid",
+    category: "Team",
     desc: "A uniform grid rather than editorial layouts",
     blocks: [
       b(
@@ -602,8 +600,8 @@ export const TRAINING_TEMPLATES = [
   },
   {
     id: "aba-consultants-featured",
-    name: "Consultants — Single featured",
-    category: "ABA — People",
+    name: "ABA Safety — Consultants, single featured",
+    category: "Team",
     desc: "One profile, in its own layout",
     blocks: [
       b(
@@ -628,8 +626,8 @@ export const TRAINING_TEMPLATES = [
   /* ===== ACCREDITATION ===== */
   {
     id: "aba-trust-strip",
-    name: "Accreditation — Trust strip",
-    category: "ABA — Accreditation",
+    name: "ABA Safety — Accreditation, trust strip",
+    category: "Logos",
     desc: "Quiet logo row for near the top of a page",
     blocks: [
       b(
@@ -651,8 +649,8 @@ export const TRAINING_TEMPLATES = [
   },
   {
     id: "aba-bodies-strip",
-    name: "Awarding bodies — Logo strip",
-    category: "ABA — Accreditation",
+    name: "ABA Safety — Awarding bodies, logo strip",
+    category: "Logos",
     desc: "Logos linked to each body's page",
     blocks: [
       b(
@@ -674,8 +672,8 @@ export const TRAINING_TEMPLATES = [
   },
   {
     id: "aba-bodies-cards",
-    name: "Awarding bodies — Cards",
-    category: "ABA — Accreditation",
+    name: "ABA Safety — Awarding bodies, cards",
+    category: "Logos",
     desc: "Logo, description and a link to the courses",
     blocks: [
       b(
@@ -699,8 +697,8 @@ export const TRAINING_TEMPLATES = [
   /* ===== CALL TO ACTION (6) ===== */
   {
     id: "aba-cta-dark",
-    name: "CTA — Dark band",
-    category: "ABA — Call To Action",
+    name: "ABA Safety — CTA, dark band",
+    category: "Call To Action",
     desc: "Ink background, one action",
     blocks: [
       ctaDark(
@@ -712,8 +710,8 @@ export const TRAINING_TEMPLATES = [
   },
   {
     id: "aba-cta-two",
-    name: "CTA — Two actions",
-    category: "ABA — Call To Action",
+    name: "ABA Safety — CTA, two actions",
+    category: "Call To Action",
     desc: "Primary and secondary side by side",
     blocks: [
       ctaDark(
@@ -726,8 +724,8 @@ export const TRAINING_TEMPLATES = [
   },
   {
     id: "aba-cta-registration",
-    name: "CTA — Register now",
-    category: "ABA — Call To Action",
+    name: "ABA Safety — CTA, register now",
+    category: "Call To Action",
     desc: "Points at the schedule, where a session can be chosen",
     blocks: [
       b(
@@ -747,8 +745,8 @@ export const TRAINING_TEMPLATES = [
   },
   {
     id: "aba-cta-light",
-    name: "CTA — Light band",
-    category: "ABA — Call To Action",
+    name: "ABA Safety — CTA, light band",
+    category: "Call To Action",
     desc: "Mist background, restrained",
     blocks: [
       b(
@@ -767,8 +765,8 @@ export const TRAINING_TEMPLATES = [
   },
   {
     id: "aba-cta-statement",
-    name: "CTA — Large typography",
-    category: "ABA — Call To Action",
+    name: "ABA Safety — CTA, large typography",
+    category: "Call To Action",
     desc: "A single strong line",
     blocks: [
       b(
@@ -787,8 +785,8 @@ export const TRAINING_TEMPLATES = [
   },
   {
     id: "aba-cta-corporate",
-    name: "CTA — Corporate enquiry",
-    category: "ABA — Call To Action",
+    name: "ABA Safety — CTA, corporate enquiry",
+    category: "Call To Action",
     desc: "For organisations booking a group",
     blocks: [
       ctaDark(
@@ -803,8 +801,8 @@ export const TRAINING_TEMPLATES = [
   /* ===== CONTENT ===== */
   {
     id: "aba-why",
-    name: "Content — Why choose us",
-    category: "ABA — Content",
+    name: "ABA Safety — Content, why choose us",
+    category: "Features",
     desc: "Four reasons as cards",
     blocks: [
       b(
@@ -850,8 +848,8 @@ export const TRAINING_TEMPLATES = [
   },
   {
     id: "aba-about-split",
-    name: "Content — About with image",
-    category: "ABA — Content",
+    name: "ABA Safety — Content, about with image",
+    category: "Content",
     desc: "Text beside an image",
     blocks: [
       b(
@@ -877,8 +875,8 @@ export const TRAINING_TEMPLATES = [
   },
   {
     id: "aba-stats",
-    name: "Content — Stats band",
-    category: "ABA — Content",
+    name: "ABA Safety — Content, stats band",
+    category: "Stats",
     desc: "Four numbers on ink",
     blocks: [
       b(
@@ -900,8 +898,8 @@ export const TRAINING_TEMPLATES = [
   },
   {
     id: "aba-faq",
-    name: "Content — FAQ",
-    category: "ABA — Content",
+    name: "ABA Safety — Content, fAQ",
+    category: "FAQ",
     desc: "Common questions about enrolling",
     blocks: [
       b(
@@ -935,8 +933,8 @@ export const TRAINING_TEMPLATES = [
   /* ===== FULL PAGE ===== */
   {
     id: "aba-page-home",
-    name: "Full page — ABA Safety home",
-    category: "ABA — Full Pages",
+    name: "ABA Safety — Full page, aBA Safety home",
+    category: "Full Pages",
     desc: "Hero, trust strip, about, courses, why, bodies, schedule, reviews, CTA",
     blocks: [
       heroDarkLeft(

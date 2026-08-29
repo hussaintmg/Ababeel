@@ -1,6 +1,6 @@
 import { BLOCK_TYPES, LIVE_BLOCK_TYPES } from "@/Components/cms/blockSchemas";
 import { TRAINING_TEMPLATES } from "@/Components/cms/trainingTemplates";
-import { TEMPLATES } from "@/Components/cms/templates";
+import { TEMPLATES, TEMPLATE_CATEGORIES } from "@/Components/cms/templates";
 import { TRAINING_BLOCK_TYPES as DATA_BLOCK_TYPES } from "@/lib/cms/trainingBlocks";
 import { TRAINING_RENDERERS } from "@/Components/cms/TrainingBlocks";
 
@@ -79,27 +79,73 @@ describe("template props match their block's schema", () => {
   });
 });
 
-describe("ABA templates", () => {
-  test("cover the sections the brief asks for", () => {
-    const byCategory = (name) => TRAINING_TEMPLATES.filter((t) => t.category === name);
-    expect(byCategory("ABA — Heroes").length).toBeGreaterThanOrEqual(6);
-    expect(byCategory("ABA — Call To Action").length).toBeGreaterThanOrEqual(6);
-    expect(byCategory("ABA — Reviews").length).toBeGreaterThanOrEqual(5);
-    expect(byCategory("ABA — Courses").length).toBeGreaterThanOrEqual(5);
-    expect(byCategory("ABA — People").length).toBeGreaterThanOrEqual(5);
-    expect(byCategory("ABA — Schedule").length).toBeGreaterThanOrEqual(3);
-    expect(byCategory("ABA — Accreditation").length).toBeGreaterThanOrEqual(3);
+describe("the ABA templates are inside the existing library", () => {
+  const byId = (id) => TEMPLATES.find((t) => t.id === id);
+
+  test("they are in the same registry the existing patterns use", () => {
+    // Not "a registry of their own that the picker also reads" — the same
+    // array, so there is one library and one picker.
+    for (const t of TRAINING_TEMPLATES) {
+      expect(byId(t.id)).toBe(t);
+    }
+  });
+
+  test("an ABA hero sits in Heroes, beside the existing heroes", () => {
+    const heroes = TEMPLATES.filter((t) => t.category === "Heroes");
+    const aba = heroes.filter((t) => t.id.startsWith("aba-"));
+    const existing = heroes.filter((t) => !t.id.startsWith("aba-"));
+    expect(aba.length).toBeGreaterThanOrEqual(6);
+    // The existing heroes must still be there. Appending, not replacing.
+    expect(existing.length).toBeGreaterThanOrEqual(6);
+  });
+
+  test("no category exists only to hold ABA templates", () => {
+    // A brand-named category is what makes a shared registry read as two
+    // separate libraries, which is the thing this integration undid.
+    const brandNamed = TEMPLATE_CATEGORIES.filter((c) => /\bABA\b/i.test(c));
+    expect(brandNamed).toEqual([]);
+
+    // The two categories the ABA work did add name a section kind the library
+    // genuinely lacked, and both are open to any future template.
+    for (const category of ["Courses", "Schedule"]) {
+      expect(TEMPLATE_CATEGORIES).toContain(category);
+    }
+  });
+
+  test("every ABA template names a category the picker lists", () => {
+    for (const t of TRAINING_TEMPLATES) {
+      expect(TEMPLATE_CATEGORIES).toContain(t.category);
+    }
+  });
+
+  test("they are identifiable by name inside a shared category", () => {
+    // Sharing a category only works if a user can tell which is which.
+    for (const t of TRAINING_TEMPLATES) {
+      expect(t.name).toMatch(/^ABA Safety/);
+    }
+  });
+
+  test("the sections the brief asks for are all present", () => {
+    const abaIn = (category) =>
+      TEMPLATES.filter((t) => t.category === category && t.id.startsWith("aba-"));
+    expect(abaIn("Heroes").length).toBeGreaterThanOrEqual(6);
+    expect(abaIn("Call To Action").length).toBeGreaterThanOrEqual(6);
+    expect(abaIn("Testimonials").length).toBeGreaterThanOrEqual(5);
+    expect(abaIn("Courses").length).toBeGreaterThanOrEqual(5);
+    expect(abaIn("Team").length).toBeGreaterThanOrEqual(5);
+    expect(abaIn("Schedule").length).toBeGreaterThanOrEqual(3);
+    expect(abaIn("Logos").length).toBeGreaterThanOrEqual(3);
   });
 
   test("the review templates cover five distinct layouts", () => {
-    const layouts = TRAINING_TEMPLATES.filter((t) => t.category === "ABA — Reviews").flatMap((t) =>
-      t.blocks.map((b) => b.props.layout),
-    );
+    const layouts = TRAINING_TEMPLATES.filter((t) =>
+      t.blocks.some((b) => b.type === "reviewWall"),
+    ).flatMap((t) => t.blocks.filter((b) => b.type === "reviewWall").map((b) => b.props.layout));
     expect(new Set(layouts).size).toBeGreaterThanOrEqual(5);
   });
 
   test("the full home page assembles the sections the brief lists", () => {
-    const home = TRAINING_TEMPLATES.find((t) => t.id === "aba-page-home");
+    const home = byId("aba-page-home");
     expect(home).toBeDefined();
     const types = home.blocks.map((b) => b.type);
     for (const required of [

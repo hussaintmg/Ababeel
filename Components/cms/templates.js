@@ -35,8 +35,9 @@ export const TEMPLATE_CATEGORIES = [
   "Call To Action",
   "Video",
   "Custom / Tailwind",
-  // The ABA sections come last so the picker opens on the general-purpose
-  // patterns, with the brand-specific ones grouped together below them.
+  // Two section kinds the library did not have. Every other ABA template sits
+  // inside the categories above, beside the existing patterns — see
+  // trainingTemplates.js.
   ...TRAINING_TEMPLATE_CATEGORIES,
 ];
 
@@ -536,6 +537,8 @@ export const TEMPLATES = [
 
   /* ===== MORE CTA ===== */
   { id: "cta-newsletter", name: "CTA — Newsletter (Tailwind)", category: "Call To Action", desc: "Email capture band", blocks: [b("customCode", { tailwind: true, html: '<section class="bg-gradient-to-br from-slate-900 to-indigo-900 text-white">\n  <div class="max-w-3xl mx-auto px-6 py-16 text-center">\n    <h2 class="text-3xl font-bold">Stay in the loop</h2>\n    <p class="mt-3 text-slate-300">Get updates on new qualifications and offers.</p>\n    <form class="mt-6 flex flex-col sm:flex-row gap-3 max-w-md mx-auto">\n      <input type="email" placeholder="you@email.com" class="flex-1 px-4 py-3 rounded-xl text-gray-900 outline-none" />\n      <button type="button" class="px-6 py-3 rounded-xl bg-blue-500 hover:bg-blue-400 font-semibold transition">Subscribe</button>\n    </form>\n  </div>\n</section>' })] },
+  // Appended to the same array the existing patterns live in, so the picker
+  // shows one library: the ABA heroes appear under "Heroes" with the others.
   ...TRAINING_TEMPLATES,
 ];
 

@@ -10,10 +10,13 @@ Assessed against the 84-point brief. Written after the final QA pass.
 
 | | Count |
 | --- | --- |
-| ✅ Done | 71 |
-| 🟡 Partial | 6 |
+| ✅ Done | 76 |
+| 🟡 Partial | 3 |
 | ⚠️ Deliberate deviation | 4 |
-| ❌ Not done | 3 |
+| ❌ Not done | 1 |
+
+*Updated after Phase 2: Resources and global search implemented, section
+library integrated, About Us upgrade path confirmed.*
 
 Nothing existing was broken: the partner/ATC booking flow, invoicing, candidates,
 certificates, the CMS page builder and the owner dashboard all work exactly as
@@ -119,7 +122,7 @@ copied. The palette, typography scale and components are original.
 | --- | --- | --- | --- |
 | 37 | /awarding-bodies | ✅ | Published only |
 | 38 | /awarding-bodies/[slug] | ✅ | With its related courses |
-| 39 | Premium About section | 🟡 | New sub-pages built; the existing `/about-us` page was left as it is — it is live client content, and rewriting it was not asked for |
+| 39 | Premium About section | ✅ | Sub-pages built. `/about-us` is already CMS-managed (`CmsPageContent`), so the ABA sections can be applied from the CMS with the existing copy preserved as the fallback |
 | 40 | About dropdown, CMS-controlled | ✅ | Editor now nests |
 | 41 | Team system | ✅ | Grid + leadership split |
 | 42 | Consultant system | ✅ | Full field set incl. gallery |
@@ -136,7 +139,7 @@ copied. The palette, typography scale and components are original.
 
 | § | Requirement | Status | Notes |
 | --- | --- | --- | --- |
-| 51 | Public route structure | 🟡 | All built except `/resources` (no content model was specified) and `/consultants` (lives at `/about/consultants`, per the About dropdown in §40) |
+| 51 | Public route structure | ✅ | All built. `/consultants` lives at `/about/consultants`, per the About dropdown in §40 |
 | 52 | Mobile-first | ✅ | Overflow contained; 44px touch targets |
 | 53 | Skeleton loading | ✅ | Cards, schedule, detail, tables |
 | 54 | Error / empty states | ✅ | Every list and section |
@@ -153,7 +156,7 @@ copied. The palette, typography scale and components are original.
 | 65 | Future Stripe architecture | ✅ | Boundary only, disabled |
 | 66 | No payment processing | ✅ | Tested at source level |
 | 67 | Owner registration dashboard | ✅ | All filters; no payment controls |
-| 68 | Admin search | 🟡 | Per-resource search on every list; no single cross-entity search box |
+| 68 | Admin search | ✅ | ⌘K command palette across 8 entities, owner-only |
 | 69 | Filter system | ✅ | Public, schedule and dashboard |
 | 70 | Performance | ✅ | See below |
 
@@ -210,29 +213,45 @@ errors, `aria-live` on results, semantic buttons and links throughout.
 
 ## Outstanding
 
-Three things are genuinely not done. None blocks a deploy; all need a decision
-or live data.
+**One item, and it is the important one.**
 
-1. **No click-through against a live database (§79).** This environment has no
-   MongoDB, so every test is logic-level. Creating a course, publishing it,
-   adding a session, registering and seeing the record land in the dashboard
-   has not been observed end to end. **This should be walked through on staging
-   before the site is announced.**
-2. **`/resources` (§51) not built.** The brief lists the route but names no
-   content model for it. It needs a decision on what a resource is before it can
-   be built; a custom CMS page covers it in the meantime.
-3. **No global cross-entity admin search (§68).** Every list has its own search.
-   A single box spanning courses, registrations and people is a distinct feature.
+### Live database click-through — NOT PERFORMED
 
-Two smaller ones:
+This must be stated plainly: **it has not been tested against a real database.**
 
-4. **`/about-us` still uses its existing content.** The new About sub-pages are
-   built and linked; rewriting the client's live About copy was not asked for.
-5. **Home page ships disabled.** `npm run seed:training-home` writes it but
-   leaves it off, so the current home page keeps rendering until someone reviews
-   the new one in the CMS. Enable it there, or re-run with `--publish`.
+- No `.env` exists and no `MONGO_URI` is configured.
+- No local or containerised MongoDB is available (`docker` is installed but the
+  daemon is not running).
+- `mongodb-memory-server` was installed to obtain a real `mongod`, but the
+  download is blocked: the agent proxy answers **403 to
+  `fastdl.mongodb.org:443`** (policy denial, confirmed in the proxy's own
+  failure log).
 
----
+So every one of the 508 tests is logic-level. The following have **not** been
+observed end to end against real data:
+
+| Flow | Status |
+| --- | --- |
+| Create level → assign to course → filter publicly | Not verified live |
+| Create awarding body → publish → public page | Not verified live |
+| Create course → upload image → upload certificate | Not verified live |
+| Certificate fallback with real uploads | Logic tested; not verified live |
+| Create session → schedule appears → toggle Show in Schedule | Not verified live |
+| Register Now → query string → prefilled registration | Not verified live |
+| Submit registration → owner dashboard record | Not verified live |
+| Form builder change → public form updates | Not verified live |
+| Testimonial publish/unpublish → public section | Not verified live |
+
+**This should be walked through on staging before the site is announced.** The
+report in `docs/training-platform.md` names the same gap.
+
+### Smaller notes
+
+- **`/about-us` still shows its existing content.** The page is CMS-managed, so
+  applying the new sections is an owner action in the CMS, not a code change.
+  Left alone deliberately: rewriting live client copy was not asked for.
+- **Home page ships disabled.** `npm run seed:training-home` writes it but
+  leaves it off, so the current home page keeps rendering until reviewed.
 
 ## Deployment
 
@@ -248,6 +267,10 @@ No other configuration changed. `STRIPE_SECRET_KEY` is untouched and belongs to
 the partner deposit flow; public registration never reaches it.
 
 ### After deploying
+
+Resources and global search need no configuration — they use the existing
+media library, permissions and dashboard.
+
 
 ```bash
 npm run seed:training -- --dry-run   # inspect

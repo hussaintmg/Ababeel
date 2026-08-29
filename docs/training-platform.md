@@ -233,9 +233,26 @@ silently broken.
 
 ## Template library
 
-`Components/cms/trainingTemplates.js` adds 30+ sections in nine "ABA —"
-categories: 6 heroes, 6 CTAs, 5 review layouts, 5 course sections, 5 people
-sections, 3 schedule, 3 accreditation, 4 content, and one full home page.
+`Components/cms/trainingTemplates.js` adds 30+ sections, **appended to the
+existing library rather than beside it**: they are spread into the same
+`TEMPLATES` array, and each one sits in the category that already describes its
+section type — an ABA hero appears under "Heroes" with the existing heroes, not
+in an "ABA — Heroes" list of its own.
+
+Two categories were added, "Courses" and "Schedule", because the library had no
+section of either kind. Both are named for what they are, so any future
+template can use them.
+
+The templates carry the brand in their names (`ABA Safety — Hero, split
+screen`) so they stay identifiable inside a shared category.
+
+Nothing was duplicated: one `TEMPLATES` array, one `BLOCK_TYPES`, one
+`RENDERERS` map, one variable registry, one media library, one page builder.
+`__tests__/training/blocks.test.js` asserts each of those, that the existing
+heroes are still present, and that no category is brand-named.
+
+An inserted template stores no template id in the page, so recategorising was
+safe for every existing saved page.
 
 ## Variables
 
@@ -262,18 +279,56 @@ disabled unless `--publish` is passed, so the current site keeps rendering until
 someone has looked at the new page in the CMS. The prose panels carry
 placeholder copy: those are the client's words to write.
 
+## Resources
+
+`/resources` and `/resources/[slug]`, backed by a `Resource` model.
+
+A dedicated model rather than a custom CMS page, because a resource library is
+a *filtered list*: it needs a type, a date, a file or external URL and an
+ordering, none of which a page-builder page can express. A custom page can hold
+an article; it cannot answer "show me every PDF".
+
+Everything else is the existing machinery — the same owner CRUD registry
+(`lib/training/resources.js`), the same field-spec editor, the same media
+library, the same SEO sub-document, the same automatic variable discovery. No
+second admin route exists; it is served by `/owner/training/[resource]` like
+every other entity.
+
+A card's action follows what the resource actually is: an article links to its
+page, a PDF offers a download, a link opens off-site, and one with nothing
+behind it shows no action rather than a dead link.
+
+## Global search
+
+`/api/owner/search` queries every dashboard entity in one request, and
+`Components/owner/GlobalSearch.jsx` is the command palette over it (⌘K).
+Mounted in the existing owner layout — no second dashboard.
+
+Owner-only, rate limited, minimum two characters, and the term is escaped
+before it becomes a regex. Registration rows return a name and a reference but
+no phone, company or answers: enough to find the row, nothing more. The detail
+page, behind the same guard, has the rest.
+
+## About Us
+
+`/about-us` is already wrapped in `CmsPageContent pageKey="about-us"` — its 780
+lines are the built-in *fallback*, shown only while the CMS page is not enabled.
+
+So the upgrade path already exists and needed no code: open **Website CMS →
+About Us**, insert the ABA sections from the template library, and enable the
+page. The original content stays underneath as the fallback and is never
+overwritten. It was left as it is because rewriting live client copy was not
+asked for.
+
 ## Status
 
-Complete. See **`docs/acceptance-report.md`** for the point-by-point assessment
-against the brief, the four deliberate deviations and their reasoning, the
-performance and accessibility findings, what remains outstanding, and the
-deployment steps.
+Phase 2 complete. See **`docs/acceptance-report.md`** for the point-by-point
+assessment, the deliberate deviations, and deployment steps.
 
-Built: data models, domain layer, owner CRUD APIs, registration APIs, public
-read APIs, seed scripts, design system, owner dashboard screens, all public
-pages, navigation wiring, sitemap and robots, catalogue page-builder blocks,
-template library, home-page seed, and the QA/performance/accessibility passes.
+Built: the full platform, plus Resources, global search, and the section-library
+integration.
 
-Outstanding (none blocking): no click-through against a live database,
-`/resources` needs a content model decision, and there is no global
-cross-entity admin search.
+Outstanding: **the live database click-through has still not been performed** —
+this environment has no MongoDB and the proxy policy denies
+`fastdl.mongodb.org`, so no server could be obtained. Every test is
+logic-level. Walk the flow on staging before announcing the site.

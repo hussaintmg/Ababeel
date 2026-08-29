@@ -50,6 +50,7 @@ const navLinks = [
   { name: "Courses", url: "/courses" },
   { name: "Awarding Bodies", url: "/awarding-bodies" },
   { name: "Schedule", url: "/schedule" },
+  { name: "Resources", url: "/resources" },
   { name: "Qualifications", url: "/qualification" },
   { name: "Certificate Verification", url: "/verify-certificate" },
   { name: "Contact Us", url: "/contact-us" },

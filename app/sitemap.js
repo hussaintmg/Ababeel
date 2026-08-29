@@ -2,6 +2,7 @@ import connectDB from "@/utils/db";
 import TrainingCourse from "@/models/TrainingCourse";
 import AwardingBody from "@/models/AwardingBody";
 import SiteContent from "@/models/SiteContent";
+import Resource from "@/models/Resource";
 
 /**
  * The site's sitemap.
@@ -23,6 +24,7 @@ const STATIC_ROUTES = [
   { path: "/courses", priority: 0.9, changeFrequency: "daily" },
   { path: "/schedule", priority: 0.9, changeFrequency: "daily" },
   { path: "/awarding-bodies", priority: 0.7, changeFrequency: "monthly" },
+  { path: "/resources", priority: 0.7, changeFrequency: "weekly" },
   { path: "/about-us", priority: 0.7, changeFrequency: "monthly" },
   { path: "/about/team", priority: 0.6, changeFrequency: "monthly" },
   { path: "/about/consultants", priority: 0.6, changeFrequency: "monthly" },
@@ -51,7 +53,7 @@ export default async function sitemap() {
   const base = baseUrl();
   const now = new Date();
 
-  const [courses, bodies, customPages, hidden] = await Promise.all([
+  const [courses, bodies, resources, customPages, hidden] = await Promise.all([
     safe(async () => {
       await connectDB();
       return TrainingCourse.find({ status: "published" })
@@ -61,6 +63,10 @@ export default async function sitemap() {
     safe(async () => {
       await connectDB();
       return AwardingBody.find({ status: "published" }).select("slug updatedAt seo.noIndex").lean();
+    }),
+    safe(async () => {
+      await connectDB();
+      return Resource.find({ status: "published" }).select("slug updatedAt seo.noIndex").lean();
     }),
     safe(async () => {
       await connectDB();
@@ -108,6 +114,16 @@ export default async function sitemap() {
       lastModified: body.updatedAt || now,
       changeFrequency: "monthly",
       priority: 0.6,
+    });
+  }
+
+  for (const resource of resources) {
+    if (!resource.slug || resource.seo?.noIndex) continue;
+    entries.push({
+      url: `${base}/resources/${resource.slug}`,
+      lastModified: resource.updatedAt || now,
+      changeFrequency: "monthly",
+      priority: 0.5,
     });
   }
 

@@ -67,3 +67,5 @@ export {
 } from "@/Components/ui/DomainCards";
 
 export { ConsultantProfile } from "@/Components/ui/ConsultantProfile";
+
+export { ResourceCard, resourceAction } from "@/Components/ui/ResourceCard";

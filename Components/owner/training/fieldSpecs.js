@@ -565,6 +565,84 @@ export const SPECS = {
     ],
   },
 
+  resources: {
+    label: "Resources",
+    singular: "Resource",
+    icon: "Library",
+    statusOptions: STATUS_PUBLISH,
+    reorderable: true,
+    columns: [
+      { key: "title", label: "Resource", primary: true, image: "featuredImage" },
+      { key: "type", label: "Type" },
+      { key: "publishedDate", label: "Published", type: "date" },
+      { key: "featured", label: "Featured", type: "boolean" },
+      { key: "status", label: "Status", type: "status" },
+    ],
+    sections: [
+      {
+        title: "Resource",
+        fields: [
+          { key: "title", type: "text", label: "Title", required: true },
+          {
+            key: "slug",
+            type: "text",
+            label: "URL slug",
+            help: "Leave blank to generate from the title. Changing it breaks existing links.",
+          },
+          {
+            key: "type",
+            type: "select",
+            label: "Type",
+            options: [
+              { value: "article", label: "Article" },
+              { value: "guide", label: "Guide" },
+              { value: "pdf", label: "PDF" },
+              { value: "download", label: "Download" },
+              { value: "link", label: "External link" },
+              { value: "announcement", label: "Announcement" },
+            ],
+          },
+          {
+            key: "shortDescription",
+            type: "textarea",
+            label: "Short description",
+            help: "One or two sentences. Shown on the resource card.",
+          },
+          { key: "featuredImage", type: "image", label: "Featured image" },
+          { key: "publishedDate", type: "date", label: "Published date" },
+        ],
+      },
+      {
+        title: "Content",
+        description:
+          "An article or guide reads its content here. A PDF, download or link sends the visitor elsewhere — fill in the section below instead. Filling in both is fine: the page shows the content and offers the file.",
+        fields: [{ key: "content", type: "richtext", label: "Content" }],
+      },
+      {
+        title: "File or link",
+        fields: [
+          { key: "file", type: "image", label: "File", help: "Uploaded through the media library." },
+          {
+            key: "fileLabel",
+            type: "text",
+            label: "Button label",
+            placeholder: "Download the guide",
+          },
+          { key: "externalUrl", type: "text", label: "External URL" },
+        ],
+      },
+      {
+        title: "Publishing",
+        fields: [
+          { key: "status", type: "select", label: "Status", options: STATUS_PUBLISH },
+          { key: "featured", type: "boolean", label: "Feature this resource" },
+          { key: "displayOrder", type: "number", label: "Display order" },
+        ],
+      },
+      SEO_SECTION,
+    ],
+  },
+
   "registration-fields": {
     label: "Registration Form",
     singular: "Field",

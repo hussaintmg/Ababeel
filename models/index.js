@@ -30,6 +30,7 @@ import Invoice from "@/models/Invoice";
 import Notification from "@/models/Notification";
 import Registration from "@/models/Registration";
 import RegistrationField from "@/models/RegistrationField";
+import Resource from "@/models/Resource";
 import SiteContent from "@/models/SiteContent";
 import TeamMember from "@/models/TeamMember";
 import Template from "@/models/Template";
@@ -60,6 +61,7 @@ export {
   Notification,
   Registration,
   RegistrationField,
+  Resource,
   SiteContent,
   TeamMember,
   Template,
@@ -91,6 +93,7 @@ export const ALL_MODELS = {
   Notification,
   Registration,
   RegistrationField,
+  Resource,
   SiteContent,
   TeamMember,
   Template,
