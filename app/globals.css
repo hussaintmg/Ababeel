@@ -12,6 +12,196 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* ---------------------------------------------------------------------------
+   ABA Safety design tokens
+   ---------------------------------------------------------------------------
+   Tailwind v4 reads its theme from CSS, not from tailwind.config.js — this
+   block is what generates `bg-ink-900`, `text-brand-600` and the rest. The
+   legacy config file is kept only because nothing imports it any more.
+
+   Two families, deliberately few:
+     ink    — the near-black navy the site is built on. Industrial, not grey.
+     brand  — the safety orange, used for one action per view, never as a wash.
+
+   Everything else uses Tailwind's own slate ramp, so a component written
+   against this palette still reads correctly beside the existing dashboard
+   screens, which are slate throughout.
+--------------------------------------------------------------------------- */
+@theme {
+  --color-ink-50: #f5f7fa;
+  --color-ink-100: #e7ecf3;
+  --color-ink-200: #c9d4e3;
+  --color-ink-300: #9aabc4;
+  --color-ink-400: #6a7f9e;
+  --color-ink-500: #4a5f7e;
+  --color-ink-600: #33475f;
+  --color-ink-700: #22334a;
+  --color-ink-800: #14243a;
+  --color-ink-900: #0b1526;
+  --color-ink-950: #060d18;
+
+  --color-brand-50: #fff5ef;
+  --color-brand-100: #ffe6d6;
+  --color-brand-200: #ffc7a8;
+  --color-brand-300: #ffa274;
+  --color-brand-400: #fb7c44;
+  --color-brand-500: #f26722;
+  --color-brand-600: #d94f0d;
+  --color-brand-700: #b13d09;
+  --color-brand-800: #8c320e;
+  --color-brand-900: #712c0f;
+}
+
+/* ---------- Typography scale ----------
+   Named steps rather than ad-hoc utility stacks, so a heading is the same size
+   and rhythm on every page. Each step carries its own tracking and leading:
+   large display type needs tight tracking to stop it looking loose, and body
+   copy needs the opposite. */
+.t-display {
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  line-height: 1.03;
+  letter-spacing: -0.035em;
+  font-weight: 700;
+}
+.t-h1 {
+  font-size: clamp(2rem, 4.4vw, 3.25rem);
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+  font-weight: 700;
+}
+.t-h2 {
+  font-size: clamp(1.625rem, 3vw, 2.35rem);
+  line-height: 1.15;
+  letter-spacing: -0.022em;
+  font-weight: 700;
+}
+.t-h3 {
+  font-size: clamp(1.25rem, 2vw, 1.6rem);
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+  font-weight: 650;
+}
+.t-h4 {
+  font-size: 1.125rem;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+  font-weight: 600;
+}
+.t-body-lg {
+  font-size: 1.125rem;
+  line-height: 1.65;
+}
+.t-body {
+  font-size: 1rem;
+  line-height: 1.65;
+}
+.t-small {
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+.t-caption {
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+.t-label {
+  font-size: 0.75rem;
+  line-height: 1.2;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  font-weight: 650;
+}
+.t-button {
+  font-size: 0.9375rem;
+  line-height: 1;
+  letter-spacing: -0.005em;
+  font-weight: 600;
+}
+
+/* An eyebrow sits above a heading: small, tracked out, brand-coloured. */
+.t-eyebrow {
+  font-size: 0.75rem;
+  line-height: 1.2;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+/* ---------- Focus ----------
+   One visible focus ring for the whole design system. `:focus-visible` so it
+   appears for keyboard users without outlining every clicked button. */
+.aba-focus:focus-visible {
+  outline: 2px solid var(--color-brand-500);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Cards lift on hover, but only where a pointer can actually hover — on touch
+   the same rule fires on tap and leaves the card stuck in its hover state. */
+@media (hover: hover) {
+  .aba-lift {
+    transition:
+      transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 0.35s ease,
+      border-color 0.35s ease;
+  }
+  .aba-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 18px 40px -18px rgba(11, 21, 38, 0.35);
+  }
+  /* The image inside a card zooms with the card, not on its own. */
+  .aba-lift .aba-zoom {
+    transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .aba-lift:hover .aba-zoom {
+    transform: scale(1.05);
+  }
+  /* An arrow that steps forward on hover — the one flourish, kept to 3px. */
+  .aba-lift .aba-arrow {
+    transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .aba-lift:hover .aba-arrow {
+    transform: translateX(3px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .aba-lift,
+  .aba-lift:hover,
+  .aba-lift .aba-zoom,
+  .aba-lift:hover .aba-zoom,
+  .aba-lift .aba-arrow,
+  .aba-lift:hover .aba-arrow {
+    transition: none;
+    transform: none;
+  }
+}
+
+/* Tailwind's animate-spin is the one piece of motion the CMS rules above do not
+   cover, and a submit button spins for as long as the request takes. Slowed
+   rather than stopped: a frozen spinner says "stuck", which is worse than no
+   spinner at all. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-spin {
+    animation-duration: 2.4s;
+  }
+}
+
+/* Clamp helpers — card copy must not push a grid row out of alignment. */
+.aba-clamp-2,
+.aba-clamp-3 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.aba-clamp-2 { -webkit-line-clamp: 2; }
+.aba-clamp-3 { -webkit-line-clamp: 3; }
+
+/* A wide table or card row scrolls inside itself rather than pushing the page
+   sideways. Paired with the body's overflow-x: clip above. */
+.aba-scroll-x {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);

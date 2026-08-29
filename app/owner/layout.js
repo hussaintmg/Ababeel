@@ -19,6 +19,8 @@ import {
   Users,
   LayoutTemplate,
   FileBadge,
+  GraduationCap,
+  ClipboardList,
 } from "lucide-react";
 
 export default function OwnerLayout({ children }) {
@@ -113,6 +115,30 @@ export default function OwnerLayout({ children }) {
       name: "Enquiries",
       icon: <MessageSquareText size={20} />,
       url: "/owner/enquiries",
+      dropdown: null,
+    },
+    {
+      id: "training",
+      name: "Training",
+      icon: <GraduationCap size={20} />,
+      url: null,
+      dropdown: [
+        { name: "Courses", url: "/owner/training/courses" },
+        { name: "Course References", url: "/owner/training/sessions" },
+        { name: "Levels", url: "/owner/training/levels" },
+        { name: "Awarding Bodies", url: "/owner/training/awarding-bodies" },
+        { name: "Accreditations", url: "/owner/training/accreditations" },
+        { name: "Testimonials", url: "/owner/training/testimonials" },
+        { name: "Team", url: "/owner/training/team" },
+        { name: "Consultants", url: "/owner/training/consultants" },
+        { name: "Registration Form", url: "/owner/training/registration-fields" },
+      ],
+    },
+    {
+      id: "registrations",
+      name: "Registrations",
+      icon: <ClipboardList size={20} />,
+      url: "/owner/registrations",
       dropdown: null,
     },
     {

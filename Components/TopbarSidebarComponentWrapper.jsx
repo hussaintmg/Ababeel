@@ -33,19 +33,26 @@ import MaintenanceBar from "@/Components/cms/MaintenanceBar";
 //   },
 // ];
 
+// The built-in public navigation, used until the owner saves their own in the
+// CMS. Kept in step with DEFAULT_GLOBAL_SETTINGS.topbar.navLinks so a site that
+// has never opened the CMS and one that has both show the same menu.
 const navLinks = [
-  { name: "Home", url: "/" },
-  { name: "About Us", url: "/about-us" },
   {
-    name: "Our Qualifications",
-    url: "/qualification",
+    name: "About",
+    url: "/about-us",
+    dropdown: [
+      { name: "About Us", url: "/about-us" },
+      { name: "Our Team", url: "/about/team" },
+      { name: "Our Consultants", url: "/about/consultants" },
+      { name: "Accreditations & Certifications", url: "/about/accreditations" },
+    ],
   },
-  { name: "Professional Dev", url: "/professional-dev" },
+  { name: "Courses", url: "/courses" },
+  { name: "Awarding Bodies", url: "/awarding-bodies" },
+  { name: "Schedule", url: "/schedule" },
+  { name: "Qualifications", url: "/qualification" },
   { name: "Certificate Verification", url: "/verify-certificate" },
-  {
-    name: "Contact Us",
-    url: "/contact-us",
-  },
+  { name: "Contact Us", url: "/contact-us" },
 ];
 const dashNavLinks = [
   { name: "Dashboard", url: "/dashboard" },
@@ -85,6 +92,15 @@ const ownerNavLinks = [
         name: "Manage Courses",
         url: "/owner/default-course/all",
       },
+    ],
+  },
+  {
+    name: "Training",
+    dropdown: [
+      { name: "Courses", url: "/owner/training/courses" },
+      { name: "Course References", url: "/owner/training/sessions" },
+      { name: "Awarding Bodies", url: "/owner/training/awarding-bodies" },
+      { name: "Registrations", url: "/owner/registrations" },
     ],
   },
   { name: "Website CMS", url: "/owner/cms" },

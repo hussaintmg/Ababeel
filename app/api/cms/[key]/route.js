@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCmsDoc, getGlobalBundle } from "@/lib/cms";
-import { hasDynamicContent, resolvePublicBlocks } from "@/lib/cms/publicData";
+import { hasDynamicContent, hasTrainingBlocks, resolvePublicBlocks } from "@/lib/cms/publicData";
 
 // Public read endpoint used by the site to hydrate CMS content (global chrome
 // + per-page blocks). No auth: this returns published, public content only.
@@ -48,6 +48,18 @@ export async function GET(request, { params }) {
       return NextResponse.json(
         { ...base, blocks, dynamic: true },
         { headers: { "Cache-Control": "private, no-store, max-age=0, must-revalidate" } }
+      );
+    }
+
+    // A page whose only data need is the training catalogue still has to be
+    // resolved — otherwise a "Featured courses" section renders empty — but the
+    // catalogue is identical for every visitor, so the response stays
+    // shared-cacheable.
+    if (doc.enabled && hasTrainingBlocks(doc)) {
+      const { blocks } = await resolvePublicBlocks(doc, { request });
+      return NextResponse.json(
+        { ...base, blocks, dynamic: false },
+        { headers: { "Cache-Control": "public, max-age=0, s-maxage=30, stale-while-revalidate=60" } }
       );
     }
 

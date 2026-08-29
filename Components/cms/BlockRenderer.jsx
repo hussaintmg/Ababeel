@@ -8,6 +8,7 @@ import ScrollVideo from "@/Components/cms/ScrollVideo";
 import { expandBlocks } from "@/lib/cms/binding";
 import { scopeCss, blockScopeId, blockScopeSelector } from "@/lib/cms/scopeCss";
 import { decorationCss } from "@/lib/cms/decorations";
+import { TRAINING_RENDERERS } from "@/Components/cms/TrainingBlocks";
 
 /* ---------- Tailwind runtime (for Custom HTML blocks) ---------- */
 // Loads the Tailwind browser build once so arbitrary Tailwind utility classes
@@ -1662,6 +1663,10 @@ const RENDERERS = {
   repeater: RepeaterBlock,
   scrollVideo: ScrollVideoBlock,
   customCode: CustomCodeBlock,
+  // Blocks that render live catalogue data. Their `_items` are resolved on the
+  // server (lib/cms/trainingBlocks.js) before they reach here, so these are
+  // presentational like every other renderer.
+  ...TRAINING_RENDERERS,
 };
 
 // Blocks that pin themselves with position: sticky. Their wrapper must not
