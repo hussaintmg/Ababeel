@@ -6,7 +6,7 @@ import Link from "next/link";
 import { toast } from "react-toastify";
 import {
   Save, Loader2, ArrowLeft, Palette, Phone, ImageIcon, Search, Menu,
-  PanelBottom, Share2, Code2, LayoutDashboard, Wrench, ToggleLeft,
+  PanelBottom, Share2, Code2, LayoutDashboard, Wrench, ToggleLeft, ClipboardList,
 } from "lucide-react";
 import { FEATURE_KEYS, getFeatures } from "@/lib/cms/features";
 import {
@@ -20,6 +20,7 @@ const TABS = [
   { id: "logos", label: "Logos & Favicon", icon: ImageIcon },
   { id: "seo", label: "Title & SEO", icon: Search },
   { id: "topbar", label: "Navigation", icon: Menu },
+  { id: "registration", label: "Registration", icon: ClipboardList },
   { id: "footer", label: "Footer", icon: PanelBottom },
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { id: "maintenance", label: "Maintenance", icon: Wrench },
@@ -150,6 +151,66 @@ export default function GlobalSettingsEditor({ meta }) {
               </Grid2>
               <F label="Address"><TextArea value={s.contact?.address} onChange={(v) => set(["contact", "address"], v)} /></F>
             </Section>
+          ) : null}
+
+          {tab === "registration" ? (
+            <>
+              <Section title="Registration page copy" desc="The headings and messages around the public registration form.">
+                <Grid2>
+                  <F label="Intro title"><TextInput value={s.training?.registration?.introTitle} onChange={(v) => set(["training", "registration", "introTitle"], v)} /></F>
+                  <F label="Submit button label"><TextInput value={s.training?.registration?.submitLabel} onChange={(v) => set(["training", "registration", "submitLabel"], v)} /></F>
+                </Grid2>
+                <F label="Intro text"><TextArea value={s.training?.registration?.introText} onChange={(v) => set(["training", "registration", "introText"], v)} /></F>
+                <Grid2>
+                  <F label="Success title"><TextInput value={s.training?.registration?.successTitle} onChange={(v) => set(["training", "registration", "successTitle"], v)} /></F>
+                </Grid2>
+                <F label="Success message"><TextArea value={s.training?.registration?.successMessage} onChange={(v) => set(["training", "registration", "successMessage"], v)} /></F>
+                <F label="Payment notice (under the form)"><TextArea value={s.training?.registration?.paymentNotice} onChange={(v) => set(["training", "registration", "paymentNotice"], v)} /></F>
+              </Section>
+
+              <Section title="Help panel" desc="The contact panel beside the form. Blank contact fields fall back to the site-wide contact details.">
+                <F label="Show the help panel">
+                  <Toggle checked={s.training?.registrationPanel?.enabled !== false} onChange={(v) => set(["training", "registrationPanel", "enabled"], v)} />
+                </F>
+                <Grid2>
+                  <F label="Panel title"><TextInput value={s.training?.registrationPanel?.title} onChange={(v) => set(["training", "registrationPanel", "title"], v)} /></F>
+                  <F label="Hours"><TextInput value={s.training?.registrationPanel?.hours} onChange={(v) => set(["training", "registrationPanel", "hours"], v)} /></F>
+                  <F label="Phone"><TextInput value={s.training?.registrationPanel?.phone} onChange={(v) => set(["training", "registrationPanel", "phone"], v)} /></F>
+                  <F label="WhatsApp"><TextInput value={s.training?.registrationPanel?.whatsapp} onChange={(v) => set(["training", "registrationPanel", "whatsapp"], v)} /></F>
+                  <F label="Email"><TextInput value={s.training?.registrationPanel?.email} onChange={(v) => set(["training", "registrationPanel", "email"], v)} /></F>
+                </Grid2>
+                <F label="Panel text"><TextArea value={s.training?.registrationPanel?.body} onChange={(v) => set(["training", "registrationPanel", "body"], v)} /></F>
+              </Section>
+
+              <Section
+                title="Bank transfer details"
+                desc="Your company's own account, shown to registrants so they can pay the course fee by transfer. Informational only — the website never collects money or anyone's banking credentials."
+              >
+                <F label="Show bank details on the registration page">
+                  <Toggle checked={!!s.training?.payment?.showBankDetails} onChange={(v) => set(["training", "payment", "showBankDetails"], v)} />
+                </F>
+                <Grid2>
+                  <F label="Panel title"><TextInput value={s.training?.payment?.bankTitle} onChange={(v) => set(["training", "payment", "bankTitle"], v)} /></F>
+                  <F label="Bank name"><TextInput value={s.training?.payment?.bankName} onChange={(v) => set(["training", "payment", "bankName"], v)} /></F>
+                  <F label="Account title"><TextInput value={s.training?.payment?.accountTitle} onChange={(v) => set(["training", "payment", "accountTitle"], v)} /></F>
+                  <F label="Account number"><TextInput value={s.training?.payment?.accountNumber} onChange={(v) => set(["training", "payment", "accountNumber"], v)} /></F>
+                  <F label="IBAN"><TextInput value={s.training?.payment?.iban} onChange={(v) => set(["training", "payment", "iban"], v)} /></F>
+                  <F label="Sort code"><TextInput value={s.training?.payment?.sortCode} onChange={(v) => set(["training", "payment", "sortCode"], v)} /></F>
+                  <F label="SWIFT / BIC"><TextInput value={s.training?.payment?.swiftBic} onChange={(v) => set(["training", "payment", "swiftBic"], v)} /></F>
+                </Grid2>
+                <F label="Instructions"><TextArea value={s.training?.payment?.bankIntro} onChange={(v) => set(["training", "payment", "bankIntro"], v)} /></F>
+                <F label="Footnote"><TextInput value={s.training?.payment?.footnote} onChange={(v) => set(["training", "payment", "footnote"], v)} /></F>
+              </Section>
+
+              <Section
+                title="Online card payments (Stripe)"
+                desc="A stored preference for the future. Online payment is OFF at the code level — the payment provider refuses every charge — so this switch charges no one and shows no card form today. It will only take effect once Stripe is configured on the server and the payment provider is enabled in a future release."
+              >
+                <F label="Enable online card payments when Stripe is configured">
+                  <Toggle checked={!!s.training?.payment?.stripeEnabled} onChange={(v) => set(["training", "payment", "stripeEnabled"], v)} />
+                </F>
+              </Section>
+            </>
           ) : null}
 
           {tab === "logos" ? (

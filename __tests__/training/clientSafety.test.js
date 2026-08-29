@@ -75,6 +75,25 @@ describe("payment boundary stays closed", () => {
     expect(source).not.toMatch(/^\s*(amount|currency|paymentStatus|cardNumber|iban)\s*:/m);
   });
 
+  test("the Stripe preference defaults off and stays a preference", () => {
+    // The CMS toggle stores intent for a future integration. It must default
+    // to off, and no public-page code may branch on it while the provider is
+    // disabled — the provider being off is what keeps the site payment-free.
+    const { DEFAULT_GLOBAL_SETTINGS } = require("@/lib/cmsDefaults");
+    expect(DEFAULT_GLOBAL_SETTINGS.training.payment.stripeEnabled).toBe(false);
+    const pub = fs.readFileSync(path.join(ROOT, "app/registration/RegistrationForm.jsx"), "utf8");
+    expect(pub).not.toMatch(/stripeEnabled/);
+  });
+
+  test("the invoice generator never reaches the payment layer", () => {
+    const source = fs.readFileSync(
+      path.join(ROOT, "app/api/owner/registrations/[id]/invoice/route.js"),
+      "utf8",
+    );
+    expect(source).not.toMatch(/\bstripe\b/i);
+    expect(source).not.toMatch(/getPaymentProvider|createIntent/);
+  });
+
   test("payments are disabled and every provider method refuses", () => {
     const source = fs.readFileSync(path.join(ROOT, "lib/payments/provider.js"), "utf8");
     expect(source).toMatch(/export const PAYMENTS_ENABLED = false/);

@@ -105,6 +105,79 @@ const FIELDS_COURSE = [
 ];
 
 
+
+// ─────────────────────────────────────────────────────────────────────────────
+// REGISTRATION INVOICE (public training registrations)
+// Registration / Course / Session mirror the Mongoose models; Invoice values
+// are typed by the owner at generation time (the Registration model itself
+// stores no amount — pricing stays out of the public catalogue by design);
+// Payment is the company's own bank details from Global Settings.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const SAMPLE_REGISTRATION = {
+  reference:           "REG-2026-0001",
+  fullName:            "Jane Smith",
+  firstName:           "Jane",
+  lastName:            "Smith",
+  email:               "jane.smith@example.com",
+  phone:               "+44 7700 900000",
+  company:             "Acme Construction Ltd",
+  country:             "United Kingdom",
+  courseNameSnapshot:  "Fire Safety Awareness — Level 2",
+  sessionNameSnapshot: "September intake",
+  createdAt:           "01 Sep 2026",
+};
+
+const SAMPLE_INVOICE = {
+  number:   "INV-2026-0001",
+  date:     "02 Sep 2026",
+  dueDate:  "16 Sep 2026",
+  amount:   "350.00",
+  currency: "GBP",
+  notes:    "Course fee for one delegate.",
+};
+
+const SAMPLE_PAYMENT = {
+  bankName:      "Example Bank",
+  accountTitle:  "Ababeel Ltd",
+  accountNumber: "12345678",
+  iban:          "GB00EXMP00000012345678",
+  sortCode:      "00-00-00",
+  swiftBic:      "EXMPGB2L",
+};
+
+const FIELDS_REGISTRATION = [
+  { label: "Registration.reference",           value: "{{Registration.reference}}"           },
+  { label: "Registration.fullName",            value: "{{Registration.fullName}}"            },
+  { label: "Registration.firstName",           value: "{{Registration.firstName}}"           },
+  { label: "Registration.lastName",            value: "{{Registration.lastName}}"            },
+  { label: "Registration.email",               value: "{{Registration.email}}"               },
+  { label: "Registration.phone",               value: "{{Registration.phone}}"               },
+  { label: "Registration.company",             value: "{{Registration.company}}"             },
+  { label: "Registration.country",             value: "{{Registration.country}}"             },
+  { label: "Registration.courseNameSnapshot",  value: "{{Registration.courseNameSnapshot}}"  },
+  { label: "Registration.sessionNameSnapshot", value: "{{Registration.sessionNameSnapshot}}" },
+  { label: "Registration.createdAt",           value: "{{Registration.createdAt}}"           },
+];
+
+const FIELDS_INVOICE = [
+  { label: "Invoice.number",   value: "{{Invoice.number}}"   },
+  { label: "Invoice.date",     value: "{{Invoice.date}}"     },
+  { label: "Invoice.dueDate",  value: "{{Invoice.dueDate}}"  },
+  { label: "Invoice.amount",   value: "{{Invoice.amount}}"   },
+  { label: "Invoice.currency", value: "{{Invoice.currency}}" },
+  { label: "Invoice.notes",    value: "{{Invoice.notes}}"    },
+];
+
+const FIELDS_PAYMENT = [
+  { label: "Payment.bankName",      value: "{{Payment.bankName}}"      },
+  { label: "Payment.accountTitle",  value: "{{Payment.accountTitle}}"  },
+  { label: "Payment.accountNumber", value: "{{Payment.accountNumber}}" },
+  { label: "Payment.iban",          value: "{{Payment.iban}}"          },
+  { label: "Payment.sortCode",      value: "{{Payment.sortCode}}"      },
+  { label: "Payment.swiftBic",      value: "{{Payment.swiftBic}}"      },
+];
+
 // ─────────────────────────────────────────────────────────────────────────────
 // PER-TYPE MAPS
 // ─────────────────────────────────────────────────────────────────────────────
@@ -121,6 +194,12 @@ const SAMPLE_DATA_MAP = {
     CourseReference:  SAMPLE_COURSE_REFERENCE,
     Course:           SAMPLE_COURSE,
   },
+
+  "registration-invoice": {
+    Registration: SAMPLE_REGISTRATION,
+    Invoice:      SAMPLE_INVOICE,
+    Payment:      SAMPLE_PAYMENT,
+  },
 };
 
 const PLACEHOLDER_FIELDS_MAP = {
@@ -134,6 +213,12 @@ const PLACEHOLDER_FIELDS_MAP = {
     ...FIELDS_CANDIDATE,
     ...FIELDS_COURSE_REFERENCE,
     ...FIELDS_COURSE,
+  ],
+
+  "registration-invoice": [
+    ...FIELDS_REGISTRATION,
+    ...FIELDS_INVOICE,
+    ...FIELDS_PAYMENT,
   ],
 };
 

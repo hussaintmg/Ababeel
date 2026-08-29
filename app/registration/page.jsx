@@ -2,7 +2,7 @@ import { Section, Container, Breadcrumb } from "@/Components/ui";
 import CmsSlot from "@/Components/cms/CmsSlot";
 import { getPublicCourseById, getPublicSessionById } from "@/lib/training/queries";
 import { getFormFields, toPublicField } from "@/lib/training/registrationForm";
-import { getRegistrationPanel, getTrainingSettings } from "@/lib/training/settings";
+import { getRegistrationPanel, getTrainingSettings, getPaymentInfo } from "@/lib/training/settings";
 import { registrationCta } from "@/lib/training/status";
 import { trainingMetadata } from "@/lib/training/metadata";
 import RegistrationForm from "@/app/registration/RegistrationForm";
@@ -34,12 +34,13 @@ export default async function RegistrationPage({ searchParams }) {
   const courseId = typeof params?.course === "string" ? params.course : "";
   const sessionId = typeof params?.reference === "string" ? params.reference : "";
 
-  const [course, sessionRaw, fields, panel, training] = await Promise.all([
+  const [course, sessionRaw, fields, panel, training, payment] = await Promise.all([
     courseId ? getPublicCourseById(courseId) : Promise.resolve(null),
     sessionId ? getPublicSessionById(sessionId) : Promise.resolve(null),
     getFormFields().catch(() => []),
     getRegistrationPanel(),
     getTrainingSettings(),
+    getPaymentInfo(),
   ]);
 
   // A session belonging to a different course means a stale or hand-edited
@@ -84,6 +85,7 @@ export default async function RegistrationPage({ searchParams }) {
           session,
           cta: session ? registrationCta(session) : null,
           panel,
+          payment,
           copy,
         }}
       />

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import { toast } from "react-toastify";
-import { ArrowLeft, Loader2, Trash2, Send } from "lucide-react";
+import { ArrowLeft, Loader2, Trash2, Send, FileDown } from "lucide-react";
 import ConfirmationModal from "@/Components/ConfirmationModal";
 import { StatusPill } from "@/Components/owner/training/ResourceTable";
 import { formatDate, formatDateRange } from "@/lib/training/format";
@@ -216,6 +216,8 @@ export default function RegistrationDetailPage({ params }) {
             <StatusPill value={reg.status} />
           </Panel>
 
+          <InvoicePanel registrationId={id} />
+
           <Panel title="Course">
             <p className="font-semibold text-gray-900">
               {reg.course?.name || reg.courseNameSnapshot || "—"}
@@ -306,6 +308,64 @@ function Panel({ title, children }) {
 }
 
 /** Checkbox answers are stored as booleans; "true" reads badly in a table. */
+/**
+ * Generates an invoice PDF for this registration from the active
+ * "Registration Invoice" template. The amount and dates are typed here and
+ * exist only in the produced PDF — the registration record itself stores no
+ * payment information, and nothing here charges anyone.
+ */
+function InvoicePanel({ registrationId }) {
+  const [inv, setInv] = useState({ number: "", amount: "", currency: "GBP", dueDate: "", notes: "" });
+  const set = (key) => (e) => setInv((prev) => ({ ...prev, [key]: e.target.value }));
+
+  const download = () => {
+    const params = new URLSearchParams();
+    for (const [k, v] of Object.entries(inv)) if (v) params.set(k, v);
+    window.open(`/api/owner/registrations/${registrationId}/invoice?${params}`, "_blank");
+  };
+
+  const field = "h-9 w-full rounded-lg border border-gray-300 px-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500";
+
+  return (
+    <Panel title="Invoice">
+      <div className="grid grid-cols-2 gap-2.5">
+        <label className="block">
+          <span className="mb-1 block text-xs font-medium text-gray-500">Invoice number</span>
+          <input className={field} value={inv.number} onChange={set("number")} placeholder="INV-2026-0001" />
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-xs font-medium text-gray-500">Due date</span>
+          <input type="date" className={field} value={inv.dueDate} onChange={set("dueDate")} />
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-xs font-medium text-gray-500">Amount</span>
+          <input className={field} value={inv.amount} onChange={set("amount")} placeholder="350.00" inputMode="decimal" />
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-xs font-medium text-gray-500">Currency</span>
+          <input className={field} value={inv.currency} onChange={set("currency")} placeholder="GBP" />
+        </label>
+      </div>
+      <label className="mt-2.5 block">
+        <span className="mb-1 block text-xs font-medium text-gray-500">Notes (optional)</span>
+        <input className={field} value={inv.notes} onChange={set("notes")} placeholder="Course fee for one delegate." />
+      </label>
+      <button
+        type="button"
+        onClick={download}
+        className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800"
+      >
+        <FileDown size={15} />
+        Download invoice PDF
+      </button>
+      <p className="mt-2 text-xs text-gray-400">
+        Uses the active template from PDF Templates → Registration Invoice. Nothing is stored or
+        charged — the values above only appear in the PDF.
+      </p>
+    </Panel>
+  );
+}
+
 function formatAnswer(value) {
   if (value === true) return "Yes";
   if (value === false) return "No";

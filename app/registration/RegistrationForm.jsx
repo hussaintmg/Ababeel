@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { CheckCircle2, Phone, Mail, MessageCircle, Info } from "lucide-react";
+import { CheckCircle2, Phone, Mail, MessageCircle, Info, Landmark } from "lucide-react";
 import {
   Container,
   Card,
@@ -33,7 +33,7 @@ import { COUNTRIES } from "@/lib/training/countries";
  * checkout to follow.
  */
 export default function RegistrationForm({ data }) {
-  const { fields = [], course, session, cta, panel, copy = {} } = data || {};
+  const { fields = [], course, session, cta, panel, payment = null, copy = {} } = data || {};
 
   const [values, setValues] = useState(() => initialValues(fields));
   const [errors, setErrors] = useState({});
@@ -94,7 +94,7 @@ export default function RegistrationForm({ data }) {
     }
   };
 
-  if (done) return <Success result={done} copy={copy} />;
+  if (done) return <Success result={done} copy={copy} payment={payment} />;
 
   if (!course) {
     return (
@@ -179,7 +179,12 @@ export default function RegistrationForm({ data }) {
           )}
         </div>
 
-        <HelpPanel panel={panel} />
+        <aside className="mt-10 lg:mt-0">
+          <div className="space-y-6 lg:sticky lg:top-24">
+            <HelpPanel panel={panel} />
+            <BankDetailsCard payment={payment} />
+          </div>
+        </aside>
       </div>
     </Container>
   );
@@ -246,9 +251,7 @@ function HelpPanel({ panel }) {
   if (!panel?.enabled) return null;
 
   return (
-    <aside className="mt-10 lg:mt-0">
-      <div className="lg:sticky lg:top-24">
-        <Card className="bg-ink-50 p-6">
+    <Card className="bg-ink-50 p-6">
           <h2 className="t-h4 text-ink-900">{panel.title || "Need Help With Registration?"}</h2>
           {panel.body ? <p className="t-small mt-2 text-ink-600">{panel.body}</p> : null}
 
@@ -276,14 +279,53 @@ function HelpPanel({ panel }) {
           </ul>
 
           {panel.hours ? <p className="t-caption mt-4 text-ink-500">{panel.hours}</p> : null}
-          {panel.footnote ? (
-            <p className="t-caption mt-4 border-t border-ink-200 pt-4 text-ink-500">
-              {panel.footnote}
-            </p>
-          ) : null}
-        </Card>
-      </div>
-    </aside>
+      {panel.footnote ? (
+        <p className="t-caption mt-4 border-t border-ink-200 pt-4 text-ink-500">
+          {panel.footnote}
+        </p>
+      ) : null}
+    </Card>
+  );
+}
+
+/**
+ * The company's own bank-transfer details, shown so a registrant knows how the
+ * fee is settled after their place is confirmed. Purely informational: the
+ * website never collects money or anyone's banking credentials.
+ */
+function BankDetailsCard({ payment }) {
+  if (!payment?.showBankDetails) return null;
+  const rows = [
+    ["Bank", payment.bankName],
+    ["Account title", payment.accountTitle],
+    ["Account number", payment.accountNumber],
+    ["IBAN", payment.iban],
+    ["Sort code", payment.sortCode],
+    ["SWIFT / BIC", payment.swiftBic],
+  ].filter(([, v]) => v);
+  if (!rows.length) return null;
+
+  return (
+    <Card className="p-6">
+      <h2 className="t-h4 flex items-center gap-2 text-ink-900">
+        <Landmark size={17} className="text-brand-700" aria-hidden="true" />
+        {payment.bankTitle || "Pay by bank transfer"}
+      </h2>
+      {payment.bankIntro ? (
+        <p className="t-small mt-2 text-ink-600">{payment.bankIntro}</p>
+      ) : null}
+      <dl className="mt-4 divide-y divide-ink-100">
+        {rows.map(([label, value]) => (
+          <div key={label} className="flex items-baseline justify-between gap-4 py-2">
+            <dt className="t-small text-ink-500">{label}</dt>
+            <dd className="t-small text-right font-mono font-semibold text-ink-900">{value}</dd>
+          </div>
+        ))}
+      </dl>
+      {payment.footnote ? (
+        <p className="t-caption mt-3 text-ink-500">{payment.footnote}</p>
+      ) : null}
+    </Card>
   );
 }
 
@@ -309,7 +351,7 @@ function ContactRow({ icon: Icon, href, label, value, external }) {
 
 /* --------------------------------------------------------------- success */
 
-function Success({ result, copy }) {
+function Success({ result, copy, payment }) {
   return (
     <Container size="normal" className="py-20">
       <div className="mx-auto max-w-xl text-center">
@@ -329,6 +371,10 @@ function Success({ result, copy }) {
               {result.sessionName ? ` — ${result.sessionName}` : ""}
             </p>
           ) : null}
+        </div>
+
+        <div className="mt-8 text-left">
+          <BankDetailsCard payment={payment} />
         </div>
 
         <div className="mt-8 flex flex-wrap justify-center gap-3">
