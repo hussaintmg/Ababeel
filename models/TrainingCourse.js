@@ -94,9 +94,8 @@ const trainingCourseSchema = new mongoose.Schema(
   { timestamps: true, minimize: false },
 );
 
-trainingCourseSchema.pre("validate", function ensureSlug(next) {
+trainingCourseSchema.pre("validate", function ensureSlug() {
   if (!this.slug && this.name) this.slug = slugify(this.name);
-  next();
 });
 
 trainingCourseSchema.index({ status: 1, displayOrder: 1, name: 1 });

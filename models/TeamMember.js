@@ -42,9 +42,8 @@ const teamMemberSchema = new mongoose.Schema(
   { timestamps: true, minimize: false },
 );
 
-teamMemberSchema.pre("validate", function ensureSlug(next) {
+teamMemberSchema.pre("validate", function ensureSlug() {
   if (!this.slug && this.name) this.slug = slugify(this.name);
-  next();
 });
 
 teamMemberSchema.index({ status: 1, displayOrder: 1 });

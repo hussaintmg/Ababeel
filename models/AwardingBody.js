@@ -40,9 +40,8 @@ const awardingBodySchema = new mongoose.Schema(
   { timestamps: true, minimize: false },
 );
 
-awardingBodySchema.pre("validate", function ensureSlug(next) {
+awardingBodySchema.pre("validate", function ensureSlug() {
   if (!this.slug && this.name) this.slug = slugify(this.name);
-  next();
 });
 
 awardingBodySchema.index({ status: 1, displayOrder: 1, name: 1 });

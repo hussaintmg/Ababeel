@@ -15,8 +15,8 @@
  *
  * SAFETY
  * ------
- * Everything it writes is tagged with a run id and named "QA Test — ABA
- * Safety …", and `afterAll` deletes exactly those documents by their recorded
+ * Everything it writes is tagged with a run id and named "QA Test —
+ * Ababeel …", and `afterAll` deletes exactly those documents by their recorded
  * ids. It never drops a collection, never empties one, never touches a record
  * it did not create, and never reads a real registration.
  *

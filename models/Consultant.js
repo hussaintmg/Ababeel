@@ -54,9 +54,8 @@ const consultantSchema = new mongoose.Schema(
   { timestamps: true, minimize: false },
 );
 
-consultantSchema.pre("validate", function ensureSlug(next) {
+consultantSchema.pre("validate", function ensureSlug() {
   if (!this.slug && this.name) this.slug = slugify(this.name);
-  next();
 });
 
 consultantSchema.index({ status: 1, displayOrder: 1 });

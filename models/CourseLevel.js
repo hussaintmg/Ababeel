@@ -33,9 +33,8 @@ const courseLevelSchema = new mongoose.Schema(
   { timestamps: true, minimize: false },
 );
 
-courseLevelSchema.pre("validate", function ensureSlug(next) {
+courseLevelSchema.pre("validate", function ensureSlug() {
   if (!this.slug && this.name) this.slug = slugify(this.name);
-  next();
 });
 
 courseLevelSchema.index({ status: 1, displayOrder: 1 });

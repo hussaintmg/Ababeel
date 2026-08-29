@@ -60,9 +60,8 @@ const resourceSchema = new mongoose.Schema(
   { timestamps: true, minimize: false },
 );
 
-resourceSchema.pre("validate", function ensureSlug(next) {
+resourceSchema.pre("validate", function ensureSlug() {
   if (!this.slug && this.title) this.slug = slugify(this.title);
-  next();
 });
 
 resourceSchema.index({ status: 1, featured: -1, publishedDate: -1 });

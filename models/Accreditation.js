@@ -37,9 +37,8 @@ const accreditationSchema = new mongoose.Schema(
   { timestamps: true, minimize: false },
 );
 
-accreditationSchema.pre("validate", function ensureSlug(next) {
+accreditationSchema.pre("validate", function ensureSlug() {
   if (!this.slug && this.name) this.slug = slugify(this.name);
-  next();
 });
 
 accreditationSchema.index({ status: 1, displayOrder: 1 });
