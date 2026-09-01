@@ -38,6 +38,7 @@ const DefaultCoursesPage = () => {
 
   // Confirmation Modal States
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
   const [courseToDelete, setCourseToDelete] = useState(null);
 
   // Fetch courses from API
@@ -51,7 +52,6 @@ const DefaultCoursesPage = () => {
       }
 
       const data = response?.data;
-      console.log(data);
 
       if (data.success) {
         setCourses(data?.data || []);
@@ -182,8 +182,8 @@ const DefaultCoursesPage = () => {
     }
   };
 
-  //Handle delete all
-  const handleDeleteAll = async () => {
+  // Handle delete all confirmation
+  const handleDeleteAllConfirm = async () => {
     try {
       setDeleteAllLoading(true);
       const response = await axios.delete(`/api/courses/default/delete/all`);
@@ -194,12 +194,14 @@ const DefaultCoursesPage = () => {
         setEditFormData({});
         fetchCourses();
       } else {
-        throw new Error(response.data.error || "Failed to update course");
+        throw new Error(response.data.error || "Failed to delete all courses");
       }
     } catch (err) {
-      console.log(err);
+      console.error(err);
+      toast.error(err?.response?.data?.error || err.message || "Failed to delete all courses");
     } finally {
       setDeleteAllLoading(false);
+      setShowDeleteAllModal(false);
     }
   };
 
@@ -256,6 +258,23 @@ const DefaultCoursesPage = () => {
         type="delete"
       />
 
+      {/* Delete All Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showDeleteAllModal}
+        onClose={() => setShowDeleteAllModal(false)}
+        onConfirm={handleDeleteAllConfirm}
+        title="Delete All Courses"
+        message={
+          <>
+            Are you sure you want to delete <span className="font-semibold text-red-600">ALL default courses</span>?
+            <p className="mt-2 text-red-600">This will permanently remove all {courses.length} courses. This action cannot be undone.</p>
+          </>
+        }
+        confirmText={deleteAllLoading ? "Deleting all..." : "Yes, Delete All Courses"}
+        cancelText="Cancel"
+        type="delete"
+      />
+
       {/* Header */}
       <div className="mb-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -276,8 +295,8 @@ const DefaultCoursesPage = () => {
               Refresh
             </button>
             <button
-              onClick={() => router.push("/admin/default-course/new")}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+              onClick={() => router.push("/owner/default-course/new")}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm transition-colors"
             >
               <Plus className="h-4 w-4" />
               Add Course
@@ -519,9 +538,10 @@ const DefaultCoursesPage = () => {
       </div>
       {filteredCourses.length !== 0 && (
         <button
-          onClick={() => handleDeleteAll()}
+          onClick={() => setShowDeleteAllModal(true)}
+          disabled={deleteAllLoading || deleteLoading}
           className={`my-3 w-full text-center text-white py-3 rounded-xl hover:-translate-y-0.5 transition-all ${
-            deleteAllLoading || deleteLoading ? " bg-red-200" : " bg-red-600"
+            deleteAllLoading || deleteLoading ? " bg-red-200 cursor-not-allowed" : " bg-red-600 hover:bg-red-700"
           } `}
         >
           {deleteAllLoading ? (

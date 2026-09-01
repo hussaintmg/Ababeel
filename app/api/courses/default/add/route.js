@@ -80,7 +80,35 @@ export async function POST(request) {
     // Parse request body
     const data = await request.json();
 
-    const { name, price, currency, currencySymbol, currencyCode, country, description } = data;
+    const {
+      name,
+      code,
+      slug,
+      shortDescription,
+      description,
+      price,
+      currency,
+      currencySymbol,
+      currencyCode,
+      country,
+      level,
+      awardingBody,
+      category,
+      duration,
+      durationDays,
+      featuredImage,
+      gallery,
+      certificateImage,
+      certificationInfo,
+      courseContent,
+      learningOutcomes,
+      requirements,
+      whoShouldAttend,
+      faqs,
+      featured,
+      displayOrder,
+      status,
+    } = data;
 
     // Validation
     if (!name || !name.trim()) {
@@ -97,23 +125,8 @@ export async function POST(request) {
       );
     }
 
-    if (!price || isNaN(price) || parseFloat(price) <= 0) {
-      return NextResponse.json(
-        { success: false, error: "Valid price is required" },
-        { status: 400 }
-      );
-    }
-
-    if (!currency || !currencySymbol) {
-      return NextResponse.json(
-        { success: false, error: "Currency selection is required" },
-        { status: 400 }
-      );
-    }
-
-    // Check if course with same name exists for this user
+    // Check if course with same name exists
     const existingCourse = await DefaultCourse.findOne({
-      userId: user._id,
       name: name.trim(),
     });
 
@@ -129,42 +142,45 @@ export async function POST(request) {
 
     // Create new course
     const courseData = {
-      userId: user._id,
       name: name.trim(),
-      price: parseFloat(price),
-      currency: currency.trim(),
-      currencySymbol: currencySymbol.trim(),
-      currencyCode: currencyCode?.trim() || "",
-      country: country?.trim() || "",
-      description: description?.trim() || name.trim(),
-      isActive: true,
+      code: code?.trim() || "",
+      slug: slug?.trim() || "",
+      shortDescription: shortDescription?.trim() || "",
+      description: description?.trim() || "",
+      price: price ? parseFloat(price) : 0,
+      currency: currency?.trim() || "GBP",
+      currencySymbol: currencySymbol?.trim() || "£",
+      currencyCode: currencyCode?.trim() || "GBP",
+      country: country?.trim() || "United Kingdom",
+      level: level || null,
+      awardingBody: awardingBody || null,
+      category: category?.trim() || "",
+      duration: duration?.trim() || "",
+      durationDays: durationDays ? Number(durationDays) : 0,
+      featuredImage: featuredImage?.trim() || "",
+      gallery: Array.isArray(gallery) ? gallery : [],
+      certificateImage: certificateImage?.trim() || "",
+      certificationInfo: certificationInfo?.trim() || "",
+      courseContent: courseContent?.trim() || "",
+      learningOutcomes: learningOutcomes?.trim() || "",
+      requirements: requirements?.trim() || "",
+      whoShouldAttend: whoShouldAttend?.trim() || "",
+      faqs: Array.isArray(faqs) ? faqs : [],
+      featured: !!featured,
+      displayOrder: displayOrder ? Number(displayOrder) : 0,
+      status: status || "active",
+      isDefaultCourse: true,
+      createdBy: user._id,
+      updatedBy: user._id,
     };
-
-    console.log(courseData)
-
 
     const newCourse = await DefaultCourse.create(courseData);
-
-    // Format response
-    const responseCourse = {
-      id: newCourse._id.toString(),
-      name: newCourse.name,
-      price: newCourse.price,
-      currency: newCourse.currency,
-      currencySymbol: newCourse.currencySymbol,
-      currencyCode: newCourse.currencyCode,
-      country: newCourse.country,
-      description: newCourse.description,
-      isActive: newCourse.isActive,
-      createdAt: newCourse.createdAt,
-      updatedAt: newCourse.updatedAt,
-    };
 
     return NextResponse.json(
       {
         success: true,
         message: "Course created successfully!",
-        course: responseCourse,
+        course: newCourse,
       },
       {
         status: 201,

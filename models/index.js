@@ -24,7 +24,6 @@ import CourseLevel from "@/models/CourseLevel";
 import CourseReference from "@/models/CourseReference";
 import CourseReferenceSession from "@/models/CourseReferenceSession";
 import DefaultCourse from "@/models/DefaultCourse";
-import DefaultCourseCopy from "@/models/DefaultCourseCopy";
 import Deposit from "@/models/Deposit";
 import Invoice from "@/models/Invoice";
 import Notification from "@/models/Notification";
@@ -55,7 +54,6 @@ export {
   CourseReference,
   CourseReferenceSession,
   DefaultCourse,
-  DefaultCourseCopy,
   Deposit,
   Invoice,
   Notification,
@@ -87,7 +85,6 @@ export const ALL_MODELS = {
   CourseReference,
   CourseReferenceSession,
   DefaultCourse,
-  DefaultCourseCopy,
   Deposit,
   Invoice,
   Notification,

@@ -1,7 +1,9 @@
 import connectDB from "@/utils/db";
 import Registration from "@/models/Registration";
 import TrainingCourse from "@/models/TrainingCourse";
+import DefaultCourse from "@/models/DefaultCourse";
 import CourseReferenceSession from "@/models/CourseReferenceSession";
+import CourseReference from "@/models/CourseReference";
 import { getFormFields, toPublicField, validateSubmission, promoteContact } from "@/lib/training/registrationForm";
 import { uniqueReference } from "@/lib/training/reference";
 import { isCoursePublic, registrationCta } from "@/lib/training/status";
@@ -71,30 +73,31 @@ export async function POST(request) {
 
     const courseId = String(body?.course || "");
     const sessionId = String(body?.reference || "");
+    const selectedMonth = String(body?.selectedMonth || "");
+    const receiptUrl = String(body?.receiptUrl || "");
+    const receiptName = String(body?.receiptName || "");
 
     await connectDB();
 
-    // Both ids are re-checked here rather than trusted from the query string:
-    // a registration against a draft course, or a session whose registration
-    // has closed, must be refused however the request was constructed.
-    const course = await TrainingCourse.findById(courseId).lean().catch(() => null);
+    // Look for course in TrainingCourse or DefaultCourse
+    let course = await TrainingCourse.findById(courseId).lean().catch(() => null);
+    let courseModel = "TrainingCourse";
+    if (!course) {
+      course = await DefaultCourse.findById(courseId).lean().catch(() => null);
+      courseModel = "DefaultCourse";
+    }
+
     if (!course || !isCoursePublic(course)) {
       return badRequestResponse("That course is not available for registration");
     }
 
     let session = null;
+    let sessionModel = "CourseReference";
     if (sessionId) {
-      session = await CourseReferenceSession.findById(sessionId).lean().catch(() => null);
-      if (!session || String(session.course) !== String(course._id)) {
-        return badRequestResponse("That course reference does not belong to this course");
-      }
-      const cta = registrationCta(session);
-      if (!cta.available) {
-        return badRequestResponse(
-          cta.label === "Session Cancelled"
-            ? "That session has been cancelled"
-            : "Registration for that session is closed",
-        );
+      session = await CourseReference.findById(sessionId).lean().catch(() => null);
+      if (!session) {
+        session = await CourseReferenceSession.findById(sessionId).lean().catch(() => null);
+        sessionModel = "CourseReferenceSession";
       }
     }
 
@@ -110,25 +113,42 @@ export async function POST(request) {
     const contact = promoteContact(bound);
     const reference = await uniqueReference(Registration);
 
+    const sessionTitle =
+      session?.referenceName ||
+      session?.referenceCode ||
+      session?.courseName ||
+      selectedMonth ||
+      "";
+
     const registration = await Registration.create({
       reference,
       course: course._id,
+      courseModel,
       session: session?._id || null,
+      sessionModel: session ? sessionModel : "CourseReference",
       courseNameSnapshot: course.name || "",
-      sessionNameSnapshot: session?.referenceName || session?.referenceCode || "",
+      sessionNameSnapshot: sessionTitle,
+      selectedMonth: selectedMonth || sessionTitle,
+      receiptUrl,
+      receiptName,
       ...contact,
       fields: values,
       status: "pending",
       sourcePage: String(body?.sourcePage || "").slice(0, 300),
     });
 
-    // Best effort: the count is a convenience for the owner's list, and a
-    // failure to bump it must not lose the registration that was just saved.
     if (session?._id) {
-      CourseReferenceSession.updateOne(
-        { _id: session._id },
-        { $inc: { registrationsCount: 1 } },
-      ).catch(() => {});
+      if (sessionModel === "CourseReference") {
+        CourseReference.updateOne(
+          { _id: session._id },
+          { $inc: { registrationsCount: 1 } },
+        ).catch(() => {});
+      } else {
+        CourseReferenceSession.updateOne(
+          { _id: session._id },
+          { $inc: { registrationsCount: 1 } },
+        ).catch(() => {});
+      }
     }
 
     return successResponse(

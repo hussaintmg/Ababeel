@@ -5,20 +5,22 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import { toast } from "react-toastify";
-import { ArrowLeft, Loader2, Trash2, Send, FileDown } from "lucide-react";
+import {
+  ArrowLeft,
+  Loader2,
+  Trash2,
+  Send,
+  FileDown,
+  CheckCircle,
+  FileCheck,
+  ExternalLink,
+  Users,
+} from "lucide-react";
 import ConfirmationModal from "@/Components/ConfirmationModal";
 import { StatusPill } from "@/Components/owner/training/ResourceTable";
 import { formatDate, formatDateRange } from "@/lib/training/format";
 import { modeLabel } from "@/lib/training/status";
 
-/**
- * One registration.
- *
- * The submitted answers are shown exactly as they were sent and are not
- * editable: this is a record of what a person told us, and an owner's own
- * commentary belongs in the internal notes below it, which are appended so the
- * history stays intact.
- */
 const STATUSES = ["pending", "contacted", "confirmed", "rejected", "cancelled", "completed"];
 
 export default function RegistrationDetailPage({ params }) {
@@ -69,6 +71,10 @@ export default function RegistrationDetailPage({ params }) {
       setSaving(false);
     }
     return false;
+  };
+
+  const handleApprove = async () => {
+    await patch({ status: "confirmed" }, "Registration Approved & Candidate Enrolled into Course!");
   };
 
   const addNote = async () => {
@@ -127,6 +133,22 @@ export default function RegistrationDetailPage({ params }) {
           <p className="mt-1 text-sm text-gray-500">Received {formatDate(reg.createdAt)}</p>
         </div>
         <div className="flex items-center gap-2">
+          {reg.status !== "confirmed" ? (
+            <button
+              type="button"
+              onClick={handleApprove}
+              disabled={saving}
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold shadow-sm transition-colors disabled:opacity-50"
+            >
+              {saving ? <Loader2 size={15} className="animate-spin" /> : <CheckCircle size={15} />}
+              Approve & Enroll Candidate
+            </button>
+          ) : (
+            <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-100 text-emerald-800 rounded-lg text-xs font-bold">
+              <CheckCircle size={14} /> Approved & Enrolled
+            </span>
+          )}
+
           <label htmlFor="reg-status" className="sr-only">
             Status
           </label>
@@ -135,7 +157,7 @@ export default function RegistrationDetailPage({ params }) {
             value={reg.status}
             disabled={saving}
             onChange={(e) => patch({ status: e.target.value }, "Status updated")}
-            className="h-10 rounded-lg border border-gray-300 px-3 text-sm capitalize outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60"
+            className="h-10 rounded-lg border border-gray-300 px-3 text-sm capitalize outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 bg-white"
           >
             {STATUSES.map((s) => (
               <option key={s} value={s}>
@@ -156,6 +178,44 @@ export default function RegistrationDetailPage({ params }) {
 
       <div className="grid gap-5 lg:grid-cols-3">
         <div className="space-y-5 lg:col-span-2">
+          {/* Payment Receipt Card */}
+          {reg.receiptUrl ? (
+            <Panel title="Candidate Payment Receipt / Deposit Slip">
+              <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <div className="flex items-center gap-2">
+                    <FileCheck className="w-5 h-5 text-emerald-700" />
+                    <span className="font-semibold text-emerald-950 text-sm">
+                      {reg.receiptName || "Deposit Slip Uploaded"}
+                    </span>
+                  </div>
+                  <a
+                    href={reg.receiptUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors"
+                  >
+                    <ExternalLink size={13} /> View / Download Slip
+                  </a>
+                </div>
+                {reg.receiptUrl.match(/\.(jpeg|jpg|png|webp)($|\?)/i) ? (
+                  <div className="mt-3 rounded-lg overflow-hidden border border-emerald-200 max-h-80 bg-white flex items-center justify-center p-2">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={reg.receiptUrl}
+                      alt="Payment Receipt"
+                      className="max-h-72 object-contain rounded"
+                    />
+                  </div>
+                ) : (
+                  <p className="text-xs text-emerald-700 mt-1">
+                    Document file attached. Click above to open PDF receipt in a new tab.
+                  </p>
+                )}
+              </div>
+            </Panel>
+          ) : null}
+
           <Panel title="Submitted information">
             {reg.fields?.length ? (
               <dl className="divide-y divide-gray-100">
@@ -196,7 +256,7 @@ export default function RegistrationDetailPage({ params }) {
               rows={3}
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="Called the candidate — will confirm by Friday."
+              placeholder="Called the candidate — verified payment and confirmed place."
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
             />
             <button
@@ -212,13 +272,20 @@ export default function RegistrationDetailPage({ params }) {
         </div>
 
         <div className="space-y-5">
-          <Panel title="Status">
-            <StatusPill value={reg.status} />
+          <Panel title="Enrollment Status">
+            <div className="flex items-center gap-2">
+              <StatusPill value={reg.status} />
+              {reg.enrolledCandidate && (
+                <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                  Enrolled Candidate
+                </span>
+              )}
+            </div>
           </Panel>
 
           <InvoicePanel registrationId={id} />
 
-          <Panel title="Course">
+          <Panel title="Selected Course">
             <p className="font-semibold text-gray-900">
               {reg.course?.name || reg.courseNameSnapshot || "—"}
             </p>
@@ -236,10 +303,15 @@ export default function RegistrationDetailPage({ params }) {
             ) : null}
           </Panel>
 
-          <Panel title="Course reference">
+          <Panel title="Intake Month / Session">
+            {reg.selectedMonth ? (
+              <p className="font-semibold text-gray-900 text-sm mb-2">
+                Requested Intake: {reg.selectedMonth}
+              </p>
+            ) : null}
             {session ? (
               <>
-                <p className="font-semibold text-gray-900">
+                <p className="font-medium text-gray-900 text-sm">
                   {session.referenceName || session.referenceCode || "—"}
                 </p>
                 <dl className="mt-2 space-y-1.5 text-sm text-gray-600">
@@ -249,15 +321,12 @@ export default function RegistrationDetailPage({ params }) {
                   {session.examDate && <div>Exam: {formatDate(session.examDate)}</div>}
                   <div>Mode: {modeLabel(session)}</div>
                   {session.location && <div>{session.location}</div>}
-                  <div className="pt-1">
-                    <StatusPill value={session.status} />
-                  </div>
                 </dl>
               </>
             ) : (
               <p className="text-sm text-gray-500">
                 {reg.sessionNameSnapshot ||
-                  "No session was selected — this came from a general course enquiry."}
+                  "No specific session selected — flexible intake requested."}
               </p>
             )}
           </Panel>
@@ -307,13 +376,6 @@ function Panel({ title, children }) {
   );
 }
 
-/** Checkbox answers are stored as booleans; "true" reads badly in a table. */
-/**
- * Generates an invoice PDF for this registration from the active
- * "Registration Invoice" template. The amount and dates are typed here and
- * exist only in the produced PDF — the registration record itself stores no
- * payment information, and nothing here charges anyone.
- */
 function InvoicePanel({ registrationId }) {
   const [inv, setInv] = useState({ number: "", amount: "", currency: "GBP", dueDate: "", notes: "" });
   const set = (key) => (e) => setInv((prev) => ({ ...prev, [key]: e.target.value }));
@@ -359,8 +421,7 @@ function InvoicePanel({ registrationId }) {
         Download invoice PDF
       </button>
       <p className="mt-2 text-xs text-gray-400">
-        Uses the active template from PDF Templates → Registration Invoice. Nothing is stored or
-        charged — the values above only appear in the PDF.
+        Uses the active template from PDF Templates → Registration Invoice.
       </p>
     </Panel>
   );

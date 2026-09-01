@@ -140,12 +140,8 @@ export function ScheduleListBlock({ p, s }) {
  * second copy of this layout.
  */
 function LogoBlock({ p, s, items, hrefFor, detailCard }) {
-  if (!items.length) {
-    return (
-      <BlockShell p={p} s={s}>
-        <Nothing message={p.emptyMessage} fallback="Logos will appear here once they are published." />
-      </BlockShell>
-    );
+  if (!items || !items.length) {
+    return null;
   }
 
   if (p.layout === "cards" && detailCard) {

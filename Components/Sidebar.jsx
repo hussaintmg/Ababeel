@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
-const Sidebar = ({ isOpen, onClose, navLinks }) => {
+const Sidebar = ({ isOpen, onClose, navLinks, loading = false }) => {
   const { user } = useAuth();
   const [openDropdown, setOpenDropdown] = useState(null);
   const [isScrolling, setIsScrolling] = useState(false);
@@ -78,11 +78,12 @@ const Sidebar = ({ isOpen, onClose, navLinks }) => {
             <div className="p-2 bg-blue-50 rounded-lg">
               <Home size={18} className="text-blue-600" />
             </div>
-            <span className="font-bold text-gray-800">Home</span>
+            <span className="font-bold text-gray-800">Menu</span>
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+            aria-label="Close menu"
           >
             <X size={20} />
           </button>
@@ -99,58 +100,66 @@ const Sidebar = ({ isOpen, onClose, navLinks }) => {
             className="h-full overflow-y-auto py-4 px-3 custom-scrollbar"
           >
             <nav className="space-y-1">
-              {navLinks.map((item, index) => (
-                <div key={index} className="mb-1">
-                  {item.dropdown ? (
-                    <div className="rounded-lg overflow-hidden">
-                      <button
-                        onClick={() => toggleDropdown(index)}
-                        className="flex items-center justify-between w-full p-3 text-left bg-gray-50 hover:bg-blue-50 text-gray-800 hover:text-blue-700 transition-all duration-200 group rounded-lg"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-2 h-2 rounded-full bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                          <span className="font-medium text-sm">
-                            {item.name}
-                          </span>
-                        </div>
-                        <ChevronDown
-                          size={16}
-                          className={`transition-transform duration-300 ${
-                            openDropdown === index ? "rotate-180" : ""
-                          } text-gray-400 group-hover:text-blue-600`}
-                        />
-                      </button>
-
-                      {openDropdown === index && (
-                        <div className="mt-1 ml-6 pl-2 border-l-2 border-blue-200 animate-slideDown">
-                          {item.dropdown.map((drop, i) => (
-                            <Link
-                              key={i}
-                              href={`/qualification/${drop.id}`}
-                              className="block py-2.5 px-3 text-gray-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all duration-200 text-sm group/link"
-                              onClick={onClose}
-                            >
-                              <div className="flex items-center">
-                                <div className="w-1.5 h-1.5 rounded-full bg-gray-300 mr-3 group-hover/link:bg-blue-500 transition-all duration-300"></div>
-                                <span className="truncate">{drop.name}</span>
-                              </div>
-                            </Link>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <Link
-                      href={item.url}
-                      className="flex items-center gap-3 p-3 text-gray-800 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all duration-200 group"
-                      onClick={onClose}
-                    >
-                      <div className="w-2 h-2 rounded-full bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                      <span className="font-medium text-sm">{item.name}</span>
-                    </Link>
-                  )}
+              {loading || !Array.isArray(navLinks) || navLinks.length === 0 ? (
+                <div className="space-y-2 p-2" aria-label="Loading menu">
+                  {[1, 2, 3, 4, 5, 6].map((i) => (
+                    <div key={i} className="h-10 bg-gray-200 animate-pulse rounded-lg w-full" />
+                  ))}
                 </div>
-              ))}
+              ) : (
+                navLinks.map((item, index) => (
+                  <div key={index} className="mb-1">
+                    {item.dropdown ? (
+                      <div className="rounded-lg overflow-hidden">
+                        <button
+                          onClick={() => toggleDropdown(index)}
+                          className="flex items-center justify-between w-full p-3 text-left bg-gray-50 hover:bg-blue-50 text-gray-800 hover:text-blue-700 transition-all duration-200 group rounded-lg cursor-pointer"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-2 h-2 rounded-full bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                            <span className="font-medium text-sm">
+                              {item.name}
+                            </span>
+                          </div>
+                          <ChevronDown
+                            size={16}
+                            className={`transition-transform duration-300 ${
+                              openDropdown === index ? "rotate-180" : ""
+                            } text-gray-400 group-hover:text-blue-600`}
+                          />
+                        </button>
+
+                        {openDropdown === index && (
+                          <div className="mt-1 ml-6 pl-2 border-l-2 border-blue-200 animate-slideDown space-y-0.5">
+                            {item.dropdown.map((drop, i) => (
+                              <Link
+                                key={i}
+                                href={drop.url || `/qualification/${drop.id || ""}`}
+                                className="block py-2.5 px-3 text-gray-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all duration-200 text-sm group/link"
+                                onClick={onClose}
+                              >
+                                <div className="flex items-center">
+                                  <div className="w-1.5 h-1.5 rounded-full bg-gray-300 mr-3 group-hover/link:bg-blue-500 transition-all duration-300"></div>
+                                  <span className="truncate">{drop.name}</span>
+                                </div>
+                              </Link>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <Link
+                        href={item.url}
+                        className="flex items-center gap-3 p-3 text-gray-800 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all duration-200 group"
+                        onClick={onClose}
+                      >
+                        <div className="w-2 h-2 rounded-full bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                        <span className="font-medium text-sm">{item.name}</span>
+                      </Link>
+                    )}
+                  </div>
+                ))
+              )}
             </nav>
           </div>
 

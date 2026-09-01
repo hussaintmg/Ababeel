@@ -99,8 +99,6 @@ const ownerNavLinks = [
   {
     name: "Training",
     dropdown: [
-      { name: "Courses", url: "/owner/training/courses" },
-      { name: "Course References", url: "/owner/training/sessions" },
       { name: "Awarding Bodies", url: "/owner/training/awarding-bodies" },
       { name: "Registrations", url: "/owner/registrations" },
     ],
@@ -109,7 +107,7 @@ const ownerNavLinks = [
 ];
 export default function TopbarSidebarComponentWrapper() {
   const { isDashboard, isAdmin, isOwner, pathname, hasMounted } = usePath();
-  const { settings } = useSiteContent();
+  const { settings, loading } = useSiteContent();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const handleCloseSidebar = () => {
@@ -142,12 +140,14 @@ export default function TopbarSidebarComponentWrapper() {
         mobileOpen={mobileOpen}
         setMobileOpen={setMobileOpen}
         navLinks={TopbarLinks}
+        loading={loading}
       />
       {/* Sidebar */}
       <Sidebar
         isOpen={mobileOpen}
         onClose={handleCloseSidebar}
         navLinks={publicNav}
+        loading={loading}
       />
     </div>
   );

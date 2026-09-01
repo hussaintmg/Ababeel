@@ -19,45 +19,82 @@ const CSVUploadForm = () => {
 
   // Required columns for CSV
   const requiredColumns = ['name', 'price', 'description'];
-  const optionalColumns = ['currency', 'currencySymbol', 'currencyCode', 'country', 'categories', 'duration', 'level'];
+  const optionalColumns = [
+    'code',
+    'slug',
+    'shortDescription',
+    'category',
+    'duration',
+    'durationDays',
+    'courseContent',
+    'learningOutcomes',
+    'requirements',
+    'whoShouldAttend',
+    'currency',
+    'currencySymbol',
+    'currencyCode',
+    'country',
+    'status'
+  ];
 
   const downloadSampleCSV = () => {
     const sampleData = [
       {
-        name: 'Award in Boom Lift Safe Operator Training',
-        price: '250',
+        name: 'NVQ Level 6 Diploma in Occupational Health and Safety',
+        code: 'NVQ-L6-OHS',
+        price: '1850',
         currency: 'GBP',
         currencySymbol: '£',
         currencyCode: 'GBP',
         country: 'United Kingdom',
-        description: 'Comprehensive training for safe operation of boom lifts',
-        categories: 'Safety,Operator Training,Construction',
-        duration: '24',
-        level: 'intermediate'
+        shortDescription: 'Advanced diploma for health and safety practitioners aiming for GradIOSH and CMIOSH membership.',
+        description: 'The Level 6 NVQ Diploma in Occupational Health and Safety Practice is a vocational qualification aimed at managers and practitioners responsible for designing and implementing health and safety procedures in workplaces across the UK and internationally.',
+        category: 'Health & Safety',
+        duration: '6-12 Months',
+        durationDays: '180',
+        learningOutcomes: '1. Promote a positive health and safety culture\n2. Develop and implement health and safety emergency response procedures\n3. Identify workplace hazards and evaluate risk controls\n4. Investigate accidents and incidents effectively',
+        courseContent: 'Module 1: Principles of Health & Safety Management\nModule 2: Risk Assessment & Control\nModule 3: Incident Investigation\nModule 4: Statutory Compliance & Auditing',
+        requirements: 'Learners must be in a position where they have responsibility for health and safety policy implementation or inspection.',
+        whoShouldAttend: 'Health & Safety Managers, Officers, Advisors, and Directors seeking chartered status.',
+        status: 'active'
       },
       {
-        name: 'Level 2 Award In Emergency First Aid at Work',
-        price: '120',
+        name: 'Qualifi Level 3 Award in Emergency First Aid at Work',
+        code: 'EFAW-L3',
+        price: '150',
         currency: 'GBP',
         currencySymbol: '£',
         currencyCode: 'GBP',
         country: 'United Kingdom',
-        description: 'Essential first aid training for workplace emergencies',
-        categories: 'First Aid,Emergency,Health & Safety',
-        duration: '8',
-        level: 'beginner'
+        shortDescription: 'HSE-compliant emergency first aid training for workplace designated first aiders.',
+        description: 'Comprehensive 1-day certified emergency first aid course covering CPR, AED operation, choking, bleeding management, and shock protocols.',
+        category: 'First Aid',
+        duration: '1 Day',
+        durationDays: '1',
+        learningOutcomes: '1. Understand the role of the first aider\n2. Assess an incident safely\n3. Manage an unresponsive casualty\n4. Administer CPR and operate an Automated External Defibrillator (AED)',
+        courseContent: 'Unit 1: Emergency First Aid in the Workplace\nUnit 2: CPR & Defibrillation\nUnit 3: Bleeding, Burns & Minor Injuries',
+        requirements: 'No formal prerequisites. Minimum age 16.',
+        whoShouldAttend: 'Nominated workplace first aiders, safety representatives, and office managers.',
+        status: 'active'
       },
       {
-        name: 'Advanced Construction Management',
-        price: '450',
+        name: 'Highfield Level 2 Award in Food Safety in Catering',
+        code: 'FS-L2-CAT',
+        price: '95',
         currency: 'GBP',
         currencySymbol: '£',
         currencyCode: 'GBP',
         country: 'United Kingdom',
-        description: 'Advanced techniques in construction project management',
-        categories: 'Management,Construction,Leadership',
-        duration: '40',
-        level: 'advanced'
+        shortDescription: 'Essential food hygiene certificate for food handlers and catering staff.',
+        description: 'Covers temperature control, cross-contamination prevention, personal hygiene, and HACCP fundamentals.',
+        category: 'Food Safety',
+        duration: '1 Day',
+        durationDays: '1',
+        learningOutcomes: '1. Understand food safety legislation\n2. Prevent biological and chemical contamination\n3. Maintain high standards of personal hygiene\n4. Apply pest control and cleaning schedules',
+        courseContent: 'Unit 1: Introduction to Food Safety\nUnit 2: Food Hazards & Contamination\nUnit 3: Temperature Control & Storage',
+        requirements: 'Open to all catering staff and supervisors.',
+        whoShouldAttend: 'Chefs, kitchen assistants, catering supervisors, food prep workers.',
+        status: 'active'
       }
     ];
 
@@ -67,7 +104,7 @@ const CSVUploadForm = () => {
     const url = URL.createObjectURL(blob);
     
     link.setAttribute('href', url);
-    link.setAttribute('download', 'course_template_uk.csv');
+    link.setAttribute('download', 'ababeel_course_template.csv');
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -321,39 +358,35 @@ const CSVUploadForm = () => {
         duration = parseFloat(cleanDuration) || null;
       }
 
-      // Get level with validation
-      const levelRaw = getValue('level');
-      let level = 'all';
-      if (levelRaw) {
-        const levelLower = levelRaw.toLowerCase();
-        const validLevels = ['beginner', 'intermediate', 'advanced', 'all'];
-        if (validLevels.includes(levelLower)) {
-          level = levelLower;
-        }
-      }
-
       return {
         name: getValue('name'),
-        price: price,
+        code: getValue('code') || '',
+        slug: getValue('slug') || '',
+        shortDescription: getValue('shortdescription') || getValue('short_description') || '',
         description: getValue('description'),
+        price: price,
         currency: getValue('currency') || 'GBP',
         currencySymbol: getValue('currencysymbol') || getValue('currency_symbol') || '£',
         currencyCode: getValue('currencycode') || getValue('currency_code') || 'GBP',
         country: getValue('country') || 'United Kingdom',
+        category: categoriesStr || getValue('category') || '',
         categories: categories,
-        duration: duration,
-        level: level,
+        duration: durationStr || getValue('duration') || '',
+        durationDays: parseFloat(getValue('durationdays') || getValue('duration_days')) || 0,
+        courseContent: getValue('coursecontent') || getValue('course_content') || '',
+        learningOutcomes: getValue('learningoutcomes') || getValue('learning_outcomes') || '',
+        requirements: getValue('requirements') || '',
+        whoShouldAttend: getValue('whoshouldattend') || getValue('who_should_attend') || '',
+        status: getValue('status') || 'active',
         isDefaultCourse: true,
         courseType: 'csv_import',
         rowNumber: index + 2
       };
     }).filter(course => {
-      // Only include courses with all required fields
       return course.name && 
              course.name.trim() !== '' && 
              course.description && 
-             course.description.trim() !== '' && 
-             course.price > 0;
+             course.description.trim() !== '';
     });
   };
 

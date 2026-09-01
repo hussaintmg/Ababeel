@@ -100,15 +100,15 @@ export default function OwnerLayout({ children }) {
     },
     {
       id: "course",
-      name: "Default Course",
-      icon: <FileChartColumn size={20} />,
+      name: "Default Courses",
+      icon: <BookOpen size={20} />,
       url: null,
       dropdown: [
         {
-          name: "New Default Course",
+          name: "Add Course",
           url: "/owner/default-course/new",
         },
-        { name: "All Default Course", url: "/owner/default-course/all" },
+        { name: "Manage Courses", url: "/owner/default-course/all" },
       ],
     },
     {
@@ -124,8 +124,6 @@ export default function OwnerLayout({ children }) {
       icon: <GraduationCap size={20} />,
       url: null,
       dropdown: [
-        { name: "Courses", url: "/owner/training/courses" },
-        { name: "Course References", url: "/owner/training/sessions" },
         { name: "Levels", url: "/owner/training/levels" },
         { name: "Awarding Bodies", url: "/owner/training/awarding-bodies" },
         { name: "Accreditations", url: "/owner/training/accreditations" },
@@ -156,34 +154,12 @@ export default function OwnerLayout({ children }) {
       ],
     },
     {
-      id: "applications",
-      name: "Applications",
-      icon: <FileChartColumn size={20} />,
-      url: null,
-      dropdown: [
-        { name: "Pending", url: "/owner/applications/pending" },
-        { name: "Approved", url: "/owner/applications/approved" },
-        { name: "Rejected", url: "/owner/applications/rejected" },
-      ],
-    },
-    {
-      id: "admin-approvals",
-      name: "Admin Approvals",
-      icon: <Users size={20} />,
-      url: null,
-      dropdown: [
-        { name: "Pending", url: "/owner/admin-approvals/pending" },
-        { name: "Approved", url: "/owner/admin-approvals/approved" },
-      ],
-    },
-    {
       id: "pdf-template",
       name: "PDF Templates",
       icon: <FileBadge size={20} />,
       url: "/owner/pdf-template",
       dropdown: null,
     },
-    // Add Training Resources, Trainers, and Training Test removed.
   ];
 
   return (

@@ -49,19 +49,32 @@ const registrationSchema = new mongoose.Schema(
 
     course: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "TrainingCourse",
+      refPath: "courseModel",
       required: true,
       index: true,
     },
+    courseModel: {
+      type: String,
+      enum: ["TrainingCourse", "DefaultCourse"],
+      default: "DefaultCourse",
+    },
     session: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "CourseReferenceSession",
+      refPath: "sessionModel",
       default: null,
       index: true,
+    },
+    sessionModel: {
+      type: String,
+      enum: ["CourseReferenceSession", "CourseReference"],
+      default: "CourseReference",
     },
 
     courseNameSnapshot: { type: String, default: "", trim: true },
     sessionNameSnapshot: { type: String, default: "", trim: true },
+    selectedMonth: { type: String, default: "", trim: true },
+    receiptUrl: { type: String, default: "", trim: true },
+    receiptName: { type: String, default: "", trim: true },
 
     // Promoted from the submitted form so lists, search and notifications do
     // not have to dig through `fields`.
@@ -78,6 +91,7 @@ const registrationSchema = new mongoose.Schema(
 
     status: { type: String, enum: REGISTRATION_STATUSES, default: "pending", index: true },
     internalNotes: { type: [InternalNoteSchema], default: [] },
+    enrolledCandidate: { type: mongoose.Schema.Types.ObjectId, ref: "Candidate", default: null },
 
     // Provenance, for spam triage only.
     sourcePage: { type: String, default: "", trim: true, maxlength: 300 },

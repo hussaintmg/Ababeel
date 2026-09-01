@@ -102,22 +102,48 @@ export async function PUT(request, { params }) {
       );
     }
 
+    const updateFields = {
+      name: body.name.trim(),
+      updatedAt: Date.now(),
+    };
+
+    if (body.code !== undefined) updateFields.code = body.code?.trim() || "";
+    if (body.slug !== undefined) updateFields.slug = body.slug?.trim() || "";
+    if (body.shortDescription !== undefined) updateFields.shortDescription = body.shortDescription?.trim() || "";
+    if (body.description !== undefined) updateFields.description = body.description || "";
+    if (body.price !== undefined) updateFields.price = parseFloat(body.price) || 0;
+    if (body.currency !== undefined) updateFields.currency = body.currency?.trim() || "GBP";
+    if (body.currencySymbol !== undefined) updateFields.currencySymbol = body.currencySymbol?.trim() || "£";
+    if (body.currencyCode !== undefined) updateFields.currencyCode = body.currencyCode?.trim() || "GBP";
+    if (body.country !== undefined) updateFields.country = body.country?.trim() || "United Kingdom";
+    if (body.level !== undefined) updateFields.level = body.level || null;
+    if (body.awardingBody !== undefined) updateFields.awardingBody = body.awardingBody || null;
+    if (body.category !== undefined) updateFields.category = body.category?.trim() || "";
+    if (body.duration !== undefined) updateFields.duration = body.duration?.trim() || "";
+    if (body.durationDays !== undefined) updateFields.durationDays = Number(body.durationDays) || 0;
+    if (body.featuredImage !== undefined) updateFields.featuredImage = body.featuredImage?.trim() || "";
+    if (body.gallery !== undefined) updateFields.gallery = Array.isArray(body.gallery) ? body.gallery : [];
+    if (body.certificateImage !== undefined) updateFields.certificateImage = body.certificateImage?.trim() || "";
+    if (body.certificationInfo !== undefined) updateFields.certificationInfo = body.certificationInfo?.trim() || "";
+    if (body.courseContent !== undefined) updateFields.courseContent = body.courseContent || "";
+    if (body.learningOutcomes !== undefined) updateFields.learningOutcomes = body.learningOutcomes || "";
+    if (body.requirements !== undefined) updateFields.requirements = body.requirements || "";
+    if (body.whoShouldAttend !== undefined) updateFields.whoShouldAttend = body.whoShouldAttend || "";
+    if (body.faqs !== undefined) updateFields.faqs = Array.isArray(body.faqs) ? body.faqs : [];
+    if (body.featured !== undefined) updateFields.featured = !!body.featured;
+    if (body.displayOrder !== undefined) updateFields.displayOrder = Number(body.displayOrder) || 0;
+    if (body.status !== undefined) updateFields.status = body.status || "active";
+
     const course = await DefaultCourse.findByIdAndUpdate(
       id,
-      {
-        $set: {
-          name: body.name,
-          description: body.description || "",
-          price: parseFloat(body.price) || 0,
-          status: body.status || "draft",
-          updatedAt: Date.now()
-        }
-      },
+      { $set: updateFields },
       {
         new: true,
-        runValidators: true
+        runValidators: true,
       }
-    );
+    )
+      .populate("level", "name slug color icon")
+      .populate("awardingBody", "name slug logo");
 
     if (!course) {
       return NextResponse.json(
@@ -129,7 +155,7 @@ export async function PUT(request, { params }) {
     return NextResponse.json({
       success: true,
       data: course,
-      message: "Course updated successfully"
+      message: "Course updated successfully",
     });
   } catch (error) {
     console.error("Error updating course:", error);

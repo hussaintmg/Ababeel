@@ -1,528 +1,650 @@
 "use client";
 
-import CmsPageContent from "@/Components/cms/CmsPageContent";
-import React, { useState, useEffect, useCallback } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import bannarV2 from "@/public/bannerv2.webp";
-import FAQ from "@/Components/FAQ";
+import React, { useState } from "react";
+import Link from "next/link";
 import { motion } from "framer-motion";
+import CmsPageContent from "@/Components/cms/CmsPageContent";
+import FAQ from "@/Components/FAQ";
+import {
+  Award,
+  BookOpen,
+  Calendar,
+  CheckCircle2,
+  ChevronRight,
+  GraduationCap,
+  ShieldCheck,
+  Star,
+  Users,
+  ArrowRight,
+  Clock,
+  Sparkles,
+  Building2,
+  Check,
+  FileCheck,
+  Layers,
+  MapPin,
+} from "lucide-react";
 import webData from "@/constants";
 
+const FEATURED_COURSES = [
+  {
+    id: "nvq-level-6-diploma-occupational-health-safety-practice",
+    title: "NVQ Level 6 Diploma in Occupational Health and Safety Practice",
+    level: "Level 6 (Degree Equiv.)",
+    levelColor: "bg-teal-50 text-teal-700 border-teal-200",
+    body: "ProQual Awarding Body",
+    duration: "6 - 9 Months (Portfolio)",
+    price: "£1,450",
+    slug: "nvq-level-6-diploma-occupational-health-safety-practice",
+    description:
+      "The premier competence-based vocational qualification for health & safety practitioners seeking GradIOSH & CMIOSH chartered status.",
+    highlights: [
+      "100% Portfolio — No Written Exams",
+      "Direct Pathway to GradIOSH / CMIOSH",
+      "Dedicated 1-on-1 UK Assessor",
+      "Flexible Distance Learning",
+    ],
+    popular: true,
+  },
+  {
+    id: "level-7-diploma-strategic-management-leadership",
+    title: "Level 7 Diploma in Strategic Management and Leadership",
+    level: "Level 7 (Master's Equiv.)",
+    levelColor: "bg-amber-50 text-amber-800 border-amber-200",
+    body: "Qualifi Qualifications",
+    duration: "6 - 12 Months",
+    price: "£1,850",
+    slug: "level-7-diploma-strategic-management-leadership",
+    description:
+      "Postgraduate executive diploma providing 120 credits with advanced progression to UK University MBA Top-Up dissertation stage.",
+    highlights: [
+      "120 Postgraduate Credits",
+      "Direct UK MBA Top-Up Progression",
+      "Strategic Governance & Leadership",
+      "Executive Case-Study Learning",
+    ],
+    popular: false,
+  },
+  {
+    id: "level-3-award-emergency-first-aid-at-work",
+    title: "Level 3 Award in Emergency First Aid at Work (RQF)",
+    level: "Level 3 (Intermediate)",
+    levelColor: "bg-indigo-50 text-indigo-700 border-indigo-200",
+    body: "Highfield Qualifications",
+    duration: "1 Day (6 Hours)",
+    price: "£175",
+    slug: "level-3-award-emergency-first-aid-at-work",
+    description:
+      "HSE-compliant one-day regulated practical qualification equipping workplace first aiders with CPR, AED, and emergency trauma skills.",
+    highlights: [
+      "HSE & Resuscitation Council Compliant",
+      "Valid for 3 Years Across UK",
+      "Hands-On CPR & AED Practical Training",
+      "Immediate Digital Certification",
+    ],
+    popular: false,
+  },
+];
+
+const AWARDING_BODIES_LIST = [
+  { name: "ProQual Awarding Body", type: "Ofqual Regulated", logo: "🛡️" },
+  { name: "Focus Awards", type: "Ofqual Regulated", logo: "🏆" },
+  { name: "Qualifi", type: "UK Recognized", logo: "🎓" },
+  { name: "Highfield Qualifications", type: "Ofqual Regulated", logo: "⭐" },
+  { name: "OTHM Qualifications", type: "UK Regulated", logo: "📜" },
+];
+
+const PATHWAYS = [
+  {
+    level: "Level 2",
+    title: "Foundation & Safety Awareness",
+    target: "Entry-level staff, operatives, and newly appointed safety marshals.",
+    outcome: "Basic hazard identification, risk assessment, and legal workplace safety duties.",
+    color: "from-sky-500 to-blue-600",
+  },
+  {
+    level: "Level 3",
+    title: "Supervisory & Intermediate Practice",
+    target: "Site supervisors, team leaders, and designated first aid officers.",
+    outcome: "Accident investigation, compliance auditing, and emergency workplace response.",
+    color: "from-blue-600 to-indigo-600",
+  },
+  {
+    level: "Level 6",
+    title: "Bachelor Equivalent NVQ Diploma",
+    target: "Safety managers, advisors, and corporate compliance leads.",
+    outcome: "GradIOSH / CMIOSH chartered eligibility, policy formulation, and senior safety leadership.",
+    color: "from-teal-600 to-emerald-700",
+  },
+  {
+    level: "Level 7",
+    title: "Postgraduate & Executive Strategic Diploma",
+    target: "Directors, executives, and senior heads of department.",
+    outcome: "UK MBA Top-Up entry, corporate governance, and enterprise strategic leadership.",
+    color: "from-amber-600 to-orange-700",
+  },
+];
+
+const TESTIMONIALS = [
+  {
+    name: "David Harrison",
+    role: "Health & Safety Director",
+    company: "Apex Construction Group Ltd",
+    quote:
+      "Completing the NVQ Level 6 with Ababeel was seamless. My dedicated assessor provided prompt, thorough feedback on each portfolio module. I attained GradIOSH within 7 months.",
+    rating: 5,
+    initials: "DH",
+  },
+  {
+    name: "Ayesha Malik",
+    role: "Senior Operations Lead",
+    company: "Global Logistics UK",
+    quote:
+      "The Level 7 Strategic Management diploma gave me the executive toolkit needed for board-level leadership. The progression pathway to an MBA top-up was straightforward and valuable.",
+    rating: 5,
+    initials: "AM",
+  },
+  {
+    name: "Michael Davies",
+    role: "Workplace Safety Officer",
+    company: "Vanguard Manufacturing",
+    quote:
+      "Excellent customer support and transparent assessment process. The online portal made evidence uploading easy, and the certification arrived quickly upon internal verification.",
+    rating: 5,
+    initials: "MD",
+  },
+];
+
 const HomePageInner = () => {
-  const images = [
-    // {
-    //   id: 1,
-    //   image:
-    //     "https://plus.unsplash.com/premium_photo-1677529102407-0d075eb2cbb9?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NXx8SGVhbHRoJTIwYW5kJTIwU2FmZXR5JTIwYXQlMjBXb3JrfGVufDB8fDB8fHww",
-    //   text: "Health and Safety at Work",
-    //   subtext:
-    //     "A health and safety at work course equips participants with knowledge to create safer working environments",
-    //   color: "from-green-700/30 to-emerald-900/30",
-    //   textColor: "text-white",
-    // },
-    // {
-    //   id: 3,
-    //   image:
-    //     "https://plus.unsplash.com/premium_photo-1661490061456-00879b843549?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8RmlyZSUyMFNhZmV0eSUyMFRyYWluaW5nfGVufDB8fDB8fHww",
-    //   text: "Fire Safety Training",
-    //   subtext:
-    //     "People suffer fatalities or severe injuries as a result of workplace fires every year. Our training prevents these incidents",
-    //   color: "from-orange-600/30 to-red-800/30",
-    //   textColor: "text-white",
-    // },
-    // {
-    //   id: 4,
-    //   image:
-    //     "https://plus.unsplash.com/premium_photo-1663054750793-00d34894aeb0?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8UmlzayUyMEFzc2Vzc21lbnQlMjBUcmFpbmluZ3xlbnwwfHwwfHx8MA%3D%3D",
-    //   text: "Risk Assessment Training",
-    //   subtext:
-    //     "The Level 2 Award in Risk Assessment Training is an advanced course that builds professional competency in identifying workplace hazards",
-    //   color: "from-blue-800/30 to-blue-900/30",
-    //   textColor: "text-white",
-    // },
-    // {
-    //   id: 5,
-    //   image:
-    //     "https://images.unsplash.com/photo-1598894163140-1233de455ff2?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTV8fENoZW1pY2FsJTIwU2FmZXR5JTIwQ291cnNlfGVufDB8fDB8fHww",
-    //   text: "Chemical Safety Course",
-    //   subtext:
-    //     "The Chemical Safety Course is specialized training for handling, storing, and managing hazardous chemicals",
-    //   color: "from-purple-700/30 to-purple-900/30",
-    //   textColor: "text-white",
-    // },
-    {
-      id: 1,
-      image:
-        "https://plus.unsplash.com/premium_photo-1714138490052-65c64d8db2e0?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NXx8U2V0dGluZyUyMENlcnRpZmljYXRpb24lMjBTdGFuZGFyZHN8ZW58MHx8MHx8fDA%3D",
-      text: "Setting Certification Standards",
-      subtext:
-        "Developing and awarding safety and technical qualifications that uphold UK industry and regulatory expectations.",
-      color: "from-blue-700/30 to-blue-900/30",
-      textColor: "text-white",
-    },
-    {
-      id: 2,
-      image: bannarV2,
-      text: "Recognised. Regulated. Respected.",
-      subtext:
-        "Independent qualification frameworks designed to ensure quality, compliance, and professional credibility.",
-      color: "from-green-700/30 to-green-900/30",
-      textColor: "text-white",
-      backgroundPosition: "top center",
-    },
-    {
-      id: 3,
-      image:
-        "https://plus.unsplash.com/premium_photo-1677529102407-0d075eb2cbb9?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8QXdhcmRpbmclMjBFeGNlbGxlbmNlJTIwaW4lMjBTYWZldHl8ZW58MHx8MHx8fDA%3D",
-      text: "Awarding Excellence in Safety",
-      subtext:
-        "Robust quality assurance processes that safeguard competence across approved centres.",
-      color: "from-amber-700/30 to-amber-900/30",
-      textColor: "text-white",
-    },
-    {
-      id: 4,
-      image:
-        "https://images.unsplash.com/photo-1698434401311-4d9ef9ac9c7f?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8N3x8SW50ZWdyaXR5JTIwaW4lMjBRdWFsaWZpY2F0aW9uJTIwRnJhbWV3b3Jrc3xlbnwwfHwwfHx8MA%3D%3D",
-      text: "Integrity in Qualification Frameworks",
-      subtext:
-        "Structured governance and transparent certification processes that maintain industry trust.",
-      color: "from-red-700/30 to-red-900/30",
-      textColor: "text-white",
-    },
-  ];
-
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isTransitioning, setIsTransitioning] = useState(false);
-
-  const nextSlide = useCallback(() => {
-    if (isTransitioning) return;
-    setIsTransitioning(true);
-    setCurrentIndex((prevIndex) =>
-      prevIndex === images.length - 1 ? 0 : prevIndex + 1,
-    );
-    setTimeout(() => setIsTransitioning(false), 500);
-  }, [images.length, isTransitioning]);
-
-  const prevSlide = useCallback(() => {
-    if (isTransitioning) return;
-    setIsTransitioning(true);
-    setCurrentIndex((prevIndex) =>
-      prevIndex === 0 ? images.length - 1 : prevIndex - 1,
-    );
-    setTimeout(() => setIsTransitioning(false), 500);
-  }, [images.length, isTransitioning]);
-
-  // Auto slide functionality. Declared after nextSlide so the interval always
-  // closes over the current callback rather than a stale hoisted binding.
-  useEffect(() => {
-    const interval = setInterval(() => {
-      nextSlide();
-    }, 5000); // Change slide every 5 seconds
-
-    return () => clearInterval(interval);
-  }, [nextSlide]);
-
-  const goToSlide = (index) => {
-    if (isTransitioning || index === currentIndex) return;
-    setIsTransitioning(true);
-    setCurrentIndex(index);
-    setTimeout(() => setIsTransitioning(false), 500);
-  };
-
-  // Keyboard navigation
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === "ArrowLeft") prevSlide();
-      if (e.key === "ArrowRight") nextSlide();
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [prevSlide, nextSlide]);
-
   return (
-    <>
-      <div className="relative w-full h-[90vh] overflow-hidden group">
-        {/* Slides Container */}
-        <div className="relative w-full h-full">
-          {images.map((slide, index) => (
-            <div
-              key={slide.id}
-              className={`absolute inset-0 transition-opacity duration-1000 ${
-                index === currentIndex ? "opacity-100" : "opacity-0"
-              }`}
-              style={{
-                transition: "opacity 0.8s ease-in-out",
-              }}
-            >
-              {/* Background Image */}
-              <div
-                className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-                style={{
-                  backgroundImage: `url(${
-                    typeof slide.image === "string"
-                      ? slide.image
-                      : slide.image.src
-                  })`,
-                  backgroundPosition: `${slide.backgroundPosition}`,
-                }}
+    <div className="w-full bg-white text-gray-900 selection:bg-blue-600 selection:text-white">
+      {/* Hero Section */}
+      <section className="relative overflow-hidden bg-linear-to-b from-[#0b1526] via-[#0f203c] to-[#0b1526] text-white pt-16 pb-24 md:pt-24 md:pb-32 px-4 sm:px-6 lg:px-8">
+        {/* Glow Effects */}
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-blue-500/15 blur-[120px] rounded-full pointer-events-none" />
+        <div className="absolute top-1/3 right-10 w-[300px] h-[250px] bg-orange-500/10 blur-[100px] rounded-full pointer-events-none" />
+
+        <div className="max-w-7xl mx-auto relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+            {/* Left Column: Heading, Value Prop, CTAs */}
+            <div className="lg:col-span-7 text-left space-y-6">
+              <motion.div
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/10 border border-blue-400/30 text-blue-300 text-xs md:text-sm font-medium backdrop-blur-sm"
               >
-                {/* Overlay Gradient */}
-                <div
-                  className={`absolute inset-0 bg-linear-to-r ${slide.color}`}
-                />
-              </div>
+                <Sparkles size={15} className="text-orange-400" />
+                <span>UK Regulated Qualifications & Professional Development</span>
+              </motion.div>
 
-              {/* Content - Only visible for active slide */}
-              {index === currentIndex && (
-                <div className="relative h-full flex items-center px-4 md:px-8 lg:px-16 xl:px-24">
-                  <div className="max-w-3xl w-full text-left">
-                    {/* Animated Text */}
-                    <div className="mb-4">
-                      <h1
-                        className={`text-2xl md:text-4xl lg:text-5xl font-bold ${slide.textColor} animate-fadeInUp`}
-                        style={{ animationDelay: "0.2s" }}
-                      >
-                        {slide.text}
-                      </h1>
+              <motion.h1
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.1 }}
+                className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-tight"
+              >
+                Accredited Qualifications Built for{" "}
+                <span className="bg-linear-to-r from-blue-400 via-sky-300 to-orange-400 bg-clip-text text-transparent">
+                  Real-World Competence
+                </span>
+              </motion.h1>
+
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                className="text-base sm:text-lg md:text-xl text-gray-300 max-w-2xl leading-relaxed font-normal"
+              >
+                Earn Ofqual-regulated NVQ Level 2 to Level 7 qualifications and advance towards GradIOSH, CMIOSH, and UK MBA top-ups with flexible portfolio assessment and 1-on-1 UK tutor mentoring.
+              </motion.p>
+
+              {/* Action Buttons */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.3 }}
+                className="flex flex-wrap items-center gap-4 pt-2"
+              >
+                <Link
+                  href="/courses"
+                  className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white font-semibold shadow-lg shadow-blue-600/30 hover:shadow-blue-600/50 hover:-translate-y-0.5 transition-all duration-200"
+                >
+                  <BookOpen size={18} />
+                  <span>Browse Courses</span>
+                  <ArrowRight size={16} />
+                </Link>
+
+                <Link
+                  href="/registration"
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-white/10 hover:bg-white/15 text-white font-medium border border-white/20 hover:border-white/30 backdrop-blur-sm transition-all duration-200"
+                >
+                  <GraduationCap size={18} className="text-orange-400" />
+                  <span>Register Online</span>
+                </Link>
+
+                <Link
+                  href="/schedule"
+                  className="inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl text-gray-300 hover:text-white font-medium transition-colors"
+                >
+                  <Calendar size={18} className="text-blue-400" />
+                  <span>View Schedule</span>
+                </Link>
+              </motion.div>
+
+              {/* Trust Badges */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.6, delay: 0.4 }}
+                className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-8 border-t border-white/10"
+              >
+                <div>
+                  <p className="text-2xl sm:text-3xl font-extrabold text-white">50k+</p>
+                  <p className="text-xs text-gray-400 font-medium mt-0.5">Certified Candidates</p>
+                </div>
+                <div>
+                  <p className="text-2xl sm:text-3xl font-extrabold text-blue-400">99.4%</p>
+                  <p className="text-xs text-gray-400 font-medium mt-0.5">First-Time Pass Rate</p>
+                </div>
+                <div>
+                  <p className="text-2xl sm:text-3xl font-extrabold text-orange-400">100%</p>
+                  <p className="text-xs text-gray-400 font-medium mt-0.5">Portfolio NVQ Option</p>
+                </div>
+                <div>
+                  <p className="text-2xl sm:text-3xl font-extrabold text-emerald-400">Ofqual</p>
+                  <p className="text-xs text-gray-400 font-medium mt-0.5">Regulated Bodies</p>
+                </div>
+              </motion.div>
+            </div>
+
+            {/* Right Column: Interactive Highlights Card */}
+            <div className="lg:col-span-5">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.7, delay: 0.2 }}
+                className="relative rounded-2xl bg-white/5 border border-white/15 p-6 sm:p-8 backdrop-blur-xl shadow-2xl space-y-6 text-left"
+              >
+                <div className="flex items-center justify-between pb-4 border-b border-white/10">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-blue-600/30 border border-blue-400/40 flex items-center justify-center text-blue-400">
+                      <ShieldCheck size={22} />
                     </div>
+                    <div>
+                      <h3 className="font-semibold text-white text-base">Accredited Standards</h3>
+                      <p className="text-xs text-gray-400">Approved UK Assessment Centre</p>
+                    </div>
+                  </div>
+                  <span className="px-2.5 py-1 text-xs font-semibold rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                    Live Enrolment
+                  </span>
+                </div>
 
-                    <div className="overflow-hidden mb-6">
-                      <p
-                        className={`text-base md:text-lg lg:text-xl ${slide.textColor} opacity-90 animate-fadeInUp`}
-                        style={{ animationDelay: "0.4s" }}
-                      >
-                        {slide.subtext}
+                <div className="space-y-3.5">
+                  <div className="flex items-start gap-3 p-3.5 rounded-xl bg-white/5 border border-white/5">
+                    <CheckCircle2 size={18} className="text-blue-400 shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="text-sm font-semibold text-white">IOSH Membership Recognition</h4>
+                      <p className="text-xs text-gray-300 mt-0.5">
+                        NVQ Level 6 graduates are eligible for Graduate (GradIOSH) and Chartered (CMIOSH) membership.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3 p-3.5 rounded-xl bg-white/5 border border-white/5">
+                    <CheckCircle2 size={18} className="text-orange-400 shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="text-sm font-semibold text-white">No Formal Written Exams</h4>
+                      <p className="text-xs text-gray-300 mt-0.5">
+                        NVQ competence qualifications are assessed through authentic workplace evidence and portfolios.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3 p-3.5 rounded-xl bg-white/5 border border-white/5">
+                    <CheckCircle2 size={18} className="text-emerald-400 shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="text-sm font-semibold text-white">Flexible Intake & Invoicing</h4>
+                      <p className="text-xs text-gray-300 mt-0.5">
+                        Monthly enrolment intakes, corporate purchase order support, and zero-interest instalment plans.
                       </p>
                     </div>
                   </div>
                 </div>
-              )}
-            </div>
-          ))}
-        </div>
 
-        {/* Navigation Arrows */}
-        <button
-          onClick={prevSlide}
-          className="absolute left-2 md:left-4 top-1/2 transform -translate-y-1/2 bg-white/20 hover:bg-white/30 backdrop-blur-sm p-1.5 md:p-2 rounded-full transition-all duration-300 opacity-0 group-hover:opacity-100 hover:scale-110 active:scale-95 z-20 cursor-pointer"
-          aria-label="Previous slide"
-        >
-          <ChevronLeft className="w-4 h-4 md:w-5 md:h-5 text-white" />
-        </button>
-
-        <button
-          onClick={nextSlide}
-          className="absolute right-2 md:right-4 top-1/2 transform -translate-y-1/2 bg-white/20 hover:bg-white/30 backdrop-blur-sm p-1.5 md:p-2 rounded-full transition-all duration-300 opacity-0 group-hover:opacity-100 hover:scale-110 active:scale-95 z-20 cursor-pointer"
-          aria-label="Next slide"
-        >
-          <ChevronRight className="w-4 h-4 md:w-5 md:h-5 text-white" />
-        </button>
-
-        {/* Dots Indicator */}
-        <div className="absolute bottom-4 md:bottom-6 left-1/2 transform -translate-x-1/2 flex gap-1.5 md:gap-2 z-20">
-          {images.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => goToSlide(index)}
-              className={`w-1.5 h-1.5 md:w-2 md:h-2 rounded-full transition-all duration-300 cursor-pointer ${
-                index === currentIndex
-                  ? "bg-white scale-125"
-                  : "bg-white/50 hover:bg-white/70"
-              }`}
-              aria-label={`Go to slide ${index + 1}`}
-            />
-          ))}
-        </div>
-
-        {/* Custom CSS for animations */}
-        <style jsx global>{`
-          @keyframes fadeInUp {
-            from {
-              opacity: 0;
-              transform: translateY(20px);
-            }
-            to {
-              opacity: 1;
-              transform: translateY(0);
-            }
-          }
-
-          .animate-fadeInUp {
-            animation: fadeInUp 0.8s ease-out forwards;
-            opacity: 0;
-            animation-fill-mode: forwards;
-          }
-
-          /* Ensure images load properly */
-          .bg-cover {
-            background-size: cover;
-            background-position: center;
-          }
-
-          /* Mobile optimizations */
-          @media (max-width: 640px) {
-            .animate-fadeInUp {
-              animation: fadeInUp 0.6s ease-out forwards;
-            }
-          }
-        `}</style>
-      </div>
-
-      {/* About Us Section - Replacing SafetyHomePage */}
-      <AboutUsSection />
-      <FAQ />
-    </>
-  );
-};
-
-// AboutUsSection Component - Fixed with vertical animations
-const AboutUsSection = () => {
-  return (
-    <div className="min-h-screen bg-gray-50 py-16 px-4 sm:px-6 lg:px-8 overflow-x-hidden">
-      <div className="max-w-7xl mx-auto w-full">
-        {/* Header Section */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          viewport={{ once: true }}
-          className="text-center mb-16"
-        >
-          <div className="inline-flex items-center justify-center mb-6">
-            <div className="bg-blue-600 text-white px-6 py-2 rounded-full font-bold text-lg">
-              {webData.brand.shortName}.co.uk
-            </div>
-          </div>
-          <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight mb-6">
-            <span className="text-blue-600">ABOUT</span> US
-          </h1>
-          <div className="w-24 h-1 bg-blue-600 mx-auto mb-8"></div>
-        </motion.div>
-
-        {/* Main Content Section - Fixed overflow */}
-        <div className="flex flex-col lg:flex-row gap-12 items-start mb-16">
-          {/* Left Column - Text Content */}
-          <motion.div
-            initial={{ opacity: 0, y: 50 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            viewport={{ once: true }}
-            className="w-full lg:w-1/2"
-          >
-            <div className="bg-white p-6 md:p-8 rounded-2xl shadow-lg border border-gray-100">
-              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-6">
-                {webData.brand.shortName}: Developing and Awarding UK Safety & Technical
-                Qualifications:
-              </h2>
-              <div className="space-y-6">
-                <div className="text-base md:text-lg text-gray-700 leading-relaxed">
-                  <div className="font-semibold">
-                    {webData.brand.shortName} Qualifications is a UK-based awarding organisation
-                    specialising in safety and technical qualifications.
-                  </div>{" "}
-                  We are committed to developing, regulating, and awarding
-                  high-quality qualifications that meet industry standards and
-                  regulatory expectations. Our focus is to ensure that every
-                  certification issued under {webData.brand.shortName} reflects competence,
-                  compliance, and professional excellence.
+                <div className="pt-2">
+                  <Link
+                    href="/courses/nvq-level-6-diploma-occupational-health-safety-practice"
+                    className="w-full flex items-center justify-between p-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-medium text-sm transition-colors"
+                  >
+                    <span>Featured: NVQ Level 6 Diploma</span>
+                    <ChevronRight size={18} />
+                  </Link>
                 </div>
-
-                <div className="bg-blue-50 p-6 rounded-xl border-l-4 border-blue-500">
-                  <p className="text-gray-700 italic">
-                    &quot;Our certification pathways address real world industry
-                    needs, helping organizations reduce incidents while
-                    strengthening workforce capability.&quot;
-                  </p>
-                </div>
-
-                <p className="text-base md:text-lg text-gray-700 leading-relaxed">
-                  With a strong UK foundation and a global outlook, {webData.brand.shortName}
-                  empowers individuals and organizations to meet evolving safety
-                  and technical requirements with confidence. Our UK-backed
-                  certifications are designed to be relevant, practical and
-                  internationally accepted helping professionals remain capable,
-                  compliant, and competitive wherever they operate.
-                </p>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Right Column - Image and Features */}
-          <motion.div
-            initial={{ opacity: 0, y: 50 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            viewport={{ once: true }}
-            className="w-full lg:w-1/2"
-          >
-            <div className="space-y-8">
-              {/* Feature Image */}
-              <div className="relative h-72 md:h-96 rounded-2xl overflow-hidden shadow-2xl">
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-blue-900/20 z-10"></div>
-                <div
-                  className="absolute inset-0 bg-cover bg-center"
-                  style={{
-                    backgroundImage: `url(${bannarV2.src})`,
-                  }}
-                ></div>
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-6 z-20">
-                  <h3 className="text-white text-2xl font-bold">
-                    Global Safety Standards
-                  </h3>
-                  <p className="text-blue-100">
-                    Internationally recognized certifications
-                  </p>
-                </div>
-              </div>
-
-              {/* Key Points - Fixed grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <motion.div
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.3 }}
-                  viewport={{ once: true }}
-                  whileHover={{ y: -5 }}
-                  className="bg-white p-6 rounded-xl shadow-md border border-gray-100"
-                >
-                  <div className="flex items-center mb-4">
-                    <div className="bg-blue-100 p-3 rounded-lg mr-4 flex-shrink-0">
-                      <span className="text-blue-600 font-bold text-xl">
-                        UK
-                      </span>
-                    </div>
-                    <h3 className="font-bold text-gray-900">UK Registered</h3>
-                  </div>
-                  <p className="text-gray-600 text-sm">
-                    Registered in England and Wales with UK regulatory
-                    compliance
-                  </p>
-                </motion.div>
-
-                <motion.div
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.4 }}
-                  viewport={{ once: true }}
-                  whileHover={{ y: -5 }}
-                  className="bg-white p-6 rounded-xl shadow-md border border-gray-100"
-                >
-                  <div className="flex items-center mb-4">
-                    <div className="bg-green-100 p-3 rounded-lg mr-4 flex-shrink-0">
-                      <span className="text-green-600 font-bold text-xl">
-                        🌍
-                      </span>
-                    </div>
-                    <h3 className="font-bold text-gray-900">
-                      Global Recognition
-                    </h3>
-                  </div>
-                  <p className="text-gray-600 text-sm">
-                    Internationally accepted certifications across industries
-                    worldwide
-                  </p>
-                </motion.div>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-
-        {/* Mission Statement Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 50 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          viewport={{ once: true }}
-          className="bg-gradient-to-r from-blue-900 to-blue-800 rounded-2xl p-8 md:p-12 text-white mb-16"
-        >
-          <div className="max-w-4xl mx-auto text-center">
-            <h2 className="text-3xl md:text-4xl font-bold mb-6">Our Mission</h2>
-            <p className="text-xl text-blue-100 leading-relaxed">
-              To develop and award high-quality safety and technical
-              qualifications that uphold UK standards, promote compliance, and
-              support professional competence across industries.
-            </p>
-          </div>
-        </motion.div>
-
-        {/* Values Section */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          transition={{ duration: 0.8 }}
-          viewport={{ once: true }}
-          className="mb-16"
-        >
-          <h2 className="text-3xl font-bold text-gray-900 text-center mb-12">
-            Our Core Values
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              {
-                title: "Integrity",
-                description:
-                  "We operate with transparency, fairness, and independence, ensuring every qualification is awarded with credibility and trust.",
-                icon: "🤝",
-                color: "bg-indigo-50 border-indigo-100",
-              },
-              {
-                title: "Quality Assurance",
-                description:
-                  "We maintain rigorous approval and monitoring processes to uphold consistent standards across all approved centres.",
-                icon: "✅",
-                color: "bg-emerald-50 border-emerald-100",
-              },
-              {
-                title: "Excellence",
-                description:
-                  "We are committed to developing qualifications that meet high industry and regulatory expectations.",
-                icon: "⭐",
-                color: "bg-yellow-50 border-yellow-100",
-              },
-              {
-                title: "Compliance",
-                description:
-                  "We align our frameworks with UK regulatory standards to ensure reliability and professional recognition.",
-                icon: "📋",
-                color: "bg-blue-50 border-blue-100",
-              },
-              {
-                title: "Industry Relevance",
-                description:
-                  "We collaborate with sector specialists to ensure our qualifications remain practical, current, and aligned with workforce needs.",
-                icon: "🎯",
-                color: "bg-purple-50 border-purple-100",
-              },
-              {
-                title: "Accountability",
-                description:
-                  "We take responsibility for maintaining the integrity of our qualifications and the reputation of our approved centres.",
-                icon: "🛡️",
-                color: "bg-red-50 border-red-100",
-              },
-            ].map((value, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                viewport={{ once: true }}
-                whileHover={{ y: -5 }}
-                className={`${value.color} p-6 rounded-2xl border shadow-sm text-center flex flex-col items-center`}
-              >
-                <div className="text-4xl mb-4">{value.icon}</div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">
-                  {value.title}
-                </h3>
-                <p className="text-gray-600 text-sm leading-relaxed">
-                  {value.description}
-                </p>
               </motion.div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Awarding Bodies Ribbon */}
+      <section className="bg-gray-50 border-b border-gray-200 py-8 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <p className="text-center text-xs font-semibold uppercase tracking-wider text-gray-500 mb-6">
+            Recognised & Regulated By Leading UK Awarding Organisations
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-10 md:gap-14">
+            {AWARDING_BODIES_LIST.map((body, idx) => (
+              <div
+                key={idx}
+                className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-gray-200/80 shadow-xs hover:shadow-sm transition-shadow"
+              >
+                <span className="text-xl">{body.logo}</span>
+                <div className="text-left">
+                  <p className="text-sm font-bold text-gray-800">{body.name}</p>
+                  <p className="text-[10px] text-blue-600 font-medium">{body.type}</p>
+                </div>
+              </div>
             ))}
           </div>
-        </motion.div>
-      </div>
+        </div>
+      </section>
+
+      {/* Featured Courses Grid Section */}
+      <section className="py-16 md:py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div className="text-center max-w-3xl mx-auto mb-14 space-y-4">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold border border-blue-100">
+            <BookOpen size={13} />
+            <span>Featured Qualifications</span>
+          </div>
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight">
+            Popular Professional Qualifications
+          </h2>
+          <p className="text-gray-600 text-base sm:text-lg">
+            Choose from industry-standard vocational certificates, NVQ diplomas, and executive management pathways.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {FEATURED_COURSES.map((course) => (
+            <div
+              key={course.id}
+              className={`relative flex flex-col justify-between rounded-2xl border ${
+                course.popular
+                  ? "border-blue-600 ring-2 ring-blue-600/20 shadow-xl"
+                  : "border-gray-200 shadow-sm hover:shadow-md"
+              } bg-white p-6 sm:p-8 transition-all duration-200 hover:-translate-y-1`}
+            >
+              {course.popular && (
+                <div className="absolute -top-3 right-6 bg-linear-to-r from-blue-600 to-indigo-600 text-white text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full shadow-sm">
+                  Most Popular
+                </div>
+              )}
+
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className={`text-xs font-semibold px-2.5 py-1 rounded-md border ${course.levelColor}`}>
+                    {course.level}
+                  </span>
+                  <span className="text-xs text-gray-500 font-medium flex items-center gap-1">
+                    <Award size={13} className="text-gray-400" />
+                    {course.body}
+                  </span>
+                </div>
+
+                <h3 className="text-xl font-bold text-gray-900 leading-snug hover:text-blue-600 transition-colors">
+                  <Link href={`/courses/${course.slug}`}>{course.title}</Link>
+                </h3>
+
+                <p className="text-gray-600 text-sm leading-relaxed">{course.description}</p>
+
+                <div className="flex items-center gap-4 text-xs text-gray-500 pt-1">
+                  <div className="flex items-center gap-1.5 font-medium">
+                    <Clock size={14} className="text-blue-500" />
+                    <span>{course.duration}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 font-medium">
+                    <MapPin size={14} className="text-orange-500" />
+                    <span>Online / UK Centre</span>
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-gray-100 space-y-2">
+                  <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Key Highlights:</p>
+                  {course.highlights.map((h, i) => (
+                    <div key={i} className="flex items-center gap-2 text-xs text-gray-600">
+                      <Check size={14} className="text-emerald-500 shrink-0" />
+                      <span>{h}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pt-6 mt-6 border-t border-gray-100 flex items-center justify-between">
+                <div>
+                  <p className="text-[11px] text-gray-400 font-medium">Fee</p>
+                  <p className="text-2xl font-extrabold text-gray-900">{course.price}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Link
+                    href={`/registration?course=${course.slug}`}
+                    className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg shadow-sm transition-colors"
+                  >
+                    Enrol Now
+                  </Link>
+                  <Link
+                    href={`/courses/${course.slug}`}
+                    className="px-3 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-medium rounded-lg transition-colors"
+                    aria-label={`View details for ${course.title}`}
+                  >
+                    <ArrowRight size={14} />
+                  </Link>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-12 text-center">
+          <Link
+            href="/courses"
+            className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl border border-gray-300 hover:border-gray-400 bg-white hover:bg-gray-50 text-gray-800 font-semibold shadow-xs transition-colors"
+          >
+            <span>View All Qualifications & Courses</span>
+            <ArrowRight size={16} />
+          </Link>
+        </div>
+      </section>
+
+      {/* Qualifications Pathway Ladder */}
+      <section className="bg-slate-900 text-white py-16 md:py-24 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-xs font-semibold border border-blue-400/30">
+              <Layers size={13} />
+              <span>Career Progression Ladder</span>
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+              Regulated Qualifications Framework (RQF) Pathways
+            </h2>
+            <p className="text-gray-300 text-base sm:text-lg">
+              Structured stepping stones from foundational safety competence to chartered director status.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {PATHWAYS.map((p, idx) => (
+              <div
+                key={idx}
+                className="relative rounded-2xl bg-white/5 border border-white/10 p-6 flex flex-col justify-between hover:bg-white/10 transition-all duration-200"
+              >
+                <div className="space-y-4">
+                  <div
+                    className={`inline-flex items-center justify-center px-3 py-1 rounded-lg bg-linear-to-r ${p.color} text-white font-bold text-xs`}
+                  >
+                    {p.level}
+                  </div>
+                  <h3 className="text-lg font-bold text-white">{p.title}</h3>
+                  <div className="space-y-2 text-xs text-gray-300">
+                    <p>
+                      <strong className="text-white">Target Audience:</strong> {p.target}
+                    </p>
+                    <p>
+                      <strong className="text-white">Key Outcome:</strong> {p.outcome}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="pt-6 mt-6 border-t border-white/10">
+                  <Link
+                    href={`/courses?level=${p.level.toLowerCase().replace(" ", "-")}`}
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-400 hover:text-blue-300"
+                  >
+                    <span>Browse {p.level} Courses</span>
+                    <ArrowRight size={13} />
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Why Choose Ababeel (Key USPs) */}
+      <section className="py-16 md:py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-50 text-orange-700 text-xs font-semibold border border-orange-100">
+            <ShieldCheck size={13} />
+            <span>The Ababeel Advantage</span>
+          </div>
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight">
+            Why Professionals & Organisations Choose Ababeel
+          </h2>
+          <p className="text-gray-600 text-base sm:text-lg">
+            We deliver flexible, rigorous vocational qualifications tailored for working practitioners.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="p-6 rounded-2xl bg-blue-50/50 border border-blue-100 text-left space-y-3">
+            <div className="w-12 h-12 rounded-xl bg-blue-600 text-white flex items-center justify-center">
+              <FileCheck size={24} />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900">100% Portfolio Assessment</h3>
+            <p className="text-sm text-gray-600 leading-relaxed">
+              No stressful written exams for NVQs. Demonstrate your competence through real workplace documentation and evidence.
+            </p>
+          </div>
+
+          <div className="p-6 rounded-2xl bg-orange-50/50 border border-orange-100 text-left space-y-3">
+            <div className="w-12 h-12 rounded-xl bg-orange-500 text-white flex items-center justify-center">
+              <Users size={24} />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900">Dedicated 1-on-1 Assessors</h3>
+            <p className="text-sm text-gray-600 leading-relaxed">
+              Every candidate is paired with a qualified, highly experienced UK occupational safety assessor for continuous guidance.
+            </p>
+          </div>
+
+          <div className="p-6 rounded-2xl bg-emerald-50/50 border border-emerald-100 text-left space-y-3">
+            <div className="w-12 h-12 rounded-xl bg-emerald-600 text-white flex items-center justify-center">
+              <Clock size={24} />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900">Fast-Track Verification</h3>
+            <p className="text-sm text-gray-600 leading-relaxed">
+              Expedited internal verification and rapid certificate claim processing through our direct awarding body integrations.
+            </p>
+          </div>
+
+          <div className="p-6 rounded-2xl bg-purple-50/50 border border-purple-100 text-left space-y-3">
+            <div className="w-12 h-12 rounded-xl bg-purple-600 text-white flex items-center justify-center">
+              <Building2 size={24} />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900">Corporate & Group Invoicing</h3>
+            <p className="text-sm text-gray-600 leading-relaxed">
+              Full support for corporate purchase orders, employer billing, candidate tracking, and approved training centre (ATC) partnerships.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Candidate Testimonials */}
+      <section className="bg-gray-50 border-t border-gray-200 py-16 md:py-24 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center max-w-3xl mx-auto mb-14 space-y-4">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-100">
+              <Star size={13} className="text-emerald-600" />
+              <span>Candidate Reviews</span>
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight">
+              Trusted by Health & Safety Leaders
+            </h2>
+            <p className="text-gray-600 text-base">
+              See what our certified professionals say about their qualification journey with Ababeel.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {TESTIMONIALS.map((t, idx) => (
+              <div
+                key={idx}
+                className="bg-white rounded-2xl border border-gray-200 p-6 sm:p-8 shadow-xs flex flex-col justify-between"
+              >
+                <div className="space-y-4">
+                  <div className="flex items-center gap-1 text-amber-400">
+                    {Array.from({ length: t.rating }).map((_, i) => (
+                      <Star key={i} size={16} fill="currentColor" />
+                    ))}
+                  </div>
+                  <p className="text-gray-700 text-sm leading-relaxed italic">"{t.quote}"</p>
+                </div>
+
+                <div className="pt-6 mt-6 border-t border-gray-100 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-linear-to-tr from-blue-600 to-indigo-600 text-white font-bold flex items-center justify-center text-sm shrink-0">
+                    {t.initials}
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-gray-900">{t.name}</h4>
+                    <p className="text-xs text-gray-500">
+                      {t.role} • <span className="text-blue-600 font-medium">{t.company}</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <FAQ />
+
+      {/* High-Impact Bottom Call to Action */}
+      <section className="bg-linear-to-r from-blue-900 via-indigo-900 to-slate-900 text-white py-16 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-5xl mx-auto text-center space-y-6">
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+            Ready to Achieve Your Regulated Qualification?
+          </h2>
+          <p className="text-gray-300 text-base sm:text-lg max-w-2xl mx-auto">
+            Enrol online today or speak with an academic advisor to discuss your prior experience, portfolio requirements, and corporate group discounts.
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
+            <Link
+              href="/registration"
+              className="px-8 py-3.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold shadow-lg shadow-orange-500/30 transition-all duration-200"
+            >
+              Enrol Online Now
+            </Link>
+            <Link
+              href="/contact-us"
+              className="px-6 py-3.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-medium border border-white/20 backdrop-blur-sm transition-colors"
+            >
+              Contact Training Team
+            </Link>
+          </div>
+        </div>
+      </section>
     </div>
   );
 };

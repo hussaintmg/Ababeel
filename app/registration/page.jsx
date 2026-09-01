@@ -1,6 +1,6 @@
 import { Section, Container, Breadcrumb } from "@/Components/ui";
 import CmsSlot from "@/Components/cms/CmsSlot";
-import { getPublicCourseById, getPublicSessionById } from "@/lib/training/queries";
+import { getPublicCourseById, getPublicSessionById, listPublicCourses } from "@/lib/training/queries";
 import { getFormFields, toPublicField } from "@/lib/training/registrationForm";
 import { getRegistrationPanel, getTrainingSettings, getPaymentInfo } from "@/lib/training/settings";
 import { registrationCta } from "@/lib/training/status";
@@ -9,13 +9,6 @@ import RegistrationForm from "@/app/registration/RegistrationForm";
 
 /**
  * Registration.
- *
- * The course and session come from the query string —
- * /registration?course=<id>&reference=<id> — and are resolved here so the page
- * shows what the visitor is signing up for without asking them to choose it
- * again. Both are re-validated on submit; this resolution is for display.
- *
- * No payment: see lib/payments/provider.js.
  */
 export const dynamic = "force-dynamic";
 
@@ -24,8 +17,6 @@ export async function generateMetadata() {
     title: "Register For Training",
     description:
       "Register for an upcoming Ababeel training session. Our team will confirm your place.",
-    // A form has nothing to offer a search index, and an indexed one collects
-    // stray submissions with no course attached.
   }).then((meta) => ({ ...meta, robots: { index: false, follow: true } }));
 }
 
@@ -34,21 +25,20 @@ export default async function RegistrationPage({ searchParams }) {
   const courseId = typeof params?.course === "string" ? params.course : "";
   const sessionId = typeof params?.reference === "string" ? params.reference : "";
 
-  const [course, sessionRaw, fields, panel, training, payment] = await Promise.all([
+  const [course, sessionRaw, coursesList, fields, panel, training, payment] = await Promise.all([
     courseId ? getPublicCourseById(courseId) : Promise.resolve(null),
     sessionId ? getPublicSessionById(sessionId) : Promise.resolve(null),
+    listPublicCourses({ limit: 100 }),
     getFormFields().catch(() => []),
     getRegistrationPanel(),
     getTrainingSettings(),
     getPaymentInfo(),
   ]);
 
-  // A session belonging to a different course means a stale or hand-edited
-  // link. Dropping it is better than showing a summary that contradicts itself.
   const session =
     sessionRaw && course && String(sessionRaw.course?._id || sessionRaw.course) === String(course._id)
       ? sessionRaw
-      : null;
+      : sessionRaw || null;
 
   const copy = training?.registration || {};
 
@@ -83,6 +73,7 @@ export default async function RegistrationPage({ searchParams }) {
           fields: fields.map(toPublicField),
           course,
           session,
+          courses: coursesList?.items || [],
           cta: session ? registrationCta(session) : null,
           panel,
           payment,

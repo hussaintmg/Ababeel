@@ -37,7 +37,7 @@ function buildTopbarCss(s = {}) {
   return r.join("\n");
 }
 
-export default function Topbar({ mobileOpen, setMobileOpen, navLinks }) {
+export default function Topbar({ mobileOpen, setMobileOpen, navLinks, loading = false }) {
   const { user, setUser } = useAuth();
   const { settings } = useSiteContent();
   const router = useRouter();
@@ -223,67 +223,79 @@ export default function Topbar({ mobileOpen, setMobileOpen, navLinks }) {
           {/* Center: Desktop Navigation */}
           <nav className="hidden lg:flex items-center flex-1" style={{ justifyContent: navJustify }}>
             <div className="flex items-center gap-0 xl:gap-1">
-              {navLinks.map((item, index) => (
-                <div
-                  key={index}
-                  ref={(el) => {
-                    dropdownRefs.current[index] = el;
-                  }}
-                  className="relative group"
-                  onMouseEnter={() => handleMouseEnter(index)}
-                  onMouseLeave={() => handleMouseLeave(index)}
-                >
-                  {item.dropdown ? (
-                    <button
-                      type="button"
-                      className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors rounded-lg hover:bg-blue-50 whitespace-nowrap xl:px-4 cursor-pointer relative z-10"
-                    >
-                      {item.name}
-                      <ChevronDown
-                        size={16}
-                        className={`ml-1 transition-transform duration-200 ${
-                          openDropdown === index ? "rotate-180" : ""
-                        }`}
-                      />
-                    </button>
-                  ) : (
-                    <Link
-                      href={item.url}
-                      aria-current={isActive(item.url) ? "page" : undefined}
-                      className="px-3 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors rounded-lg hover:bg-blue-50 whitespace-nowrap xl:px-4 relative z-10"
-                    >
-                      {item.name}
-                    </Link>
-                  )}
-
-                  {/* Dropdown Menu with better positioning */}
-                  {item.dropdown && openDropdown === index && (
+              {loading || !Array.isArray(navLinks) || navLinks.length === 0 ? (
+                <div className="flex items-center gap-2 xl:gap-3 py-2 px-2" aria-label="Loading navigation">
+                  {[72, 64, 80, 110, 76, 96].map((width, idx) => (
                     <div
-                      className="cms-dropdown absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-xl overflow-hidden z-50 border-t-2 border-t-red-500"
-                      onMouseEnter={() => handleDropdownMouseEnter(index)}
-                      onMouseLeave={() => handleDropdownMouseLeave(index)}
-                      style={{
-                        animation: "fadeIn 0.2s ease-out",
-                      }}
-                    >
-                      <div className="py-1">
-                        {item.dropdown.map((drop, i) => (
-                          <Link
-                            key={i}
-                            href={drop.url}
-                            className="block px-4 py-3 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 transition-colors border-b border-gray-100 last:border-b-0"
-                            onClick={() => setOpenDropdown(null)}
-                          >
-                            <div className="flex items-center">
-                              <span>{drop.name}</span>
-                            </div>
-                          </Link>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                      key={idx}
+                      style={{ width: `${width}px` }}
+                      className="h-7 bg-gray-200 animate-pulse rounded-lg"
+                    />
+                  ))}
                 </div>
-              ))}
+              ) : (
+                navLinks.map((item, index) => (
+                  <div
+                    key={index}
+                    ref={(el) => {
+                      dropdownRefs.current[index] = el;
+                    }}
+                    className="relative group"
+                    onMouseEnter={() => handleMouseEnter(index)}
+                    onMouseLeave={() => handleMouseLeave(index)}
+                  >
+                    {item.dropdown ? (
+                      <button
+                        type="button"
+                        className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors rounded-lg hover:bg-blue-50 whitespace-nowrap xl:px-4 cursor-pointer relative z-10"
+                      >
+                        {item.name}
+                        <ChevronDown
+                          size={16}
+                          className={`ml-1 transition-transform duration-200 ${
+                            openDropdown === index ? "rotate-180" : ""
+                          }`}
+                        />
+                      </button>
+                    ) : (
+                      <Link
+                        href={item.url}
+                        aria-current={isActive(item.url) ? "page" : undefined}
+                        className="px-3 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors rounded-lg hover:bg-blue-50 whitespace-nowrap xl:px-4 relative z-10"
+                      >
+                        {item.name}
+                      </Link>
+                    )}
+
+                    {/* Dropdown Menu with better positioning */}
+                    {item.dropdown && openDropdown === index && (
+                      <div
+                        className="cms-dropdown absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-xl overflow-hidden z-50 border-t-2 border-t-red-500"
+                        onMouseEnter={() => handleDropdownMouseEnter(index)}
+                        onMouseLeave={() => handleDropdownMouseLeave(index)}
+                        style={{
+                          animation: "fadeIn 0.2s ease-out",
+                        }}
+                      >
+                        <div className="py-1">
+                          {item.dropdown.map((drop, i) => (
+                            <Link
+                              key={i}
+                              href={drop.url}
+                              className="block px-4 py-3 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 transition-colors border-b border-gray-100 last:border-b-0"
+                              onClick={() => setOpenDropdown(null)}
+                            >
+                              <div className="flex items-center">
+                                <span>{drop.name}</span>
+                              </div>
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
             </div>
           </nav>
 

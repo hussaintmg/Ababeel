@@ -37,8 +37,11 @@ export default async function connectDB() {
     throw new Error("MongoDB is unreachable");
   }
 
+  const rawUri = (process.env.MONGO_URI || "").trim();
+  const cleanUri = rawUri.replace(/\/+(\?)/, "$1").replace(/\/+$/, "");
+
   connecting = mongoose
-    .connect(process.env.MONGO_URI, {
+    .connect(cleanUri, {
       bufferCommands: false,
       serverSelectionTimeoutMS: 5000,
     })
