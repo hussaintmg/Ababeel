@@ -1,5 +1,4 @@
 "use client";
-import { useState, useMemo } from "react";
 
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "react-toastify";
@@ -26,7 +25,11 @@ import {
   ChevronRight,
   Clock,
   Tag,
+  Loader2,
 } from "lucide-react";
+import { useState, useMemo, useEffect } from "react";
+import DataTablePagination from "@/Components/common/DataTablePagination";
+import DataTableBulkBar from "@/Components/common/DataTableBulkBar";
 
 const Enquiries = () => {
   const { user } = useAuth();
@@ -35,6 +38,11 @@ const Enquiries = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [showFilters, setShowFilters] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   // Data is now fetched and refreshed by ContactReferenceContext
 
@@ -67,6 +75,63 @@ const Enquiries = () => {
       return matchesSearch && matchesStatus;
     });
   }, [searchTerm, statusFilter, enquiries]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm, statusFilter]);
+
+  const totalItems = filteredEnquiries.length;
+  const totalPages = Math.ceil(totalItems / pageSize) || 1;
+  const startIndex = (page - 1) * pageSize;
+  const visibleEnquiries = filteredEnquiries.slice(startIndex, startIndex + pageSize);
+
+  const isPageAllSelected =
+    visibleEnquiries.length > 0 &&
+    visibleEnquiries.every((e) => selectedIds.includes(e._id));
+  const isPageSomeSelected =
+    visibleEnquiries.some((e) => selectedIds.includes(e._id)) && !isPageAllSelected;
+
+  const handleSelectAllOnPage = () => {
+    if (isPageAllSelected) {
+      setSelectedIds((prev) =>
+        prev.filter((id) => !visibleEnquiries.some((e) => e._id === id))
+      );
+    } else {
+      const pageIds = visibleEnquiries.map((e) => e._id);
+      setSelectedIds((prev) => Array.from(new Set([...prev, ...pageIds])));
+    }
+  };
+
+  const handleToggleRow = (id) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkDelete = async () => {
+    if (!selectedIds.length) return;
+    try {
+      setDeleting(true);
+      const res = await axios.delete("/api/enquiries", {
+        data: { ids: selectedIds },
+      });
+      if (res.data?.success) {
+        toast.success(res.data.message || "Enquiries deleted successfully");
+        setEnquiries((prev) => prev.filter((e) => !selectedIds.includes(e._id)));
+        setSelectedIds([]);
+        setShowDeleteModal(false);
+        if (selectedEnquiry && selectedIds.includes(selectedEnquiry._id)) {
+          setSelectedEnquiry(null);
+        }
+      } else {
+        toast.error(res.data?.error || "Failed to delete enquiries");
+      }
+    } catch (err) {
+      toast.error(err?.response?.data?.error || "Failed to delete enquiries");
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const markAsRead = async (id) => {
     try {
@@ -128,6 +193,7 @@ const Enquiries = () => {
       
       // Remove from state
       setEnquiries(prev => prev.filter(enquiry => enquiry._id !== id));
+      setSelectedIds(prev => prev.filter(item => item !== id));
       
       // If viewing this enquiry, close it
       if (selectedEnquiry && selectedEnquiry._id === id) {
@@ -304,11 +370,38 @@ const Enquiries = () => {
 
       {/* Enquiries List */}
       <div className="w-full px-4 sm:px-6 md:px-8 pb-6 sm:pb-8 lg:pb-10">
+        <DataTableBulkBar
+          selectedCount={selectedIds.length}
+          onClearSelection={() => setSelectedIds([])}
+          actions={
+            <button
+              type="button"
+              onClick={() => setShowDeleteModal(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors shadow-sm"
+            >
+              <Trash2 size={13} />
+              Delete Selected ({selectedIds.length})
+            </button>
+          }
+        />
+
         <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           {/* Desktop Table Header */}
           <div className="hidden md:block bg-gray-50 px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
-            <div className="grid grid-cols-12 gap-4 text-xs sm:text-sm font-medium text-gray-700">
-              <div className="col-span-4">Contact</div>
+            <div className="grid grid-cols-12 gap-4 text-xs sm:text-sm font-medium text-gray-700 items-center">
+              <div className="col-span-1 flex items-center">
+                <input
+                  type="checkbox"
+                  checked={isPageAllSelected}
+                  ref={(el) => {
+                    if (el) el.indeterminate = isPageSomeSelected;
+                  }}
+                  onChange={handleSelectAllOnPage}
+                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                  aria-label="Select all enquiries on this page"
+                />
+              </div>
+              <div className="col-span-3">Contact</div>
               <div className="col-span-3">Company</div>
               <div className="col-span-2">Inquiry Type</div>
               <div className="col-span-2">Date</div>
@@ -318,18 +411,38 @@ const Enquiries = () => {
 
           {/* Enquiries List */}
           <div className="divide-y divide-gray-200">
-            {filteredEnquiries.length > 0 ? (
-              filteredEnquiries.map((enquiry) => (
+            {visibleEnquiries.length > 0 ? (
+              visibleEnquiries.map((enquiry) => {
+                const isSelected = selectedIds.includes(enquiry._id);
+                return (
                 <div key={enquiry._id}>
                   {/* Desktop View */}
                   <div
                     className={`hidden md:block px-4 sm:px-6 py-3 sm:py-4 hover:bg-gray-50 transition-colors ${
-                      enquiry.status === "pending" ? "bg-blue-50/50" : ""
+                      isSelected
+                        ? "bg-blue-50/70"
+                        : enquiry.status === "pending"
+                        ? "bg-blue-50/50"
+                        : ""
                     }`}
                   >
                     <div className="grid grid-cols-12 gap-4 items-center">
+                      {/* Checkbox */}
+                      <div
+                        className="col-span-1 flex items-center"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => handleToggleRow(enquiry._id)}
+                          className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                          aria-label={`Select enquiry from ${enquiry.fullname}`}
+                        />
+                      </div>
+
                       {/* Contact Info */}
-                      <div className="col-span-4">
+                      <div className="col-span-3">
                         <div className="flex items-center gap-3 min-w-0">
                           <div className="w-8 h-8 sm:w-9 sm:h-9 lg:w-10 lg:h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
                             <User className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
@@ -430,12 +543,23 @@ const Enquiries = () => {
                   {/* Mobile Card View */}
                   <div
                     className={`md:hidden p-4 hover:bg-gray-50 transition-colors ${
-                      enquiry.status === "pending" ? "bg-blue-50/50" : ""
+                      isSelected
+                        ? "bg-blue-50/70"
+                        : enquiry.status === "pending"
+                        ? "bg-blue-50/50"
+                        : ""
                     }`}
                   >
-                    {/* Header with Name and Status */}
+                    {/* Header with Checkbox, Name and Status */}
                     <div className="flex items-start justify-between gap-2 mb-3">
                       <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => handleToggleRow(enquiry._id)}
+                          className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer mr-1"
+                          aria-label={`Select enquiry from ${enquiry.fullname}`}
+                        />
                         <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
                           <User className="w-4 h-4 text-blue-600" />
                         </div>
@@ -558,7 +682,8 @@ const Enquiries = () => {
                     </div>
                   </div>
                 </div>
-              ))
+              );
+              })
             ) : (
               <div className="px-4 sm:px-6 py-8 sm:py-10 lg:py-12 text-center">
                 <MessageSquare className="w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14 text-gray-300 mx-auto mb-3 sm:mb-4" />
@@ -573,8 +698,58 @@ const Enquiries = () => {
               </div>
             )}
           </div>
+
+          <DataTablePagination
+            page={page}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={(newSize) => {
+              setPageSize(newSize);
+              setPage(1);
+            }}
+            itemName="enquiries"
+          />
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-md bg-white rounded-2xl p-6 shadow-2xl space-y-4">
+            <h3 className="text-lg font-bold text-gray-900">
+              Delete Enquiries
+            </h3>
+            <p className="text-sm text-gray-600">
+              Are you sure you want to permanently delete{" "}
+              <span className="font-semibold text-gray-900">
+                {selectedIds.length} enquiry(ies)
+              </span>
+              ? This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowDeleteModal(false)}
+                disabled={deleting}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleBulkDelete}
+                disabled={deleting}
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-xl transition-colors disabled:opacity-50"
+              >
+                {deleting && <Loader2 className="w-4 h-4 animate-spin" />}
+                Delete {selectedIds.length} Enquiry(ies)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Enquiry Details Modal */}
       {selectedEnquiry && (

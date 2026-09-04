@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   ChevronDown,
@@ -19,6 +19,8 @@ import { toast } from "react-toastify";
 import { useAuth } from "@/context/AuthContext";
 import ConfirmationModal from "@/Components/ConfirmationModal";
 import { useInvoices } from "@/context/InvoiceContext";
+import DataTablePagination from "@/Components/common/DataTablePagination";
+import DataTableBulkBar from "@/Components/common/DataTableBulkBar";
 
 export default function AddCandidatesPage() {
   const { id: courseId } = useParams();
@@ -32,6 +34,7 @@ export default function AddCandidatesPage() {
     updateCandidate,
     deleteCandidate,
     addCandidateWithCSV,
+    refreshCourses,
   } = useCourseReference();
   const [course, setCourse] = useState({});
 
@@ -55,6 +58,124 @@ export default function AddCandidatesPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [candidateToDelete, setCandidateToDelete] = useState(null);
   const [deleteCandidateInfo, setDeleteCandidateInfo] = useState(null);
+
+  // Pagination & Multi-Page Persistent Selection
+  const [candidatePage, setCandidatePage] = useState(1);
+  const [candidatePageSize, setCandidatePageSize] = useState(20);
+  const [candidateSearch, setCandidateSearch] = useState("");
+  const [selectedCandidates, setSelectedCandidates] = useState([]);
+  const [showDeleteSelectedModal, setShowDeleteSelectedModal] = useState(false);
+  const [isDeletingSelected, setIsDeletingSelected] = useState(false);
+  const [selectedCandidatesList, setSelectedCandidatesList] = useState([]);
+
+  // Filter candidates by search
+  const filteredCandidates = useMemo(() => {
+    if (!candidateSearch.trim()) return candidates;
+    const q = candidateSearch.toLowerCase();
+    return candidates.filter(
+      (c) =>
+        c.firstName?.toLowerCase().includes(q) ||
+        c.lastName?.toLowerCase().includes(q) ||
+        c.name?.toLowerCase().includes(q) ||
+        c.email?.toLowerCase().includes(q) ||
+        c.traineeId?.toLowerCase().includes(q) ||
+        c.country?.toLowerCase().includes(q),
+    );
+  }, [candidates, candidateSearch]);
+
+  // Current page visible slice
+  const startIndex = (candidatePage - 1) * candidatePageSize;
+  const visibleCandidates = useMemo(() => {
+    return filteredCandidates.slice(startIndex, startIndex + candidatePageSize);
+  }, [filteredCandidates, startIndex, candidatePageSize]);
+
+  // Check if all visible rows on CURRENT page are selected
+  const isPageAllSelected =
+    visibleCandidates.length > 0 &&
+    visibleCandidates.every((c) => selectedCandidates.includes(c._id));
+
+  const isPageSomeSelected =
+    !isPageAllSelected &&
+    visibleCandidates.some((c) => selectedCandidates.includes(c._id));
+
+  // Toggle selection for a single candidate
+  const handleSelectCandidate = (candidateId) => {
+    setSelectedCandidates((prev) =>
+      prev.includes(candidateId)
+        ? prev.filter((id) => id !== candidateId)
+        : [...prev, candidateId],
+    );
+  };
+
+  // Toggle selection for visible rows on the CURRENT page (persisting selections across other pages)
+  const handleToggleSelectPage = () => {
+    if (isPageAllSelected) {
+      const visibleIds = new Set(visibleCandidates.map((c) => c._id));
+      setSelectedCandidates((prev) => prev.filter((id) => !visibleIds.has(id)));
+    } else {
+      const visibleIds = visibleCandidates.map((c) => c._id);
+      setSelectedCandidates((prev) =>
+        Array.from(new Set([...prev, ...visibleIds])),
+      );
+    }
+  };
+
+  const handlePageSizeChange = (newSize) => {
+    setCandidatePageSize(newSize);
+    setCandidatePage(1);
+  };
+
+  const handleDeleteSelected = () => {
+    const selectedCandidatesData = candidates.filter((c) =>
+      selectedCandidates.includes(c._id),
+    );
+    setSelectedCandidatesList(selectedCandidatesData);
+    setShowDeleteSelectedModal(true);
+  };
+
+  const handleConfirmDeleteSelected = async () => {
+    setIsDeletingSelected(true);
+
+    try {
+      const result = await axios.delete(
+        "/api/course-ref/candidates/deleteMany",
+        {
+          data: {
+            courseId,
+            candidateIds: selectedCandidates,
+          },
+        },
+      );
+
+      if (!result.data.success) {
+        toast.error(result.data.error || "Failed to delete candidates");
+        return;
+      }
+
+      // Update local state
+      setCandidates((prev) =>
+        prev.filter((c) => !selectedCandidates.includes(c._id)),
+      );
+
+      // Clear selections
+      setSelectedCandidates([]);
+      if (typeof refreshCourses === "function") {
+        refreshCourses();
+      }
+      await fetchInvoices();
+
+      toast.success(
+        `${selectedCandidates.length} candidates deleted successfully!`,
+      );
+    } catch (error) {
+      console.error("Error deleting candidates:", error);
+      toast.error("Failed to delete selected candidates");
+    } finally {
+      setIsDeletingSelected(false);
+      setShowDeleteSelectedModal(false);
+      setSelectedCandidatesList([]);
+    }
+  };
 
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploadFile, setUploadFile] = useState(null);
@@ -1329,15 +1450,69 @@ export default function AddCandidatesPage() {
 
               <div className="bg-white rounded-xl shadow-sm overflow-hidden">
                 <div className="px-6 py-4 border-b border-gray-200">
-                  <h2 className="text-lg font-semibold text-gray-800">
-                    Added Candidates ({candidates.length})
-                  </h2>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                      <h2 className="text-lg font-semibold text-gray-800">
+                        Added Candidates ({candidates.length})
+                      </h2>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        Manage enrolled trainees, review scores, and make changes
+                      </p>
+                    </div>
+
+                    {/* Search candidates */}
+                    <div className="relative w-full sm:w-72">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <input
+                        type="text"
+                        placeholder="Search candidates..."
+                        value={candidateSearch}
+                        onChange={(e) => {
+                          setCandidateSearch(e.target.value);
+                          setCandidatePage(1);
+                        }}
+                        className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Persistent Multi-Page Selection Banner */}
+                <div className="px-6 pt-4">
+                  <DataTableBulkBar
+                    selectedCount={selectedCandidates.length}
+                    onClearSelection={() => setSelectedCandidates([])}
+                    itemName="candidates"
+                  >
+                    <button
+                      onClick={handleDeleteSelected}
+                      className="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors shadow-xs"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 mr-1" />
+                      Delete Selected
+                    </button>
+                  </DataTableBulkBar>
                 </div>
 
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-12">
+                          <div className="flex items-center justify-center">
+                            <input
+                              type="checkbox"
+                              checked={isPageAllSelected}
+                              ref={(el) => {
+                                if (el) {
+                                  el.indeterminate = isPageSomeSelected;
+                                }
+                              }}
+                              onChange={handleToggleSelectPage}
+                              className="w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500 focus:ring-2 cursor-pointer"
+                            />
+                          </div>
+                        </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Photo
                         </th>
@@ -1359,22 +1534,51 @@ export default function AddCandidatesPage() {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {candidates.length === 0 ? (
+                      {filteredCandidates.length === 0 ? (
                         <tr>
                           <td
-                            colSpan="6"
+                            colSpan="7"
                             className="px-6 py-12 text-center text-gray-500"
                           >
-                            <User className="h-12 w-12 mx-auto text-gray-300 mb-3" />
-                            <p>No candidates added yet</p>
-                            <p className="text-sm mt-1">
-                              Add your first candidate using the form above
-                            </p>
+                            <div className="flex flex-col items-center justify-center">
+                              <User className="h-12 w-12 text-gray-300 mb-3" />
+                              <p className="text-base font-medium text-gray-700">
+                                {candidateSearch
+                                  ? "No candidates match your search"
+                                  : "No candidates added yet"}
+                              </p>
+                              <p className="text-sm mt-1">
+                                {candidateSearch
+                                  ? "Try a different search term"
+                                  : "Add your first candidate using the form above"}
+                              </p>
+                            </div>
                           </td>
                         </tr>
                       ) : (
-                        candidates.map((candidate) => (
-                          <tr key={candidate._id} className="hover:bg-gray-50">
+                        visibleCandidates.map((candidate) => (
+                          <tr
+                            key={candidate._id}
+                            className={`hover:bg-gray-50 transition-colors duration-150 ${
+                              selectedCandidates.includes(candidate._id)
+                                ? "bg-blue-50"
+                                : ""
+                            }`}
+                          >
+                            <td className="px-4 py-4 whitespace-nowrap">
+                              <div className="flex items-center justify-center">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedCandidates.includes(
+                                    candidate._id,
+                                  )}
+                                  onChange={() =>
+                                    handleSelectCandidate(candidate._id)
+                                  }
+                                  className="w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500 focus:ring-2 cursor-pointer"
+                                />
+                              </div>
+                            </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="h-10 w-10 rounded-full overflow-hidden bg-gray-100">
                                 {candidate.profile?.url ? (
@@ -1443,6 +1647,16 @@ export default function AddCandidatesPage() {
                     </tbody>
                   </table>
                 </div>
+
+                {/* Live Counter & Pagination */}
+                <DataTablePagination
+                  page={candidatePage}
+                  pageSize={candidatePageSize}
+                  totalItems={filteredCandidates.length}
+                  onPageChange={setCandidatePage}
+                  onPageSizeChange={handlePageSizeChange}
+                  itemName="candidates"
+                />
               </div>
             </div>
 
@@ -1572,6 +1786,49 @@ export default function AddCandidatesPage() {
         confirmText="Yes, Delete"
         cancelText="Cancel"
         type="delete"
+      />
+
+      {/* Delete Selected Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showDeleteSelectedModal}
+        onClose={() => setShowDeleteSelectedModal(false)}
+        onConfirm={handleConfirmDeleteSelected}
+        title="Delete Selected Candidates"
+        message={
+          <div className="space-y-3">
+            <p className="text-sm text-gray-600">
+              Are you sure you want to delete the following candidates?
+            </p>
+            <div className="max-h-40 overflow-y-auto bg-gray-50 rounded-lg p-3">
+              <ul className="space-y-2">
+                {selectedCandidatesList.map((candidate) => (
+                  <li
+                    key={candidate._id}
+                    className="text-sm text-gray-700 flex items-center gap-2"
+                  >
+                    <User className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                    <span className="font-medium">
+                      {candidate.firstName} {candidate.lastName}
+                    </span>
+                    <span className="text-gray-500">
+                      ({candidate.email})
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <p className="text-xs text-red-600 font-medium">
+              This action cannot be undone. All selected candidates will be
+              permanently removed.
+            </p>
+          </div>
+        }
+        confirmText={
+          isDeletingSelected ? "Deleting..." : "Yes, Delete Selected"
+        }
+        cancelText="Cancel"
+        type="delete"
+        isLoading={isDeletingSelected}
       />
       {showUploadModal && (
         <div className="fixed inset-0 flex items-center justify-center z-500">

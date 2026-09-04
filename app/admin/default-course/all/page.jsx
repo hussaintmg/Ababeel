@@ -23,6 +23,8 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
 import ConfirmationModal from "@/Components/ConfirmationModal";
+import DataTablePagination from "@/Components/common/DataTablePagination";
+import DataTableBulkBar from "@/Components/common/DataTableBulkBar";
 
 const DefaultCoursesPage = () => {
   const router = useRouter();
@@ -38,7 +40,14 @@ const DefaultCoursesPage = () => {
 
   // Confirmation Modal States
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showDeleteSelectedModal, setShowDeleteSelectedModal] = useState(false);
+  const [deleteSelectedLoading, setDeleteSelectedLoading] = useState(false);
   const [courseToDelete, setCourseToDelete] = useState(null);
+
+  // Pagination & Multi-Page Selection
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [selectedCourses, setSelectedCourses] = useState([]);
 
   // Fetch courses from API
   const fetchCourses = useCallback(async () => {
@@ -90,7 +99,42 @@ const DefaultCoursesPage = () => {
     );
 
     setFilteredCourses(filtered);
+    setPage(1); // Reset page on search change
   }, [searchTerm, courses]);
+
+  // Sliced courses for current page
+  const visibleCourses = filteredCourses.slice((page - 1) * pageSize, page * pageSize);
+
+  // Check if all visible courses on the current page are selected
+  const isPageAllSelected =
+    visibleCourses.length > 0 &&
+    visibleCourses.every((c) => selectedCourses.includes(c._id));
+
+  // Toggle select all on current page (persisting selections from other pages)
+  const handleToggleSelectPage = () => {
+    if (isPageAllSelected) {
+      const visibleIds = new Set(visibleCourses.map((c) => c._id));
+      setSelectedCourses((prev) => prev.filter((id) => !visibleIds.has(id)));
+    } else {
+      const visibleIds = visibleCourses.map((c) => c._id);
+      setSelectedCourses((prev) => Array.from(new Set([...prev, ...visibleIds])));
+    }
+  };
+
+  // Toggle single course selection
+  const handleSelectCourse = (courseId) => {
+    setSelectedCourses((prev) =>
+      prev.includes(courseId)
+        ? prev.filter((id) => id !== courseId)
+        : [...prev, courseId]
+    );
+  };
+
+  // Change page size and reset to page 1
+  const handlePageSizeChange = (newSize) => {
+    setPageSize(newSize);
+    setPage(1);
+  };
 
   // Handle edit start
   const handleEditStart = (course) => {
@@ -197,9 +241,36 @@ const DefaultCoursesPage = () => {
         throw new Error(response.data.error || "Failed to update course");
       }
     } catch (err) {
-      console.log(err);
     } finally {
       setDeleteAllLoading(false);
+    }
+  };
+
+  // Handle bulk delete confirmation
+  const handleDeleteSelectedConfirm = async () => {
+    try {
+      setDeleteSelectedLoading(true);
+      const response = await axios.delete(`/api/courses/default/delete/bulk`, {
+        data: { ids: selectedCourses },
+      });
+
+      if (response.data.success) {
+        toast.success(
+          response.data.data?.message || `${selectedCourses.length} course(s) deleted successfully`
+        );
+        const deletedSet = new Set(selectedCourses);
+        setCourses((prev) => prev.filter((c) => !deletedSet.has(c._id)));
+        setFilteredCourses((prev) => prev.filter((c) => !deletedSet.has(c._id)));
+        setSelectedCourses([]);
+      } else {
+        throw new Error(response.data.error || "Failed to delete selected courses");
+      }
+    } catch (err) {
+      console.error("Bulk delete error:", err);
+      toast.error(err?.response?.data?.error || err.message || "Failed to delete selected courses");
+    } finally {
+      setDeleteSelectedLoading(false);
+      setShowDeleteSelectedModal(false);
     }
   };
 
@@ -252,6 +323,26 @@ const DefaultCoursesPage = () => {
           </>
         }
         confirmText={deleteLoading ? "Deleting..." : "Yes, Delete"}
+        cancelText="Cancel"
+        type="delete"
+      />
+
+      {/* Delete Selected Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showDeleteSelectedModal}
+        onClose={() => setShowDeleteSelectedModal(false)}
+        onConfirm={handleDeleteSelectedConfirm}
+        title="Delete Selected Courses"
+        message={
+          <>
+            Are you sure you want to delete{" "}
+            <span className="font-semibold text-red-600">
+              {selectedCourses.length} selected course(s)
+            </span>
+            ? This action cannot be undone.
+          </>
+        }
+        confirmText={deleteSelectedLoading ? "Deleting..." : "Yes, Delete Selected"}
         cancelText="Cancel"
         type="delete"
       />
@@ -348,10 +439,44 @@ const DefaultCoursesPage = () => {
               </div>
             </div>
 
+            {/* Bulk Action Bar */}
+            <div className="px-6 pt-4">
+              <DataTableBulkBar
+                selectedCount={selectedCourses.length}
+                onClearSelection={() => setSelectedCourses([])}
+                itemName="courses"
+              >
+                <button
+                  onClick={() => setShowDeleteSelectedModal(true)}
+                  className="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors shadow-xs cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5 mr-1" />
+                  Delete Selected ({selectedCourses.length})
+                </button>
+              </DataTableBulkBar>
+            </div>
+
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
+                    <th scope="col" className="px-4 py-3 text-left w-12">
+                      <div className="flex items-center justify-center">
+                        <input
+                          type="checkbox"
+                          checked={isPageAllSelected}
+                          ref={(el) => {
+                            if (el) {
+                              el.indeterminate =
+                                !isPageAllSelected &&
+                                visibleCourses.some((c) => selectedCourses.includes(c._id));
+                            }
+                          }}
+                          onChange={handleToggleSelectPage}
+                          className="w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500 focus:ring-2 cursor-pointer"
+                        />
+                      </div>
+                    </th>
                     <th
                       scope="col"
                       className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
@@ -379,8 +504,24 @@ const DefaultCoursesPage = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredCourses.map((course) => (
-                    <tr key={course._id} className="hover:bg-gray-50">
+                  {visibleCourses.map((course) => (
+                    <tr
+                      key={course._id}
+                      className={`hover:bg-gray-50 transition-colors ${
+                        selectedCourses.includes(course._id) ? "bg-blue-50/60" : ""
+                      }`}
+                    >
+                      {/* Checkbox Column */}
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="flex items-center justify-center">
+                          <input
+                            type="checkbox"
+                            checked={selectedCourses.includes(course._id)}
+                            onChange={() => handleSelectCourse(course._id)}
+                            className="w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500 focus:ring-2 cursor-pointer"
+                          />
+                        </div>
+                      </td>
                       {/* Course Name Column */}
                       <td className="px-6 py-4">
                         {editingCourse === course._id ? (
@@ -514,6 +655,16 @@ const DefaultCoursesPage = () => {
                 </tbody>
               </table>
             </div>
+
+            {/* Live Counter & Pagination */}
+            <DataTablePagination
+              page={page}
+              pageSize={pageSize}
+              totalItems={filteredCourses.length}
+              onPageChange={setPage}
+              onPageSizeChange={handlePageSizeChange}
+              itemName="courses"
+            />
           </>
         )}
       </div>

@@ -13,7 +13,7 @@ import { plain } from "@/lib/training/queries";
  */
 export const dynamic = "force-dynamic";
 
-const MAX_LIMIT = 100;
+const MAX_LIMIT = 200;
 
 export async function GET(request) {
   try {
@@ -88,3 +88,39 @@ export async function GET(request) {
     return safeErrorResponse(error, 500);
   }
 }
+
+export async function DELETE(request) {
+  try {
+    const { error } = await requireOwner(request);
+    if (error) return error;
+
+    const body = await request.json().catch(() => ({}));
+    const { ids } = body;
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return safeErrorResponse(new Error("No registration IDs provided"), 400);
+    }
+
+    const validIds = ids
+      .filter((id) => mongoose.Types.ObjectId.isValid(id))
+      .map((id) => new mongoose.Types.ObjectId(id));
+
+    if (validIds.length === 0) {
+      return safeErrorResponse(new Error("Invalid registration IDs"), 400);
+    }
+
+    await connectDB();
+    const result = await Registration.deleteMany({ _id: { $in: validIds } });
+
+    return successResponse({
+      data: {
+        deletedCount: result.deletedCount,
+        message: `${result.deletedCount} registration(s) deleted successfully`,
+      },
+    });
+  } catch (error) {
+    console.error("Error deleting registrations in bulk:", error);
+    return safeErrorResponse(error, 500);
+  }
+}
+

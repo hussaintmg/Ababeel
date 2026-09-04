@@ -39,6 +39,8 @@ const geistMono = Geist_Mono({
  * internal the App Router never sends, so every page was inheriting the home
  * page's title.
  */
+export const dynamic = "force-dynamic";
+
 export async function generateMetadata() {
   return pageMetadata("home", "Home");
 }

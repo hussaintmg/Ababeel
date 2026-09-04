@@ -30,6 +30,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import CreateAdminForm from "@/Components/owner/CreateAdminForm";
 import CreateOrganizationForm from "@/Components/owner/CreateOrganizationForm";
+import DataTablePagination from "@/Components/common/DataTablePagination";
 
 export default function OwnerOverviewPage() {
   const router = useRouter();
@@ -46,6 +47,8 @@ export default function OwnerOverviewPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showCreateAdmin, setShowCreateAdmin] = useState(false);
   const [showCreateOrg, setShowCreateOrg] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
 
   const fetchDashboardData = useCallback(async () => {
     setLoading(true);
@@ -101,7 +104,13 @@ export default function OwnerOverviewPage() {
     }
 
     setFilteredData(items);
+    setPage(1);
   };
+
+  const paginatedData = filteredData.slice(
+    (page - 1) * pageSize,
+    page * pageSize
+  );
 
   const formatDate = (date) => {
     if (!date) return "N/A";
@@ -354,22 +363,34 @@ export default function OwnerOverviewPage() {
           <div className="bg-white overflow-x-auto">
             {activeTab === "organizations" && (
               <OrganizationsTable
-                organizations={filteredData}
+                organizations={paginatedData}
                 formatDate={formatDate}
               />
             )}
             {activeTab === "admins" && (
-              <AdminsTable admins={filteredData} formatDate={formatDate} />
+              <AdminsTable admins={paginatedData} formatDate={formatDate} />
             )}
             {activeTab === "users" && (
               <UsersTable
-                users={filteredData}
+                users={paginatedData}
                 formatDate={formatDate}
                 formatCurrency={formatCurrency}
                 invoices={data.invoices}
               />
             )}
           </div>
+
+          <DataTablePagination
+            page={page}
+            pageSize={pageSize}
+            totalItems={filteredData.length}
+            onPageChange={setPage}
+            onPageSizeChange={(newSize) => {
+              setPageSize(newSize);
+              setPage(1);
+            }}
+            itemName={activeTab}
+          />
         </div>
       </div>
 

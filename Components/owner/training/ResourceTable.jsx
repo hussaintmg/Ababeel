@@ -19,6 +19,7 @@ import {
 import ConfirmationModal from "@/Components/ConfirmationModal";
 import { readPath } from "@/Components/owner/training/fieldSpecs";
 import { formatDateShort } from "@/lib/training/format";
+import DataTablePagination from "@/Components/common/DataTablePagination";
 
 /**
  * The owner list screen for any training resource.
@@ -40,6 +41,8 @@ export default function ResourceTable({ resource, spec }) {
   const [status, setStatus] = useState("");
   const [busyId, setBusyId] = useState("");
   const [confirming, setConfirming] = useState(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -66,6 +69,15 @@ export default function ResourceTable({ resource, spec }) {
     const t = setTimeout(load, search ? 300 : 0);
     return () => clearTimeout(t);
   }, [load, search]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, status]);
+
+  const totalItems = items.length;
+  const totalPages = Math.ceil(totalItems / pageSize) || 1;
+  const startIndex = (page - 1) * pageSize;
+  const visibleItems = items.slice(startIndex, startIndex + pageSize);
 
   const duplicate = async (id) => {
     setBusyId(id);
@@ -215,15 +227,17 @@ export default function ResourceTable({ resource, spec }) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {items.map((item, index) => (
+                {visibleItems.map((item, index) => {
+                  const actualIndex = startIndex + index;
+                  return (
                   <tr key={item._id} className="hover:bg-gray-50">
                     {canReorder && (
                       <td className="px-3 py-3">
                         <div className="flex flex-col">
                           <button
                             type="button"
-                            onClick={() => move(index, -1)}
-                            disabled={index === 0}
+                            onClick={() => move(actualIndex, -1)}
+                            disabled={actualIndex === 0}
                             aria-label="Move up"
                             className="rounded p-0.5 text-gray-400 hover:bg-gray-200 hover:text-gray-700 disabled:opacity-30"
                           >
@@ -231,8 +245,8 @@ export default function ResourceTable({ resource, spec }) {
                           </button>
                           <button
                             type="button"
-                            onClick={() => move(index, 1)}
-                            disabled={index === items.length - 1}
+                            onClick={() => move(actualIndex, 1)}
+                            disabled={actualIndex === items.length - 1}
                             aria-label="Move down"
                             className="rounded p-0.5 text-gray-400 hover:bg-gray-200 hover:text-gray-700 disabled:opacity-30"
                           >
@@ -279,10 +293,23 @@ export default function ResourceTable({ resource, spec }) {
                       </div>
                     </td>
                   </tr>
-                ))}
+                );
+                })}
               </tbody>
             </table>
           </div>
+          <DataTablePagination
+            page={page}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={(newSize) => {
+              setPageSize(newSize);
+              setPage(1);
+            }}
+            itemName={spec.label.toLowerCase()}
+          />
         </div>
       )}
 

@@ -27,6 +27,7 @@ import {
 import axios from "axios";
 import { toast } from "react-toastify";
 import CreateOrganizationForm from "@/Components/owner/CreateOrganizationForm";
+import DataTablePagination from "@/Components/common/DataTablePagination";
 
 const SEARCH_DEBOUNCE_MS = 400;
 
@@ -34,6 +35,7 @@ export default function OwnerOrganizationsPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [organizations, setOrganizations] = useState([]);
+  const [limit, setLimit] = useState(20);
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 20,
@@ -101,7 +103,7 @@ export default function OwnerOrganizationsPage() {
     try {
       const params = new URLSearchParams();
       params.set("page", String(currentPage));
-      params.set("limit", "20");
+      params.set("limit", String(limit));
       params.set("sortBy", sortBy);
       params.set("sortOrder", sortOrder);
 
@@ -126,6 +128,7 @@ export default function OwnerOrganizationsPage() {
     }
   }, [
     currentPage,
+    limit,
     debouncedSearch,
     statusFilter,
     creatorRoleFilter,
@@ -812,72 +815,18 @@ export default function OwnerOrganizationsPage() {
           </div>
 
           {/* Pagination */}
-          {pagination.totalPages > 1 && (
-            <div className="px-3 sm:px-6 py-4 border-t border-gray-200 bg-gray-50 flex items-center justify-between">
-              <div className="text-xs sm:text-sm text-gray-600">
-                Showing{" "}
-                <span className="font-medium">
-                  {(pagination.page - 1) * pagination.limit + 1}
-                </span>{" "}
-                to{" "}
-                <span className="font-medium">
-                  {Math.min(
-                    pagination.page * pagination.limit,
-                    pagination.totalCount
-                  )}
-                </span>{" "}
-                of{" "}
-                <span className="font-medium">{pagination.totalCount}</span>{" "}
-                organizations
-              </div>
-              <div className="flex items-center gap-1 sm:gap-2">
-                <button
-                  onClick={() =>
-                    setCurrentPage((p) => Math.max(1, p - 1))
-                  }
-                  disabled={!pagination.hasPrevPage}
-                  className="p-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                >
-                  <ChevronLeft className="h-4 w-4 text-gray-600" />
-                </button>
-                {Array.from(
-                  { length: Math.min(5, pagination.totalPages) },
-                  (_, i) => {
-                    const startPage = Math.max(
-                      1,
-                      pagination.page - 2
-                    );
-                    return startPage + i;
-                  }
-                )
-                  .filter((p) => p <= pagination.totalPages)
-                  .map((p) => (
-                    <button
-                      key={p}
-                      onClick={() => setCurrentPage(p)}
-                      className={`px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg transition-colors ${
-                        p === pagination.page
-                          ? "bg-blue-600 text-white"
-                          : "bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
-                      }`}
-                    >
-                      {p}
-                    </button>
-                  ))}
-                <button
-                  onClick={() =>
-                    setCurrentPage((p) =>
-                      Math.min(pagination.totalPages, p + 1)
-                    )
-                  }
-                  disabled={!pagination.hasNextPage}
-                  className="p-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                >
-                  <ChevronRight className="h-4 w-4 text-gray-600" />
-                </button>
-              </div>
-            </div>
-          )}
+          <DataTablePagination
+            page={pagination.page}
+            totalPages={pagination.totalPages}
+            totalItems={pagination.totalCount}
+            pageSize={limit}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={(newLimit) => {
+              setLimit(newLimit);
+              setCurrentPage(1);
+            }}
+            itemName="organizations"
+          />
         </div>
       </div>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   ChevronDown,
@@ -21,6 +21,8 @@ import ConfirmationModal from "@/Components/ConfirmationModal";
 import IdCardGenerator from "@/Components/candidates/IdCardGenerator";
 import CertificateGenerator from "@/Components/candidates/CertificateGenerator";
 import { useInvoices } from "@/context/InvoiceContext";
+import DataTablePagination from "@/Components/common/DataTablePagination";
+import DataTableBulkBar from "@/Components/common/DataTableBulkBar";
 
 export default function AddCandidatesPage() {
   const { id: courseId } = useParams();
@@ -90,41 +92,68 @@ export default function AddCandidatesPage() {
     loadCountries();
   }, [courseId]);
 
-  // Add these state variables with your other useState declarations
+  // Pagination & Multi-Page Persistent Selection
+  const [candidatePage, setCandidatePage] = useState(1);
+  const [candidatePageSize, setCandidatePageSize] = useState(20);
+  const [candidateSearch, setCandidateSearch] = useState("");
   const [selectedCandidates, setSelectedCandidates] = useState([]);
-  const [selectAll, setSelectAll] = useState(false);
   const [showDeleteSelectedModal, setShowDeleteSelectedModal] = useState(false);
   const [isDeletingSelected, setIsDeletingSelected] = useState(false);
   const [selectedCandidatesList, setSelectedCandidatesList] = useState([]);
 
-  // Add these functions
-  const handleSelectCandidate = (candidateId) => {
-    setSelectedCandidates((prev) => {
-      const newSelected = prev.includes(candidateId)
-        ? prev.filter((id) => id !== candidateId)
-        : [...prev, candidateId];
+  // Filter candidates by search
+  const filteredCandidates = useMemo(() => {
+    if (!candidateSearch.trim()) return candidates;
+    const q = candidateSearch.toLowerCase();
+    return candidates.filter((c) =>
+      c.firstName?.toLowerCase().includes(q) ||
+      c.lastName?.toLowerCase().includes(q) ||
+      c.name?.toLowerCase().includes(q) ||
+      c.email?.toLowerCase().includes(q) ||
+      c.traineeId?.toLowerCase().includes(q) ||
+      c.country?.toLowerCase().includes(q)
+    );
+  }, [candidates, candidateSearch]);
 
-      // Update select all state
-      setSelectAll(
-        newSelected.length === candidates.length && candidates.length > 0,
-      );
-      return newSelected;
-    });
+  // Current page visible slice
+  const startIndex = (candidatePage - 1) * candidatePageSize;
+  const visibleCandidates = useMemo(() => {
+    return filteredCandidates.slice(startIndex, startIndex + candidatePageSize);
+  }, [filteredCandidates, startIndex, candidatePageSize]);
+
+  // Check if all visible rows on CURRENT page are selected
+  const isPageAllSelected =
+    visibleCandidates.length > 0 &&
+    visibleCandidates.every((c) => selectedCandidates.includes(c._id));
+
+  // Toggle selection for a single candidate
+  const handleSelectCandidate = (candidateId) => {
+    setSelectedCandidates((prev) =>
+      prev.includes(candidateId)
+        ? prev.filter((id) => id !== candidateId)
+        : [...prev, candidateId]
+    );
   };
 
-  const handleSelectAll = () => {
-    if (selectAll) {
-      setSelectedCandidates([]);
-      setSelectAll(false);
+  // Toggle selection for visible rows on the CURRENT page (persisting selections across other pages)
+  const handleToggleSelectPage = () => {
+    if (isPageAllSelected) {
+      const visibleIds = new Set(visibleCandidates.map((c) => c._id));
+      setSelectedCandidates((prev) => prev.filter((id) => !visibleIds.has(id)));
     } else {
-      setSelectedCandidates(candidates.map((c) => c._id));
-      setSelectAll(true);
+      const visibleIds = visibleCandidates.map((c) => c._id);
+      setSelectedCandidates((prev) => Array.from(new Set([...prev, ...visibleIds])));
     }
+  };
+
+  const handlePageSizeChange = (newSize) => {
+    setCandidatePageSize(newSize);
+    setCandidatePage(1);
   };
 
   const handleDeleteSelected = () => {
     const selectedCandidatesData = candidates.filter((c) =>
-      selectedCandidates.includes(c._id),
+      selectedCandidates.includes(c._id)
     );
     setSelectedCandidatesList(selectedCandidatesData);
     setShowDeleteSelectedModal(true);
@@ -1520,80 +1549,90 @@ export default function AddCandidatesPage() {
               <div className="bg-white rounded-xl shadow-sm overflow-hidden">
                 <div className="px-6 py-4 border-b border-gray-200">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <h2 className="text-lg font-semibold text-gray-800">
-                      Added Candidates ({candidates.length})
-                    </h2>
+                    <div>
+                      <h2 className="text-lg font-semibold text-gray-800">
+                        Added Candidates ({candidates.length})
+                      </h2>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        Manage enrolled trainees, review scores, generate certificates & ID cards
+                      </p>
+                    </div>
 
-                    {/* Action Buttons - Visible when candidates are selected */}
-                    {selectedCandidates.length > 0 && (
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-sm text-gray-600 bg-gray-100 px-3 py-1.5 rounded-lg">
-                          {selectedCandidates.length} selected
-                        </span>
-
-                        <button
-                          onClick={handleDeleteSelected}
-                          className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4 mr-1.5" />
-                          Delete Selected
-                        </button>
-
-                        <button
-                          onClick={handleDownloadSelectedIDCards}
-                          disabled={selectedCandidates.length === 0}
-                          className={`inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
-                            selectedCandidates.length > 0
-                              ? "bg-blue-600 text-white hover:bg-blue-700"
-                              : "bg-gray-200 text-gray-500 cursor-not-allowed"
-                          }`}
-                        >
-                          <svg
-                            className="w-4 h-4 mr-1.5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                            />
-                          </svg>
-                          Download IDs
-                        </button>
-
-                        <button
-                          onClick={handleDownloadSelectedCertificates}
-                          disabled={selectedCandidates.length === 0}
-                          className={`inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
-                            selectedCandidates.length > 0
-                              ? "bg-purple-600 text-white hover:bg-purple-700"
-                              : "bg-gray-200 text-gray-500 cursor-not-allowed"
-                          }`}
-                        >
-                          <svg
-                            className="w-4 h-4 mr-1.5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                            />
-                          </svg>
-                          Download Certs
-                        </button>
-                      </div>
-                    )}
+                    {/* Search candidates */}
+                    <div className="relative w-full sm:w-72">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <input
+                        type="text"
+                        placeholder="Search candidates..."
+                        value={candidateSearch}
+                        onChange={(e) => {
+                          setCandidateSearch(e.target.value);
+                          setCandidatePage(1);
+                        }}
+                        className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                      />
+                    </div>
                   </div>
                 </div>
 
-                <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
+                {/* Persistent Multi-Page Selection Banner */}
+                <div className="px-6 pt-4">
+                  <DataTableBulkBar
+                    selectedCount={selectedCandidates.length}
+                    onClearSelection={() => setSelectedCandidates([])}
+                    itemName="candidates"
+                  >
+                    <button
+                      onClick={handleDeleteSelected}
+                      className="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors shadow-xs"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 mr-1" />
+                      Delete Selected
+                    </button>
+
+                    <button
+                      onClick={handleDownloadSelectedIDCards}
+                      className="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors shadow-xs"
+                    >
+                      <svg
+                        className="w-3.5 h-3.5 mr-1"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                        />
+                      </svg>
+                      Download IDs (ZIP)
+                    </button>
+
+                    <button
+                      onClick={handleDownloadSelectedCertificates}
+                      className="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors shadow-xs"
+                    >
+                      <svg
+                        className="w-3.5 h-3.5 mr-1"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                        />
+                      </svg>
+                      Download Certs (ZIP)
+                    </button>
+                  </DataTableBulkBar>
+                </div>
+
+                <div className="overflow-x-auto rounded-lg border-t border-gray-200">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
@@ -1601,8 +1640,17 @@ export default function AddCandidatesPage() {
                           <div className="flex items-center justify-center">
                             <input
                               type="checkbox"
-                              checked={selectAll}
-                              onChange={handleSelectAll}
+                              checked={isPageAllSelected}
+                              ref={(el) => {
+                                if (el) {
+                                  el.indeterminate =
+                                    !isPageAllSelected &&
+                                    visibleCandidates.some((c) =>
+                                      selectedCandidates.includes(c._id)
+                                    );
+                                }
+                              }}
+                              onChange={handleToggleSelectPage}
                               className="w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500 focus:ring-2 cursor-pointer"
                             />
                           </div>
@@ -1631,7 +1679,7 @@ export default function AddCandidatesPage() {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {candidates.length === 0 ? (
+                      {filteredCandidates.length === 0 ? (
                         <tr>
                           <td
                             colSpan="8"
@@ -1642,16 +1690,16 @@ export default function AddCandidatesPage() {
                                 <User className="h-8 w-8 text-gray-400" />
                               </div>
                               <p className="text-lg font-medium text-gray-700 mb-1">
-                                No candidates added yet
+                                {candidateSearch ? "No candidates match your search" : "No candidates added yet"}
                               </p>
                               <p className="text-sm text-gray-500">
-                                Add your first candidate using the form above
+                                {candidateSearch ? "Try a different search term" : "Add your first candidate using the form above"}
                               </p>
                             </div>
                           </td>
                         </tr>
                       ) : (
-                        candidates.map((candidate) => (
+                        visibleCandidates.map((candidate) => (
                           <tr
                             key={candidate._id}
                             className={`hover:bg-gray-50 transition-colors duration-150 ${
@@ -1788,6 +1836,16 @@ export default function AddCandidatesPage() {
                     </tbody>
                   </table>
                 </div>
+
+                {/* Live Counter & Pagination */}
+                <DataTablePagination
+                  page={candidatePage}
+                  pageSize={candidatePageSize}
+                  totalItems={filteredCandidates.length}
+                  onPageChange={setCandidatePage}
+                  onPageSizeChange={handlePageSizeChange}
+                  itemName="candidates"
+                />
 
                 {/* Delete Selected Confirmation Modal */}
                 <ConfirmationModal

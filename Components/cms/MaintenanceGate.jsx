@@ -1,70 +1,151 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useSiteContent } from "@/context/SiteContentContext";
+import { RefreshCw, Mail, Phone, Shield, ArrowRight } from "lucide-react";
 
 // Pages that stay reachable while maintenance is on (so users can still log in).
-const ALLOWED = new Set(["/login"]);
+const ALLOWED = new Set(["/login", "/forgot-password", "/reset-password"]);
 
-/**
- * When maintenance mode is enabled, everyone except the owner sees the
- * maintenance screen on every page (except the allowed auth pages). The owner
- * always sees the real site. When maintenance is off this is a pass-through.
- */
 export default function MaintenanceGate({ children }) {
-  const { settings } = useSiteContent();
+  const { settings, refresh } = useSiteContent();
   const { user, loading } = useAuth();
   const pathname = usePathname();
+  const [rechecking, setRechecking] = useState(false);
 
   const m = settings?.maintenance || {};
-  if (!m.enabled) return children; // normal operation — zero overhead
-  if (ALLOWED.has(pathname)) return children; // login stays reachable
 
-  const isOwner = user?.role === "owner";
-  if (isOwner) return children; // owner sees everything, live
+  // Normal operation — pass-through
+  if (!m.enabled) return children;
 
-  // Don't flash the maintenance screen before we know who the visitor is.
+  // Login & auth pages stay reachable so owner/staff can sign in
+  if (ALLOWED.has(pathname)) return children;
+
+  // Owner always sees the live site
+  if (user?.role === "owner") return children;
+
+  // Don't flash maintenance while auth state is resolving
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-slate-900 text-white">
+        <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
-  return <MaintenanceScreen title={m.title} message={m.message} logo={settings?.logos?.topbar} brand={settings?.brand?.name} />;
+  const handleManualRefresh = async () => {
+    setRechecking(true);
+    try {
+      await refresh?.();
+    } finally {
+      setTimeout(() => setRechecking(false), 600);
+    }
+  };
+
+  return (
+    <MaintenanceScreen
+      title={m.title}
+      message={m.message}
+      logo={settings?.logos?.topbar}
+      brand={settings?.brand?.name || "Ababeel"}
+      contact={settings?.contact}
+      onRefresh={handleManualRefresh}
+      rechecking={rechecking}
+    />
+  );
 }
 
-function MaintenanceScreen({ title, message, logo, brand }) {
+function MaintenanceScreen({ title, message, logo, brand, contact, onRefresh, rechecking }) {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white px-6">
-      <div className="max-w-lg w-full text-center">
-        {logo ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={logo} alt={brand || "Logo"} className="h-14 mx-auto mb-8 object-contain" />
-        ) : null}
+    <div className="min-h-screen relative flex items-center justify-center bg-slate-950 text-white px-4 sm:px-6 py-12 overflow-hidden selection:bg-blue-600 selection:text-white">
+      {/* Background ambient lighting */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-blue-600/15 blur-[120px] rounded-full pointer-events-none" />
+      <div className="absolute bottom-10 right-10 w-96 h-96 bg-indigo-600/10 blur-[130px] rounded-full pointer-events-none" />
 
-        <div className="mx-auto mb-6 w-20 h-20 rounded-2xl bg-white/10 backdrop-blur flex items-center justify-center">
-          <svg className="w-10 h-10 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
+      <div className="relative max-w-xl w-full text-center z-10">
+        {/* Brand Logo */}
+        {logo ? (
+          <div className="flex justify-center mb-8">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={logo} alt={brand} className="h-14 sm:h-16 object-contain drop-shadow-md" />
+          </div>
+        ) : (
+          <div className="text-2xl font-bold tracking-tight text-white mb-8">{brand}</div>
+        )}
+
+        {/* Glassmorphic Main Card */}
+        <div className="bg-slate-900/80 backdrop-blur-xl border border-slate-800/90 rounded-3xl p-7 sm:p-10 shadow-2xl">
+          {/* Status Badge */}
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-semibold uppercase tracking-wider mb-6">
+            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+            Under Scheduled Maintenance
+          </div>
+
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white leading-tight">
+            {title || "We'll be back online soon"}
+          </h1>
+
+          <p className="mt-4 text-slate-300 text-base sm:text-lg leading-relaxed whitespace-pre-line">
+            {message ||
+              "Our website is currently undergoing scheduled improvements to serve you better. We apologize for any temporary inconvenience."}
+          </p>
+
+          {/* Action buttons: Refresh + Owner Login */}
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3.5">
+            <button
+              onClick={onRefresh}
+              disabled={rechecking}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm transition-all duration-200 shadow-lg shadow-blue-600/30 active:scale-98 disabled:opacity-60 cursor-pointer"
+            >
+              <RefreshCw className={`w-4 h-4 ${rechecking ? "animate-spin" : ""}`} />
+              {rechecking ? "Checking status…" : "Check Status / Refresh"}
+            </button>
+
+            <Link
+              href="/login"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700/80 border border-slate-700 text-slate-200 font-medium text-sm transition-all duration-200 hover:text-white active:scale-98"
+            >
+              <Shield className="w-4 h-4 text-slate-400" />
+              Staff Login
+              <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
+            </Link>
+          </div>
+
+          {/* Direct Support Contact Strip */}
+          {(contact?.infoEmail || contact?.supportEmail || contact?.phone || contact?.whatsapp) && (
+            <div className="mt-8 pt-6 border-t border-slate-800/80 flex flex-wrap items-center justify-center gap-4 text-xs text-slate-400">
+              <span className="text-slate-500">Need urgent assistance?</span>
+              {(contact.supportEmail || contact.infoEmail) && (
+                <a
+                  href={`mailto:${contact.supportEmail || contact.infoEmail}`}
+                  className="inline-flex items-center gap-1.5 text-slate-300 hover:text-blue-400 transition-colors"
+                >
+                  <Mail className="w-3.5 h-3.5 text-blue-400" />
+                  {contact.supportEmail || contact.infoEmail}
+                </a>
+              )}
+              {(contact.phone || contact.whatsapp) && (
+                <a
+                  href={`tel:${contact.phone || contact.whatsapp}`}
+                  className="inline-flex items-center gap-1.5 text-slate-300 hover:text-blue-400 transition-colors"
+                >
+                  <Phone className="w-3.5 h-3.5 text-emerald-400" />
+                  {contact.phone || contact.whatsapp}
+                </a>
+              )}
+            </div>
+          )}
         </div>
 
-        <h1 className="text-3xl md:text-4xl font-bold">{title || "We'll be back soon"}</h1>
-        <p className="mt-4 text-slate-300 leading-relaxed whitespace-pre-line">
-          {message || "Our website is currently under maintenance. Please check back shortly."}
+        {/* Footer copyright stamp */}
+        <p className="mt-6 text-xs text-slate-600">
+          © {new Date().getFullYear()} {brand}. All rights reserved.
         </p>
-
-        <Link
-          href="/login"
-          className="inline-block mt-8 px-6 py-3 rounded-xl bg-white text-slate-900 font-semibold shadow-lg hover:scale-[1.03] active:scale-95 transition-transform"
-        >
-          Login
-        </Link>
       </div>
     </div>
   );
 }
+

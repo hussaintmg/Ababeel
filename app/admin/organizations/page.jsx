@@ -18,6 +18,7 @@ import {
   KeyRound,
 } from "lucide-react";
 import axios from "axios";
+import DataTablePagination from "@/Components/common/DataTablePagination";
 
 const emptyForm = {
   name: "",
@@ -38,6 +39,8 @@ export default function AdminOrganizationsPage() {
   const [editingOrg, setEditingOrg] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [submitting, setSubmitting] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [resettingPasswordId, setResettingPasswordId] = useState(null);
@@ -110,6 +113,15 @@ export default function AdminOrganizationsPage() {
         org.contactPerson?.toLowerCase().includes(term)
     );
   }, [searchTerm, organizations]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm]);
+
+  const totalItems = filteredOrganizations.length;
+  const totalPages = Math.ceil(totalItems / pageSize) || 1;
+  const startIndex = (page - 1) * pageSize;
+  const visibleOrganizations = filteredOrganizations.slice(startIndex, startIndex + pageSize);
 
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
@@ -269,7 +281,7 @@ export default function AdminOrganizationsPage() {
               </div>
             </div>
           ) : (
-            filteredOrganizations.map((org) => (
+            visibleOrganizations.map((org) => (
               <div
                 key={org._id}
                 className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100"
@@ -395,7 +407,7 @@ export default function AdminOrganizationsPage() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredOrganizations.map((org) => (
+                    {visibleOrganizations.map((org) => (
                       <tr
                         key={org._id}
                         className="hover:bg-gray-50/50 transition-colors group"
@@ -480,6 +492,24 @@ export default function AdminOrganizationsPage() {
             )}
           </div>
         </div>
+
+        {/* Pagination */}
+        {filteredOrganizations.length > 0 && (
+          <div className="mt-4 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <DataTablePagination
+              page={page}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={(newSize) => {
+                setPageSize(newSize);
+                setPage(1);
+              }}
+              itemName="organizations"
+            />
+          </div>
+        )}
       </div>
 
       {/* Create / Edit Modal */}

@@ -14,8 +14,10 @@ const CSP_DIRECTIVES = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com https://cdnjs.cloudflare.com",
+  "style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com https://cdnjs.cloudflare.com",
   "img-src 'self' data: blob: https: http:",
   "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:",
+  "font-src-elem 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:",
   "connect-src 'self'",
   "object-src 'none'",
   "base-uri 'self'",
@@ -166,6 +168,8 @@ async function handlePageMiddleware(request, pathname) {
 
   const response = NextResponse.next();
   applySecurityHeaders(response);
+  response.headers.set("Cache-Control", "no-cache, no-store, max-age=0, must-revalidate");
+  response.headers.set("Pragma", "no-cache");
 
   const token = request.cookies.get("token")?.value;
 

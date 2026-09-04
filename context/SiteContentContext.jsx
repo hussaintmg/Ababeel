@@ -37,6 +37,12 @@ export function SiteContentProvider({
     }
   }, []);
 
+  // Fetch fresh global settings on client mount so maintenance toggle or branding
+  // takes effect across all devices without needing a site rebuild or manual reload.
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
   // Repoint every icon link at the versioned /favicon.ico URL so a newly saved
   // icon shows up without a reload. The version stamp is what forces the
   // browser to drop its cached copy — the URL itself never changes.

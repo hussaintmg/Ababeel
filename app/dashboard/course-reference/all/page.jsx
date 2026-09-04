@@ -19,9 +19,13 @@ import {
   Lock,
   Plus,
   Loader2,
+  Trash2,
 } from "lucide-react";
 import Link from "next/link";
 import axios from "axios";
+import DataTablePagination from "@/Components/common/DataTablePagination";
+import DataTableBulkBar from "@/Components/common/DataTableBulkBar";
+import ConfirmationModal from "@/Components/ConfirmationModal";
 
 export default function CourseReferencesPage() {
   const router = useRouter();
@@ -41,6 +45,11 @@ export default function CourseReferencesPage() {
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
   const [togglingMap, setTogglingMap] = useState({});
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [selectedCourses, setSelectedCourses] = useState([]);
+  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   const loadCourses = useCallback(async () => {
     try {
@@ -99,7 +108,63 @@ export default function CourseReferencesPage() {
     });
 
     setFilteredCourses(result);
+    setPage(1);
   }, [courses, searchTerm, sortBy, sortOrder]);
+
+  const totalItems = filteredCourses.length;
+  const totalPages = Math.ceil(totalItems / pageSize) || 1;
+  const startIndex = (page - 1) * pageSize;
+  const visibleCourses = filteredCourses.slice(startIndex, startIndex + pageSize);
+
+  const isPageAllSelected =
+    visibleCourses.length > 0 &&
+    visibleCourses.every((c) => selectedCourses.includes(c._id));
+  const isPageSomeSelected =
+    visibleCourses.some((c) => selectedCourses.includes(c._id)) && !isPageAllSelected;
+
+  const handleToggleSelectPage = () => {
+    if (isPageAllSelected) {
+      const visibleIds = new Set(visibleCourses.map((c) => c._id));
+      setSelectedCourses((prev) => prev.filter((id) => !visibleIds.has(id)));
+    } else {
+      const visibleIds = visibleCourses.map((c) => c._id);
+      setSelectedCourses((prev) => Array.from(new Set([...prev, ...visibleIds])));
+    }
+  };
+
+  const handleToggleCourse = (id, e) => {
+    e?.stopPropagation();
+    setSelectedCourses((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkDelete = async () => {
+    if (!selectedCourses.length) return;
+    try {
+      setIsBulkDeleting(true);
+      const res = await axios.delete("/api/course-ref/delete/bulk", {
+        data: { ids: selectedCourses },
+      });
+      if (res.data?.success) {
+        toast.success(
+          res.data.data?.message || `${selectedCourses.length} course reference(s) deleted`
+        );
+        const deletedSet = new Set(selectedCourses);
+        setCourses((prev) => prev.filter((c) => !deletedSet.has(c._id)));
+        setFilteredCourses((prev) => prev.filter((c) => !deletedSet.has(c._id)));
+        setSelectedCourses([]);
+        setShowBulkDeleteModal(false);
+        fetchCourses?.();
+      } else {
+        toast.error(res.data?.error || "Failed to delete course references");
+      }
+    } catch (err) {
+      toast.error(err?.response?.data?.error || "Failed to delete course references");
+    } finally {
+      setIsBulkDeleting(false);
+    }
+  };
 
   const handleTogglePublic = async (courseId, currentValue, e) => {
     e.stopPropagation();
@@ -254,6 +319,23 @@ export default function CourseReferencesPage() {
           </div>
         </div>
 
+        {/* Bulk Action Bar */}
+        <DataTableBulkBar
+          selectedCount={selectedCourses.length}
+          onClearSelection={() => setSelectedCourses([])}
+          itemName="course references"
+          actions={
+            <button
+              type="button"
+              onClick={() => setShowBulkDeleteModal(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors shadow-xs"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Delete Selected ({selectedCourses.length})
+            </button>
+          }
+        />
+
         {/* References Table */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
           {isLoading ? (
@@ -281,6 +363,18 @@ export default function CourseReferencesPage() {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
+                    <th className="px-4 py-3.5 text-center w-12">
+                      <input
+                        type="checkbox"
+                        checked={isPageAllSelected}
+                        ref={(el) => {
+                          if (el) el.indeterminate = isPageSomeSelected;
+                        }}
+                        onChange={handleToggleSelectPage}
+                        className="w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500 focus:ring-2 cursor-pointer"
+                        aria-label="Select all on this page"
+                      />
+                    </th>
                     <th
                       onClick={() => handleSort("courseName")}
                       className="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
@@ -323,7 +417,7 @@ export default function CourseReferencesPage() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredCourses.map((course) => {
+                  {visibleCourses.map((course) => {
                     const isPublic = course.showInSchedule !== false;
                     const isToggling = !!togglingMap[course._id];
 
@@ -331,8 +425,26 @@ export default function CourseReferencesPage() {
                       <tr
                         key={course._id}
                         onClick={() => handleRowClick(course._id)}
-                        className="hover:bg-blue-50/40 cursor-pointer transition-colors group"
+                        className={`cursor-pointer transition-colors group ${
+                          selectedCourses.includes(course._id)
+                            ? "bg-blue-50/70 hover:bg-blue-50"
+                            : "hover:bg-blue-50/40"
+                        }`}
                       >
+                        {/* Row Selection Checkbox */}
+                        <td
+                          className="px-4 py-4 text-center"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedCourses.includes(course._id)}
+                            onChange={(e) => handleToggleCourse(course._id, e)}
+                            className="w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500 focus:ring-2 cursor-pointer"
+                            aria-label={`Select ${course.referenceName || course.courseName}`}
+                          />
+                        </td>
+
                         {/* Course & Session Info */}
                         <td className="px-6 py-4">
                           <div className="font-semibold text-gray-900 text-sm">
@@ -436,10 +548,33 @@ export default function CourseReferencesPage() {
                   })}
                 </tbody>
               </table>
+              <DataTablePagination
+                page={page}
+                totalPages={totalPages}
+                totalItems={totalItems}
+                pageSize={pageSize}
+                onPageChange={setPage}
+                onPageSizeChange={(newSize) => {
+                  setPageSize(newSize);
+                  setPage(1);
+                }}
+                itemName="course references"
+              />
             </div>
           )}
         </div>
       </div>
+
+      {/* Bulk Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showBulkDeleteModal}
+        onClose={() => setShowBulkDeleteModal(false)}
+        onConfirm={handleBulkDelete}
+        title="Delete Course References"
+        message={`Are you sure you want to permanently delete ${selectedCourses.length} selected course reference(s)? All candidate records associated with these references will also be removed. This action cannot be undone.`}
+        confirmText={isBulkDeleting ? "Deleting..." : "Delete Selected"}
+        type="delete"
+      />
     </div>
   );
 }
