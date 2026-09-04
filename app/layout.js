@@ -40,6 +40,7 @@ const geistMono = Geist_Mono({
  * page's title.
  */
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function generateMetadata() {
   return pageMetadata("home", "Home");
@@ -50,14 +51,32 @@ export default async function RootLayout({ children }) {
   return (
     <html lang="en">
       <head>
-        <link
-          rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css"
-          integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw=="
-          crossOrigin="anonymous"
-          referrerPolicy="no-referrer"
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                window.addEventListener('error', function(e) {
+                  var msg = (e && e.message) ? String(e.message) : '';
+                  var isChunkError = (
+                    msg.indexOf('ChunkLoadError') !== -1 ||
+                    msg.indexOf('Loading chunk') !== -1 ||
+                    msg.indexOf('Failed to fetch dynamically imported module') !== -1 ||
+                    (e && e.target && (e.target.tagName === 'SCRIPT' || e.target.tagName === 'LINK') && e.target.src && e.target.src.indexOf('/_next/static/') !== -1)
+                  );
+                  if (isChunkError) {
+                    var key = 'ababeel_chunk_retry_ts';
+                    var last = sessionStorage.getItem(key);
+                    var now = Date.now();
+                    if (!last || (now - parseInt(last, 10)) > 6000) {
+                      sessionStorage.setItem(key, String(now));
+                      window.location.reload();
+                    }
+                  }
+                }, true);
+              })();
+            `,
+          }}
         />
-        {/* <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script> */}
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}

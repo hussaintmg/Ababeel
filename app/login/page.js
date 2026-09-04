@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useSiteContent } from "@/context/SiteContentContext";
 import AuthTheme from "@/Components/cms/AuthTheme";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function Page() {
   const router = useRouter();
@@ -148,11 +149,11 @@ export default function Page() {
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute top-1/2 transform -translate-y-1/2 left-[83%] text-[#aaa] bg-transparent border-none cursor-pointer transition-all duration-300 hover:text-green-500 max-[700px]:left-[80%]"
               >
-                <i
-                  className={`fa-solid ${
-                    showPassword ? "fa-eye" : "fa-eye-slash"
-                  }`}
-                ></i>
+                {showPassword ? (
+                  <Eye className="w-5 h-5" />
+                ) : (
+                  <EyeOff className="w-5 h-5" />
+                )}
               </button>
             </div>
 
