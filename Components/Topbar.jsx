@@ -158,6 +158,8 @@ export default function Topbar({ mobileOpen, setMobileOpen, navLinks, loading = 
   const containerMax = tb.container === "normal" ? "80rem" : tb.container === "full" ? "100%" : "88rem";
   const navJustify = tb.navAlign === "left" ? "flex-start" : tb.navAlign === "right" ? "flex-end" : "center";
   const logoH = parseInt(tb.logoHeight, 10);
+  const maxLogoH = Number.isNaN(barH) ? 48 : Math.max(32, barH - 12);
+  const effectiveLogoH = Number.isNaN(logoH) ? undefined : Math.min(logoH, maxLogoH);
   const tbCss = buildTopbarCss(tb);
   // Active-link detection (case-insensitive; "/" only matches home exactly).
   const isActive = (url) => {
@@ -203,18 +205,18 @@ export default function Topbar({ mobileOpen, setMobileOpen, navLinks, loading = 
           </div>
 
           {/* Logo */}
-          <div className="flex items-center md:flex-none">
-            <Link href="/" className="flex items-center">
+          <div className="flex items-center shrink-0 mr-2 sm:mr-4 h-full">
+            <Link href="/" className="flex items-center h-full max-h-full py-1">
               <div
-                className="relative h-30 w-40"
-                style={Number.isNaN(logoH) ? undefined : { height: logoH, width: logoH * 1.5 }}
+                className="relative flex items-center justify-start h-9 sm:h-10 md:h-12 lg:h-14 max-h-full w-auto max-w-[130px] sm:max-w-[170px] md:max-w-[210px] lg:max-w-[240px] overflow-hidden"
+                style={effectiveLogoH ? { height: effectiveLogoH, maxHeight: "100%" } : undefined}
               >
                 {/* CMS-managed logo (may be an uploaded/external URL) so use a
                     plain img to avoid next/image domain configuration. */}
                 <img
                   src={settings?.logos?.topbar || "/ababeel-logo.svg"}
                   alt={settings?.brand?.name || "Ababeel"}
-                  className="h-full w-full object-contain object-left"
+                  className="h-full w-auto max-h-full max-w-full object-contain object-left block"
                 />
               </div>
             </Link>
