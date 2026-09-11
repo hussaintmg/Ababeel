@@ -263,14 +263,12 @@ const Sidebar = ({
             <div className="w-10 h-10 bg-linear-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">
               {user?.username?.charAt(0).toUpperCase() || "U"}
             </div>
-            {sidebarOpen && (
-              <div className="overflow-hidden">
-                <p className="font-medium text-gray-900 text-sm truncate">
-                  {user?.username || user?.email}
-                </p>
-                <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
-              </div>
-            )}
+            <div className="overflow-hidden">
+              <p className="font-medium text-gray-900 text-sm truncate">
+                {user?.username || user?.email}
+              </p>
+              <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
+            </div>
           </Link>
         </div>
 

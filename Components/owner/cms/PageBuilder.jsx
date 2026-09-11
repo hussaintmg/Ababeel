@@ -78,15 +78,17 @@ function ChildBlocks({ block, onChange, features, scopeHint, previewDoc }) {
             <div key={child.id} className="rounded-lg border border-gray-200 bg-white overflow-hidden">
               <div className="flex items-center gap-1.5 px-2 py-2 bg-gray-50 border-b border-gray-100">
                 <button onClick={() => setExpandedId(open ? null : child.id)} className="flex items-center gap-2 min-w-0 flex-1 text-left">
-                  <ChevronRight size={14} className={`text-gray-400 transition-transform ${open ? "rotate-90" : ""}`} />
+                  <ChevronRight size={14} className={`text-gray-400 shrink-0 transition-transform ${open ? "rotate-90" : ""}`} />
                   <span className="w-6 h-6 rounded bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
                     <Icon size={13} />
                   </span>
                   <span className="font-medium text-xs text-gray-800 truncate">{def.label || child.type}</span>
                 </button>
-                <button onClick={() => move(child.id, -1)} disabled={i === 0} className="p-1 rounded hover:bg-gray-200 text-gray-500 disabled:opacity-30"><ChevronUp size={13} /></button>
-                <button onClick={() => move(child.id, 1)} disabled={i === children.length - 1} className="p-1 rounded hover:bg-gray-200 text-gray-500 disabled:opacity-30"><ChevronDown size={13} /></button>
-                <button onClick={() => remove(child.id)} className="p-1 rounded hover:bg-red-100 text-red-500"><Trash2 size={12} /></button>
+                <div className="flex items-center gap-0.5 shrink-0">
+                  <button onClick={() => move(child.id, -1)} disabled={i === 0} className="p-1 rounded hover:bg-gray-200 text-gray-500 disabled:opacity-30"><ChevronUp size={13} /></button>
+                  <button onClick={() => move(child.id, 1)} disabled={i === children.length - 1} className="p-1 rounded hover:bg-gray-200 text-gray-500 disabled:opacity-30"><ChevronDown size={13} /></button>
+                  <button onClick={() => remove(child.id)} className="p-1 rounded hover:bg-red-100 text-red-500"><Trash2 size={12} /></button>
+                </div>
               </div>
               {open ? (
                 <div className="p-3">
@@ -146,27 +148,27 @@ function BlockCard({ block, index, total, expanded, onToggle, onChange, onMove, 
       <div className="flex items-center gap-1.5 px-2.5 py-2.5 bg-gray-50 border-b border-gray-100">
         <button
           onPointerDown={(e) => controls.start(e)}
-          className="p-1 text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing touch-none"
+          className="p-1 text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing touch-none shrink-0"
           title="Drag to reorder"
         >
           <GripVertical size={16} />
         </button>
-        <button onClick={onToggle} className="flex items-center gap-2 min-w-0 flex-1 text-left">
-          <ChevronRight size={16} className={`text-gray-400 transition-transform ${expanded ? "rotate-90" : ""}`} />
+        <button onClick={onToggle} className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1 text-left">
+          <ChevronRight size={16} className={`text-gray-400 shrink-0 transition-transform ${expanded ? "rotate-90" : ""}`} />
           <span className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
             <Icon size={15} />
           </span>
-          <span className="font-medium text-sm text-gray-800 truncate">{def.label || block.type}</span>
+          <span className="font-medium text-xs sm:text-sm text-gray-800 truncate">{def.label || block.type}</span>
           {container && block.props?.source ? (
-            <span className="shrink-0 rounded border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-mono text-emerald-700">
+            <span className="shrink-0 rounded border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-mono text-emerald-700 hidden sm:inline-block">
               {block.props.source}
             </span>
           ) : null}
           {bound && !container ? (
-            <span className="shrink-0 rounded border border-blue-200 bg-blue-50 px-1.5 py-0.5 text-[10px] text-blue-700">dynamic</span>
+            <span className="shrink-0 rounded border border-blue-200 bg-blue-50 px-1.5 py-0.5 text-[10px] text-blue-700 hidden sm:inline-block">dynamic</span>
           ) : null}
         </button>
-        <div className="flex items-center gap-0.5">
+        <div className="flex items-center gap-0.5 shrink-0">
           <button onClick={() => onMove(-1)} disabled={index === 0} className="p-1.5 rounded hover:bg-gray-200 text-gray-500 disabled:opacity-30" title="Move up">
             <ChevronUp size={15} />
           </button>
@@ -434,49 +436,51 @@ function PageBuilderInner({ pageKey, meta }) {
   return (
     <div className="pb-24">
       {/* Toolbar */}
-      <div className="sticky top-16 md:top-20 z-20 -mx-4 md:-mx-6 px-4 md:px-6 py-3 bg-white/90 backdrop-blur border-b border-gray-200 flex flex-wrap items-center gap-3">
-        <Link href="/owner/cms" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800">
-          <ArrowLeft size={16} /> All Pages
-        </Link>
-        <div className="h-5 w-px bg-gray-200" />
-        <div className="min-w-0">
-          <h1 className="font-semibold text-gray-900 truncate">{meta?.title || pageKey}</h1>
-          <p className="text-xs text-gray-400">{route}</p>
+      <div className="sticky top-14 md:top-16 lg:top-20 z-20 -mx-4 md:-mx-6 px-4 md:px-6 py-2.5 sm:py-3 bg-white/95 backdrop-blur border-b border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <Link href="/owner/cms" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800 shrink-0">
+            <ArrowLeft size={16} /> <span className="hidden sm:inline">All Pages</span>
+          </Link>
+          <div className="h-5 w-px bg-gray-200 shrink-0" />
+          <div className="min-w-0">
+            <h1 className="font-semibold text-gray-900 truncate text-sm sm:text-base">{meta?.title || pageKey}</h1>
+            <p className="text-xs text-gray-400 truncate">{route}</p>
+          </div>
         </div>
-        <div className="ml-auto flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap sm:ml-auto w-full sm:w-auto justify-end">
           {features.dynamicCms && features.liveData ? (
             <button
               onClick={() => setShowData((v) => !v)}
-              className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border transition-colors ${showData ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"}`}
+              className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium border transition-colors ${showData ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"}`}
               title="Configure the data this page reads from the database"
             >
-              <Database size={15} /> Data
+              <Database size={14} className="shrink-0" /> <span>Data</span>
               {dataSources.length ? <span className="text-[10px] rounded-full bg-blue-600 text-white px-1.5">{dataSources.length}</span> : null}
             </button>
           ) : null}
           {features.dynamicCms && features.variables ? (
             <button
               onClick={() => setShowVariables((v) => !v)}
-              className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border transition-colors ${showVariables ? "bg-indigo-50 text-indigo-700 border-indigo-200" : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"}`}
+              className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium border transition-colors ${showVariables ? "bg-indigo-50 text-indigo-700 border-indigo-200" : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"}`}
               title="Browse and drag variables into any field"
             >
-              <Sparkles size={15} /> Variables
+              <Sparkles size={14} className="shrink-0" /> <span>Variables</span>
             </button>
           ) : null}
           <button
             onClick={() => setEnabled((e) => !e)}
-            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border transition-colors ${enabled ? "bg-green-50 text-green-700 border-green-200" : "bg-gray-50 text-gray-500 border-gray-200"}`}
+            className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium border transition-colors ${enabled ? "bg-green-50 text-green-700 border-green-200" : "bg-gray-50 text-gray-500 border-gray-200"}`}
             title="When published, this CMS content replaces the built-in page"
           >
-            {enabled ? <Eye size={15} /> : <EyeOff size={15} />}
-            {enabled ? "Published" : "Draft"}
+            {enabled ? <Eye size={14} className="shrink-0" /> : <EyeOff size={14} className="shrink-0" />}
+            <span>{enabled ? "Published" : "Draft"}</span>
           </button>
-          <Link href={route} target="_blank" className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm border border-gray-200 text-gray-600 hover:bg-gray-50">
-            <ExternalLink size={15} /> View
+          <Link href={route} target="_blank" className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm border border-gray-200 text-gray-600 hover:bg-gray-50">
+            <ExternalLink size={14} className="shrink-0" /> <span>View</span>
           </Link>
-          <button onClick={save} disabled={saving} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60">
-            {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
-            Save
+          <button onClick={save} disabled={saving} className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60">
+            {saving ? <Loader2 size={14} className="animate-spin shrink-0" /> : <Save size={14} className="shrink-0" />}
+            <span>Save</span>
           </button>
         </div>
       </div>
@@ -548,7 +552,7 @@ function PageBuilderInner({ pageKey, meta }) {
 
       <div className="mt-5 grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)] gap-6">
         {/* Editor column */}
-        <div>
+        <div className="min-w-0">
           {blocks.length === 0 ? (
             <div className="rounded-xl border-2 border-dashed border-gray-200 py-16 text-center text-gray-400">
               No blocks yet. Use <b>Browse Templates</b> for ready-made designs, or add a single block.
@@ -690,7 +694,7 @@ function PageBuilderInner({ pageKey, meta }) {
         </div>
 
         {/* Live preview column */}
-        <div className="xl:sticky xl:top-36 xl:self-start">
+        <div className="min-w-0 xl:sticky xl:top-36 xl:self-start">
           <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
             <div className="flex items-center gap-2 px-4 py-2.5 border-b border-gray-100 bg-gray-50">
               <span className="w-2.5 h-2.5 rounded-full bg-red-400" />
@@ -821,13 +825,15 @@ function PageBuilderInner({ pageKey, meta }) {
 /* ---------------- modal shell ---------------- */
 function Modal({ title, onClose, children, wide }) {
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[999] bg-black/40 flex items-end sm:items-center justify-center p-4" onClick={onClose}>
-      <motion.div initial={{ y: 30, opacity: 0, scale: 0.98 }} animate={{ y: 0, opacity: 1, scale: 1 }} exit={{ y: 20, opacity: 0 }} onClick={(e) => e.stopPropagation()} className={`w-full ${wide ? "max-w-5xl" : "max-w-2xl"} bg-white rounded-2xl shadow-2xl overflow-hidden`}>
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100">
-          <h3 className="font-semibold text-gray-900">{title}</h3>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[999] bg-black/40 flex items-end sm:items-center justify-center p-2 sm:p-4" onClick={onClose}>
+      <motion.div initial={{ y: 30, opacity: 0, scale: 0.98 }} animate={{ y: 0, opacity: 1, scale: 1 }} exit={{ y: 20, opacity: 0 }} onClick={(e) => e.stopPropagation()} className={`w-full ${wide ? "max-w-5xl" : "max-w-2xl"} max-h-[92vh] sm:max-h-[85vh] flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden`}>
+        <div className="flex items-center justify-between px-4 sm:px-5 py-3 sm:py-3.5 border-b border-gray-100 shrink-0">
+          <h3 className="font-semibold text-gray-900 text-sm sm:text-base">{title}</h3>
           <button onClick={onClose} className="p-1.5 rounded hover:bg-gray-100 text-gray-500"><X size={18} /></button>
         </div>
-        {children}
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          {children}
+        </div>
       </motion.div>
     </motion.div>
   );

@@ -378,17 +378,17 @@ const DefaultCoursesPage = () => {
               Manage your default course catalog
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <button
               onClick={() => fetchCourses()}
-              className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+              className="inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 text-sm flex-1 sm:flex-initial"
             >
               <RefreshCw className="h-4 w-4" />
               Refresh
             </button>
             <button
               onClick={() => router.push("/owner/default-course/new")}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm transition-colors"
+              className="inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm transition-colors flex-1 sm:flex-initial"
             >
               <Plus className="h-4 w-4" />
               Add Course

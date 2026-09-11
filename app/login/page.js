@@ -76,14 +76,14 @@ export default function Page() {
         className={
           hideImg
             ? "w-full max-w-md flex px-4"
-            : "w-1/2 h-full absolute top-0 left-1/2 flex max-[700px]:w-[80%] max-[700px]:top-1/2 max-[700px]:-translate-1/2 max-[700px]:h-[80%]"
+            : "w-1/2 h-full absolute top-0 left-1/2 flex items-center justify-center max-[700px]:w-[92%] max-[700px]:max-w-[420px] max-[700px]:left-1/2 max-[700px]:top-1/2 max-[700px]:-translate-x-1/2 max-[700px]:-translate-y-1/2 max-[700px]:h-auto"
         }
       >
         <div
           className={
             hideImg
-              ? "cms-auth-card w-full bg-white border border-stone-200 shadow-xl p-8 sm:p-10 rounded-3xl"
-              : "cms-auth-card w-full h-full bg-white border-l border-stone-300 shadow-xl p-[15%] rounded-l-4xl max-[700px]:rounded-4xl max-[700px]:p-[10%]"
+              ? "cms-auth-card w-full bg-white border border-stone-200 shadow-xl p-6 sm:p-10 rounded-3xl max-h-[92vh] overflow-y-auto"
+              : "cms-auth-card w-full h-full max-[700px]:h-auto max-[700px]:max-h-[92vh] bg-white border-l border-stone-300 shadow-xl p-[10%] lg:p-[15%] rounded-l-4xl max-[700px]:rounded-3xl max-[700px]:p-6 overflow-y-auto flex flex-col justify-center"
           }
         >
           <h2 className="cms-auth-title text-2xl font-semibold text-slate-800 mb-6 text-center">
@@ -101,7 +101,7 @@ export default function Page() {
                 required
                 autoComplete="off"
                 placeholder=" "
-                className="cms-auth-input peer w-[90%] h-[1cm] text-[1.1rem] rounded-md px-[0.5cm] py-[0.3cm]
+                className="cms-auth-input peer w-full h-[1cm] text-[1.1rem] rounded-md px-3 py-2
                border-b-2 border-[#ccc] bg-transparent outline-none
                transition-all duration-300 focus:shadow-[0_4px_20px_#0f8f4461]
                focus:border-[#0f8f44]"
@@ -109,10 +109,10 @@ export default function Page() {
 
               <label
                 htmlFor="username"
-                className={`absolute left-[2%] transition-all duration-300 pointer-events-none
-                -top-2 text-[13px] text-[#0f8f44] px-[0.1cm]
+                className={`absolute left-3 transition-all duration-300 pointer-events-none
+                -top-2 text-[13px] text-[#0f8f44] px-1
                 peer-placeholder-shown:top-2 peer-placeholder-shown:text-[16px] peer-placeholder-shown:text-gray-400 peer-placeholder-shown:bg-transparent peer-placeholder-shown:px-0
-                peer-focus:-top-3 peer-focus:text-[13px] peer-focus:text-[#0f8f44] peer-focus:bg-black/1 peer-focus:px-[0.1cm]`}
+                peer-focus:-top-3 peer-focus:text-[13px] peer-focus:text-[#0f8f44] peer-focus:bg-white peer-focus:px-1`}
               >
                 Username
               </label>
@@ -127,7 +127,7 @@ export default function Page() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 placeholder=" "
-                className="cms-auth-input peer w-[90%] h-[1cm] text-[1.1rem] rounded-md px-[0.5cm] py-[0.3cm]
+                className="cms-auth-input peer w-full pr-10 h-[1cm] text-[1.1rem] rounded-md px-3 py-2
                border-b-2 border-[#ccc] bg-transparent outline-none
                transition-all duration-300 focus:shadow-[0_4px_20px_#0f8f4461]
                focus:border-[#0f8f44]"
@@ -135,10 +135,10 @@ export default function Page() {
 
               <label
                 htmlFor="password"
-                className={`absolute left-[2%] transition-all duration-300 pointer-events-none
-                -top-2 text-[13px] text-[#0f8f44] px-[0.1cm]
+                className={`absolute left-3 transition-all duration-300 pointer-events-none
+                -top-2 text-[13px] text-[#0f8f44] px-1
                 peer-placeholder-shown:top-2 peer-placeholder-shown:text-[16px] peer-placeholder-shown:text-gray-400 peer-placeholder-shown:bg-transparent peer-placeholder-shown:px-0
-                peer-focus:-top-3 peer-focus:text-[13px] peer-focus:text-[#0f8f44] peer-focus:bg-black/1 peer-focus:px-[0.1cm]`}
+                peer-focus:-top-3 peer-focus:text-[13px] peer-focus:text-[#0f8f44] peer-focus:bg-white peer-focus:px-1`}
               >
                 Password
               </label>
@@ -147,7 +147,7 @@ export default function Page() {
                 type="button"
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute top-1/2 transform -translate-y-1/2 left-[83%] text-[#aaa] bg-transparent border-none cursor-pointer transition-all duration-300 hover:text-green-500 max-[700px]:left-[80%]"
+                className="absolute top-1/2 transform -translate-y-1/2 right-3 text-[#aaa] bg-transparent border-none cursor-pointer transition-all duration-300 hover:text-green-500"
               >
                 {showPassword ? (
                   <Eye className="w-5 h-5" />

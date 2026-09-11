@@ -25,8 +25,9 @@ const EDGE = 8;
 function clampToViewport(x, y, w, h) {
   const vw = document.documentElement.clientWidth;
   const vh = document.documentElement.clientHeight;
+  const actualW = Math.min(w, Math.max(0, vw - EDGE * 2));
   return {
-    x: Math.min(Math.max(EDGE, x), Math.max(EDGE, vw - w - EDGE)),
+    x: Math.min(Math.max(EDGE, x), Math.max(EDGE, vw - actualW - EDGE)),
     y: Math.min(Math.max(EDGE, y), Math.max(EDGE, vh - 48 - EDGE)),
   };
 }
@@ -133,7 +134,7 @@ export default function VariablesFloatingPanel({ open, onClose }) {
     <div
       ref={panelRef}
       style={{ position: "fixed", left: pos.x, top: pos.y, width: WIDTH, zIndex: 1100 }}
-      className="rounded-xl border border-gray-200 bg-white shadow-2xl overflow-hidden"
+      className="max-w-[calc(100vw-16px)] rounded-xl border border-gray-200 bg-white shadow-2xl overflow-hidden"
       role="dialog"
       aria-label="Variables"
     >

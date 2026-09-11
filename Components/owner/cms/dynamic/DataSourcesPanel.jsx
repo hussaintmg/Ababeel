@@ -159,15 +159,15 @@ export default function DataSourcesPanel({
                 <button
                   type="button"
                   onClick={() => setExpanded(open ? null : i)}
-                  className="w-full flex items-center gap-2 px-4 py-2.5 text-left hover:bg-gray-50"
+                  className="w-full flex items-center gap-2 px-4 py-2.5 text-left hover:bg-gray-50 min-w-0"
                 >
-                  <ChevronDown size={14} className={`text-gray-400 transition-transform ${open ? "" : "-rotate-90"}`} />
-                  <code className="text-xs font-mono text-blue-700">{source.key}</code>
-                  <span className="text-xs text-gray-400">
+                  <ChevronDown size={14} className={`text-gray-400 shrink-0 transition-transform ${open ? "" : "-rotate-90"}`} />
+                  <code className="text-xs font-mono text-blue-700 truncate">{source.key}</code>
+                  <span className="text-xs text-gray-400 truncate">
                     {source.mode === "single" ? "one" : source.mode === "count" ? "how many" : `up to ${source.limit}`} · {source.model}
                   </span>
                   {result ? (
-                    <span className="ml-auto text-[11px] text-gray-400">
+                    <span className="ml-auto text-[11px] text-gray-400 shrink-0">
                       {result.error
                         ? "error"
                         : source.mode === "count"

@@ -133,7 +133,7 @@ export default function AdminLayout({ children }) {
               />
               {/* Main Content */}
               <main
-                className={`flex-1 w-full transition-all duration-300 min-h-screen ${
+                className={`flex-1 min-w-0 w-full transition-all duration-300 overflow-x-clip min-h-screen ${
                   sidebarOpen ? "lg:ml-64" : "lg:ml-20"
                 }`}
               >

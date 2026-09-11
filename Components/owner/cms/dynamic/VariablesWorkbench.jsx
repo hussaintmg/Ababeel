@@ -231,20 +231,20 @@ function CustomVariableModal({ initial, onClose, onSaved }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[999] bg-black/40 flex items-center justify-center p-4"
+      className="fixed inset-0 z-[999] bg-black/40 flex items-end sm:items-center justify-center p-2 sm:p-4"
       onClick={onClose}
     >
       <motion.div
         initial={{ y: 24, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden"
+        className="w-full max-w-lg max-h-[92vh] sm:max-h-[85vh] flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden"
       >
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100">
-          <h3 className="font-semibold text-gray-900">{editing ? "Edit custom variable" : "New custom variable"}</h3>
+        <div className="flex items-center justify-between px-4 sm:px-5 py-3 sm:py-3.5 border-b border-gray-100 shrink-0">
+          <h3 className="font-semibold text-gray-900 text-sm sm:text-base">{editing ? "Edit custom variable" : "New custom variable"}</h3>
           <button onClick={onClose} className="p-1.5 rounded hover:bg-gray-100 text-gray-500"><X size={18} /></button>
         </div>
-        <div className="p-5 space-y-3 max-h-[70vh] overflow-y-auto">
+        <div className="p-4 sm:p-5 space-y-3 flex-1 min-h-0 overflow-y-auto">
           <div>
             <label className="block text-xs font-semibold text-gray-600 mb-1">Name</label>
             <input
@@ -370,20 +370,20 @@ function ImportModal({ onClose, onDone, existingNames, modelNames }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[999] bg-black/40 flex items-center justify-center p-4"
+      className="fixed inset-0 z-[999] bg-black/40 flex items-end sm:items-center justify-center p-2 sm:p-4"
       onClick={onClose}
     >
       <motion.div
         initial={{ y: 24, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-3xl bg-white rounded-2xl shadow-2xl overflow-hidden"
+        className="w-full max-w-3xl max-h-[92vh] sm:max-h-[85vh] flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden"
       >
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100">
-          <h3 className="font-semibold text-gray-900">Import variables</h3>
+        <div className="flex items-center justify-between px-4 sm:px-5 py-3 sm:py-3.5 border-b border-gray-100 shrink-0">
+          <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Import variables</h3>
           <button onClick={onClose} className="p-1.5 rounded hover:bg-gray-100 text-gray-500"><X size={18} /></button>
         </div>
-        <div className="p-5 space-y-3">
+        <div className="p-4 sm:p-5 space-y-3 flex-1 min-h-0 overflow-y-auto">
           <div className="flex items-center gap-2">
             <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-300 text-xs text-gray-700 cursor-pointer hover:bg-gray-50">
               <Upload size={13} /> Choose a .json file
@@ -545,48 +545,50 @@ export default function VariablesWorkbench() {
   return (
     <div className="pb-16">
       {/* header */}
-      <div className="flex flex-wrap items-center gap-3 mb-5">
-        <Link href="/owner/cms" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800">
-          <ArrowLeft size={16} /> All Pages
-        </Link>
-        <div className="h-5 w-px bg-gray-200" />
-        <div>
-          <h1 className="font-semibold text-gray-900 flex items-center gap-2">
-            <Layers size={18} className="text-blue-600" /> Variables &amp; Data
-          </h1>
-          <p className="text-xs text-gray-400">
-            Discovered from your MongoDB models — bind any of these in the page builder.
-          </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
+        <div className="flex items-center gap-3 min-w-0">
+          <Link href="/owner/cms" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800 shrink-0">
+            <ArrowLeft size={16} /> <span className="hidden sm:inline">All Pages</span>
+          </Link>
+          <div className="h-5 w-px bg-gray-200 shrink-0" />
+          <div className="min-w-0">
+            <h1 className="font-semibold text-gray-900 flex items-center gap-2 text-base sm:text-lg">
+              <Layers size={18} className="text-blue-600 shrink-0" /> Variables &amp; Data
+            </h1>
+            <p className="text-xs text-gray-400 truncate">
+              Discovered from your MongoDB models — bind any of these in the page builder.
+            </p>
+          </div>
         </div>
-        <div className="ml-auto flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-end">
           <button
             onClick={() => setShowImport(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 text-xs sm:text-sm text-gray-600 hover:bg-gray-50 flex-1 sm:flex-initial justify-center"
           >
-            <Upload size={15} /> Import
+            <Upload size={14} /> Import
           </button>
           {/* These are file downloads from an API route, not page navigations,
               so a plain anchor (with the browser's download handling) is correct. */}
           {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
           <a
             href="/api/owner/cms/variables/export?format=json"
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 text-xs sm:text-sm text-gray-600 hover:bg-gray-50 flex-1 sm:flex-initial justify-center"
           >
-            <Download size={15} /> Export JSON
+            <Download size={14} /> JSON
           </a>
           {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
           <a
             href="/api/owner/cms/variables/export?format=csv"
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 text-xs sm:text-sm text-gray-600 hover:bg-gray-50 flex-1 sm:flex-initial justify-center"
           >
-            <Download size={15} /> CSV
+            <Download size={14} /> CSV
           </a>
           <button
             onClick={() => {
               setEditing(null);
               setShowCustom(true);
             }}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-blue-600 text-white text-xs sm:text-sm font-medium hover:bg-blue-700 w-full sm:w-auto justify-center"
           >
             <Plus size={15} /> Custom variable
           </button>
@@ -594,23 +596,25 @@ export default function VariablesWorkbench() {
       </div>
 
       {/* sync banner */}
-      <div className="mb-5 flex flex-wrap items-center gap-4 rounded-xl border border-gray-200 bg-white px-4 py-3">
-        <div className="text-xs">
-          <p className="text-gray-400">Last synced</p>
-          <p className="font-medium text-gray-800">{timeAgo(registry.lastSyncedAt)}</p>
-        </div>
-        <div className="text-xs">
-          <p className="text-gray-400">Models</p>
-          <p className="font-medium text-gray-800">{registry.modelCount || tree.length}</p>
-        </div>
-        <div className="text-xs">
-          <p className="text-gray-400">Variables</p>
-          <p className="font-medium text-gray-800">{registry.variableCount || variables.length}</p>
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3 sm:gap-4 rounded-xl border border-gray-200 bg-white p-3 sm:px-4 sm:py-3">
+        <div className="flex items-center gap-4 sm:gap-6 flex-wrap">
+          <div className="text-xs">
+            <p className="text-gray-400">Last synced</p>
+            <p className="font-medium text-gray-800">{timeAgo(registry.lastSyncedAt)}</p>
+          </div>
+          <div className="text-xs">
+            <p className="text-gray-400">Models</p>
+            <p className="font-medium text-gray-800">{registry.modelCount || tree.length}</p>
+          </div>
+          <div className="text-xs">
+            <p className="text-gray-400">Variables</p>
+            <p className="font-medium text-gray-800">{registry.variableCount || variables.length}</p>
+          </div>
         </div>
         <button
           onClick={doSync}
           disabled={syncing}
-          className="ml-auto inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gray-900 text-white text-sm hover:bg-gray-700 disabled:opacity-60"
+          className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg bg-gray-900 text-white text-xs sm:text-sm hover:bg-gray-700 disabled:opacity-60"
         >
           {syncing ? <Loader2 size={15} className="animate-spin" /> : <RefreshCw size={15} />} Sync Models
         </button>
@@ -622,14 +626,14 @@ export default function VariablesWorkbench() {
 
       <div className="grid grid-cols-1 lg:grid-cols-[210px_minmax(0,1fr)_minmax(0,0.9fr)] gap-5">
         {/* sidebar */}
-        <aside className="rounded-xl border border-gray-200 bg-white p-2 h-fit lg:sticky lg:top-24">
+        <aside className="rounded-xl border border-gray-200 bg-white p-2 h-fit lg:sticky lg:top-24 overflow-x-auto flex lg:flex-col gap-1 -mx-4 px-4 lg:mx-0 lg:px-2">
           {sidebar.map((c) => (
             <button
               key={c.name}
               onClick={() => setCategory(c.name)}
-              className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-left transition-colors ${category === c.name ? "bg-blue-600 text-white" : "text-gray-600 hover:bg-gray-100"}`}
+              className={`whitespace-nowrap shrink-0 lg:shrink lg:w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs sm:text-sm text-left transition-colors ${category === c.name ? "bg-blue-600 text-white" : "text-gray-600 hover:bg-gray-100"}`}
             >
-              {c.name === "Custom Variables" ? <Sparkles size={13} /> : <Database size={13} />}
+              {c.name === "Custom Variables" ? <Sparkles size={13} className="shrink-0" /> : <Database size={13} className="shrink-0" />}
               <span className="truncate">{c.name}</span>
               <span className={`ml-auto text-[11px] ${category === c.name ? "text-blue-100" : "text-gray-400"}`}>{c.count}</span>
             </button>

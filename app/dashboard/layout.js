@@ -87,10 +87,10 @@ export default function DashboardLayout({ children }) {
                   />
                   {/* Main Content */}
                   <main
-                    className={`flex-1 transition-all duration-300 overflow-hidden min-h-screen ${
+                    className={`flex-1 min-w-0 transition-all duration-300 overflow-x-clip min-h-screen ${
                       sidebarOpen
-                        ? "lg:ml-64 lg:max-w-[100vw-256px]"
-                        : "lg:ml-20 lg:max-w-[100vw-80px]"
+                        ? "lg:ml-64 lg:max-w-[calc(100vw-256px)]"
+                        : "lg:ml-20 lg:max-w-[calc(100vw-80px)]"
                     }`}
                   >
                     <div className="p-4 md:p-6 lg:pl-8">{children}</div>

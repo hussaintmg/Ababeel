@@ -187,7 +187,7 @@ export default function OwnerLayout({ children }) {
                 />
                 {/* Main Content */}
                 <main
-                  className={`flex-1 transition-all duration-300 w-full min-h-screen ${
+                  className={`flex-1 min-w-0 transition-all duration-300 w-full min-h-screen overflow-x-clip ${
                     sidebarOpen ? "lg:ml-64" : "lg:ml-20"
                   }`}
                 >

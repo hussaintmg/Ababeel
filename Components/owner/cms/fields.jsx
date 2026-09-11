@@ -126,19 +126,19 @@ export function ImagePicker({ value, onChange }) {
 
   return (
     <div>
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3">
         {value ? (
           <img
             src={value}
             alt="preview"
-            className="h-14 w-14 rounded-lg object-contain border border-gray-200 bg-gray-50"
+            className="h-12 w-12 sm:h-14 sm:w-14 rounded-lg object-contain border border-gray-200 bg-gray-50 shrink-0"
           />
         ) : (
-          <div className="h-14 w-14 rounded-lg border border-dashed border-gray-300 flex items-center justify-center text-gray-300 text-xs bg-gray-50">
+          <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-lg border border-dashed border-gray-300 flex items-center justify-center text-gray-300 text-xs bg-gray-50 shrink-0">
             none
           </div>
         )}
-        <div className="flex-1">
+        <div className="flex-1 min-w-[140px]">
           <input
             type="text"
             value={value ?? ""}
@@ -151,7 +151,7 @@ export function ImagePicker({ value, onChange }) {
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={uploading}
-          className="shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gray-900 text-white text-sm hover:bg-gray-700 disabled:opacity-60"
+          className="shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gray-900 text-white text-sm hover:bg-gray-700 disabled:opacity-60 w-full sm:w-auto justify-center"
         >
           {uploading ? <Loader2 size={15} className="animate-spin" /> : <Upload size={15} />}
           Upload
@@ -230,32 +230,34 @@ export function VideoPicker({ value, onChange }) {
 
   return (
     <div>
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3">
         {value ? (
           <video
             src={value}
-            className="h-14 w-24 rounded-lg object-cover border border-gray-200 bg-black"
+            className="h-12 w-20 sm:h-14 sm:w-24 rounded-lg object-cover border border-gray-200 bg-black shrink-0"
             muted
             playsInline
             preload="metadata"
           />
         ) : (
-          <div className="h-14 w-24 rounded-lg border border-dashed border-gray-300 flex items-center justify-center text-gray-300 text-xs bg-gray-50">
+          <div className="h-12 w-20 sm:h-14 sm:w-24 rounded-lg border border-dashed border-gray-300 flex items-center justify-center text-gray-300 text-xs bg-gray-50 shrink-0">
             none
           </div>
         )}
-        <input
-          type="text"
-          value={value ?? ""}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder="Video URL or upload →"
-          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500"
-        />
+        <div className="flex-1 min-w-[140px]">
+          <input
+            type="text"
+            value={value ?? ""}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder="Video URL or upload →"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={uploading}
-          className="shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gray-900 text-white text-sm hover:bg-gray-700 disabled:opacity-60"
+          className="shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gray-900 text-white text-sm hover:bg-gray-700 disabled:opacity-60 w-full sm:w-auto justify-center"
         >
           {uploading ? <Loader2 size={15} className="animate-spin" /> : <Upload size={15} />}
           Upload
@@ -347,7 +349,7 @@ export function RichTextArea({ value, onChange, rows = 8 }) {
   const btn = "p-1.5 rounded hover:bg-gray-200 text-gray-600";
   return (
     <div className="border border-gray-300 rounded-lg overflow-hidden">
-      <div className="flex items-center gap-0.5 bg-gray-50 border-b border-gray-200 px-1.5 py-1">
+      <div className="flex items-center gap-0.5 bg-gray-50 border-b border-gray-200 px-1.5 py-1 overflow-x-auto max-w-full">
         <button type="button" className={btn} title="Bold" onClick={() => wrap("<strong>", "</strong>")}>
           <Bold size={15} />
         </button>

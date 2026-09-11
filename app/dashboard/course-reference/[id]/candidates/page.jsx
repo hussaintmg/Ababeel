@@ -1081,15 +1081,15 @@ export default function AddCandidatesPage() {
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mb-8">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
                   Add Candidates to Course
                 </h1>
-                <p className="text-gray-600 mt-2">
+                <p className="text-gray-600 mt-2 text-sm sm:text-base">
                   {course.courseName} - {course.referenceNumber}
                 </p>
-                <p className="text-gray-500 mt-1">
+                <p className="text-gray-500 mt-1 text-xs sm:text-sm">
                   Added Candidates:{" "}
                   <span className="font-semibold">{candidates.length}</span>
                 </p>
@@ -1097,7 +1097,7 @@ export default function AddCandidatesPage() {
               <button
                 onClick={handleNext}
                 disabled={candidates.length === 0}
-                className={`px-6 py-3 rounded-lg font-medium lg:block hidden ${
+                className={`px-5 sm:px-6 py-2.5 sm:py-3 rounded-lg font-medium text-sm sm:text-base inline-flex items-center justify-center shrink-0 w-full sm:w-auto ${
                   candidates.length === 0
                     ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                     : "bg-blue-600 text-white hover:bg-blue-700"
@@ -1734,7 +1734,7 @@ export default function AddCandidatesPage() {
                   </div>
                 </div>
               </div>
-              <div className="bg-white rounded-xl shadow-sm p-6 mt-6 lg:block hidden">
+              <div className="bg-white rounded-xl shadow-sm p-6 mt-6">
                 <h2 className="text-lg font-semibold text-gray-800 mb-4">
                   Bulk Upload
                 </h2>

@@ -90,16 +90,18 @@ export default function GlobalSettingsEditor({ meta }) {
   return (
     <div className="pb-24">
       {/* Toolbar */}
-      <div className="sticky top-16 md:top-20 z-20 -mx-4 md:-mx-6 px-4 md:px-6 py-3 bg-white/90 backdrop-blur border-b border-gray-200 flex items-center gap-3">
-        <Link href="/owner/cms" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800">
-          <ArrowLeft size={16} /> All Pages
-        </Link>
-        <div className="h-5 w-px bg-gray-200" />
-        <h1 className="font-semibold text-gray-900">Global Site Settings</h1>
+      <div className="sticky top-14 md:top-16 lg:top-20 z-20 -mx-4 md:-mx-6 px-4 md:px-6 py-2.5 sm:py-3 bg-white/95 backdrop-blur border-b border-gray-200 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <Link href="/owner/cms" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800 shrink-0">
+            <ArrowLeft size={16} /> <span className="hidden sm:inline">All Pages</span>
+          </Link>
+          <div className="h-5 w-px bg-gray-200 shrink-0" />
+          <h1 className="font-semibold text-gray-900 truncate text-sm sm:text-base">Global Site Settings</h1>
+        </div>
         <button
           onClick={save}
           disabled={saving}
-          className="ml-auto inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60"
+          className="inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60 shrink-0"
         >
           {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
           Save
@@ -108,7 +110,7 @@ export default function GlobalSettingsEditor({ meta }) {
 
       <div className="mt-5 grid grid-cols-1 lg:grid-cols-[220px_minmax(0,1fr)] gap-6">
         {/* Tabs */}
-        <nav className="flex lg:flex-col gap-1 overflow-x-auto lg:overflow-visible">
+        <nav className="flex lg:flex-col gap-1 overflow-x-auto lg:overflow-visible -mx-4 px-4 lg:mx-0 lg:px-0 pb-1">
           {TABS.map((t) => {
             const Icon = t.icon;
             const active = tab === t.id;
@@ -116,7 +118,7 @@ export default function GlobalSettingsEditor({ meta }) {
               <button
                 key={t.id}
                 onClick={() => setTab(t.id)}
-                className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                className={`flex items-center gap-2.5 px-3 sm:px-3.5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap transition-colors shrink-0 lg:shrink ${
                   active ? "bg-blue-600 text-white shadow-sm" : "text-gray-600 hover:bg-gray-100"
                 }`}
               >
@@ -127,7 +129,7 @@ export default function GlobalSettingsEditor({ meta }) {
         </nav>
 
         {/* Panel */}
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 md:p-6 max-w-3xl">
+        <div className="min-w-0 rounded-2xl border border-gray-200 bg-white p-4 sm:p-6 max-w-3xl">
           {tab === "brand" ? (
             <Section title="Branding" desc="Names used across the site, emails and documents.">
               <Grid2>

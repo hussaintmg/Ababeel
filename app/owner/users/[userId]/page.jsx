@@ -383,7 +383,7 @@ export default function UserDetailsPage() {
   }
 
   return (
-    <div className="min-h-screen w-[calc(100vw-2rem)] md:w-full bg-gradient-to-br from-gray-50 to-gray-100 py-4 sm:py-6 md:py-8 px-3 sm:px-4 md:px-6 lg:px-8">
+    <div className="min-h-screen w-full max-w-full bg-gradient-to-br from-gray-50 to-gray-100 py-4 sm:py-6 md:py-8 px-3 sm:px-4 md:px-6 lg:px-8">
       <div className="w-full mx-auto">
         <button
           onClick={() => router.back()}

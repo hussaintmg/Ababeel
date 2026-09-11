@@ -76,26 +76,30 @@ export default function AuthPagesEditor() {
 
   return (
     <div className="pb-24">
-      <div className="sticky top-16 md:top-20 z-20 -mx-4 md:-mx-6 px-4 md:px-6 py-3 bg-white/95 backdrop-blur border-b border-gray-200 flex items-center gap-3">
-        <Link href="/owner/cms" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800"><ArrowLeft size={16} /> All Pages</Link>
-        <div className="h-5 w-px bg-gray-200" />
-        <KeyRound size={18} className="text-indigo-600" />
-        <h1 className="font-semibold text-gray-900">Authentication Pages</h1>
-        <a href={current.route} target="_blank" className="ml-auto hidden sm:inline-flex items-center gap-1 text-sm text-gray-500 hover:text-indigo-600"><ExternalLink size={14} /> Preview</a>
-        <button onClick={save} disabled={saving} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-60">
-          {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} Save all
-        </button>
+      <div className="sticky top-14 md:top-16 lg:top-20 z-20 -mx-4 md:-mx-6 px-4 md:px-6 py-2.5 sm:py-3 bg-white/95 backdrop-blur border-b border-gray-200 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <Link href="/owner/cms" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800 shrink-0"><ArrowLeft size={16} /> <span className="hidden sm:inline">All Pages</span></Link>
+          <div className="h-5 w-px bg-gray-200 shrink-0" />
+          <KeyRound size={18} className="text-indigo-600 shrink-0" />
+          <h1 className="font-semibold text-gray-900 truncate text-sm sm:text-base">Authentication Pages</h1>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <a href={current.route} target="_blank" className="hidden sm:inline-flex items-center gap-1 text-sm text-gray-500 hover:text-indigo-600"><ExternalLink size={14} /> Preview</a>
+          <button onClick={save} disabled={saving} className="inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-60">
+            {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} Save all
+          </button>
+        </div>
       </div>
 
-      <div className="mt-6 flex gap-2 overflow-x-auto pb-2">
+      <div className="mt-6 flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
         {PAGES.map((item) => (
-          <button key={item.id} onClick={() => setActive(item.id)} className={`px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap border transition-colors ${active === item.id ? "bg-indigo-600 border-indigo-600 text-white" : "bg-white border-gray-200 text-gray-600 hover:border-indigo-300"}`}>
+          <button key={item.id} onClick={() => setActive(item.id)} className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-medium whitespace-nowrap border transition-colors shrink-0 ${active === item.id ? "bg-indigo-600 border-indigo-600 text-white" : "bg-white border-gray-200 text-gray-600 hover:border-indigo-300"}`}>
             {item.label}
           </button>
         ))}
       </div>
 
-      <div className="mt-4 max-w-4xl rounded-2xl border border-gray-200 bg-white p-5 md:p-6 space-y-7">
+      <div className="min-w-0 mt-4 max-w-4xl rounded-2xl border border-gray-200 bg-white p-4 sm:p-6 space-y-6 sm:space-y-7">
         <div className="flex items-start justify-between gap-4">
           <div><h2 className="text-lg font-semibold text-gray-900">{current.label} design</h2><p className="text-sm text-gray-500">These settings apply only to this page and override shared auth styling.</p></div>
           <button onClick={resetPage} className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-red-600"><RotateCcw size={14} /> Reset page</button>
