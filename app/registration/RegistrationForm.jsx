@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState, useEffect } from "react";
 import Link from "next/link";
+import { uploadToSupabase } from "@/utils/supabaseUpload";
 import {
   CheckCircle2,
   Phone,
@@ -134,23 +135,18 @@ export default function RegistrationForm({ data }) {
     setUploadError("");
 
     try {
-      const formData = new FormData();
-      formData.append("file", file);
+      const uploadResult = await uploadToSupabase(file, "receipts");
 
-      const res = await axios.post("/api/registration/upload-receipt", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-
-      if (res.data?.success && res.data?.data?.url) {
-        setReceiptUrl(res.data.data.url);
+      if (uploadResult?.url) {
+        setReceiptUrl(uploadResult.url);
         setReceiptName(file.name);
         setReceiptFile(file);
       } else {
-        setUploadError(res.data?.error || "Failed to upload receipt file");
+        setUploadError("Failed to upload receipt file");
       }
     } catch (err) {
       console.error("Receipt upload error:", err);
-      setUploadError(err.response?.data?.error || "Failed to upload payment receipt");
+      setUploadError(err.message || "Failed to upload payment receipt");
     } finally {
       setUploadingReceipt(false);
     }

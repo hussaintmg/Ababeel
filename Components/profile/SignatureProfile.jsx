@@ -5,6 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { createApiClient } from "@/utils/api";
 import { Upload, Camera, X, Loader2, Check } from "lucide-react";
 import { toast } from "react-toastify";
+import { uploadToSupabase } from "@/utils/supabaseUpload";
 
 export default function SignatureProfile({ user }) {
   const { getUserData } = useAuth();
@@ -151,13 +152,11 @@ export default function SignatureProfile({ user }) {
     setIsUploadingSignature(true);
     
     try {
-      const formData = new FormData();
-      formData.append('signature', signatureImage);
+      const uploadResult = await uploadToSupabase(signatureImage, "signatures");
 
-      const response = await api.post('/api/profile/upload-signature', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        }
+      const response = await api.post('/api/profile/upload-signature', {
+        url: uploadResult.url,
+        publicId: uploadResult.publicId,
       });
 
       if (response.data.success) {
@@ -169,14 +168,14 @@ export default function SignatureProfile({ user }) {
         );
         
         setSignatureImage(null);
-        setSignaturePreview(response.data.signature?.url);
+        setSignaturePreview(response.data.signature?.url || uploadResult.url);
         
         // Refresh user data
         await getUserData();
       }
     } catch (error) {
       console.error('Signature upload error:', error);
-      // Error is already handled by interceptor
+      toast.error(error.message || "Failed to upload signature");
     } finally {
       setIsUploadingSignature(false);
     }
@@ -205,13 +204,11 @@ export default function SignatureProfile({ user }) {
     setIsUploadingProfile(true);
     
     try {
-      const formData = new FormData();
-      formData.append('profileImage', profileImage);
+      const uploadResult = await uploadToSupabase(profileImage, "profile_images");
 
-      const response = await api.post('/api/profile/upload-image', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        }
+      const response = await api.post('/api/profile/upload-image', {
+        url: uploadResult.url,
+        publicId: uploadResult.publicId,
       });
 
       if (response.data.success) {
@@ -223,14 +220,14 @@ export default function SignatureProfile({ user }) {
         );
         
         setProfileImage(null);
-        setProfilePreview(response.data.profileImage?.url);
+        setProfilePreview(response.data.profileImage?.url || uploadResult.url);
         
         // Refresh user data
         await getUserData();
       }
     } catch (error) {
       console.error('Profile image upload error:', error);
-      // Error is already handled by interceptor
+      toast.error(error.message || "Failed to upload profile image");
     } finally {
       setIsUploadingProfile(false);
     }

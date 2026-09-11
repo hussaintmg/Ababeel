@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import connectDB from "@/utils/db";
 import Candidate from "@/models/Candidate";
 import CourseReference from "@/models/CourseReference";
-import { uploadFile } from "@/utils/upload";
+import { uploadFile, extractPublicId } from "@/utils/upload";
 import Invoice from "@/models/Invoice";
 import { webData } from "@/constants";
 import { getAuthenticatedUser } from "@/lib/auth";
@@ -46,17 +46,70 @@ export async function POST(request) {
 
     await connectDB();
 
-    const formData = await request.formData();
+    const contentType = request.headers.get("content-type") || "";
+    let courseId, id, firstName, lastName, dateOfBirth, country, email;
+    let assessmentMarks1, assessmentMarks2;
+    let profileData = null;
 
-    const courseId = formData.get("courseId");
-    const id = formData.get("id");
-    const firstName = formData.get("firstName");
-    const lastName = formData.get("lastName");
-    const dateOfBirth = formData.get("dateOfBirth");
-    const country = formData.get("country");
-    const email = formData.get("email");
-    const assessmentMarks1 = parseFloat(formData.get("assessmentMarks1"));
-    const assessmentMarks2 = parseFloat(formData.get("assessmentMarks2"));
+    if (contentType.includes("application/json")) {
+      const body = await request.json();
+      courseId = body.courseId;
+      id = body.id || body.traineeId;
+      firstName = body.firstName;
+      lastName = body.lastName;
+      dateOfBirth = body.dateOfBirth;
+      country = body.country;
+      email = body.email;
+      assessmentMarks1 = parseFloat(body.assessmentMarks1);
+      assessmentMarks2 = parseFloat(body.assessmentMarks2);
+
+      if (body.profile && body.profile.url) {
+        profileData = {
+          url: body.profile.url,
+          publicId: body.profile.publicId || extractPublicId(body.profile.url) || "",
+        };
+      } else if (body.profilePicture && typeof body.profilePicture === "object" && body.profilePicture.url) {
+        profileData = {
+          url: body.profilePicture.url,
+          publicId: body.profilePicture.publicId || extractPublicId(body.profilePicture.url) || "",
+        };
+      } else if (typeof body.profilePicture === "string" && body.profilePicture) {
+        profileData = {
+          url: body.profilePicture,
+          publicId: extractPublicId(body.profilePicture) || "",
+        };
+      }
+    } else {
+      const formData = await request.formData();
+      courseId = formData.get("courseId");
+      id = formData.get("id");
+      firstName = formData.get("firstName");
+      lastName = formData.get("lastName");
+      dateOfBirth = formData.get("dateOfBirth");
+      country = formData.get("country");
+      email = formData.get("email");
+      assessmentMarks1 = parseFloat(formData.get("assessmentMarks1"));
+      assessmentMarks2 = parseFloat(formData.get("assessmentMarks2"));
+
+      const profileFile = formData.get("profilePicture");
+      if (profileFile && typeof profileFile === "object" && profileFile.size > 0) {
+        try {
+          const bytes = await profileFile.arrayBuffer();
+          const buffer = Buffer.from(bytes);
+          const uploadResult = await uploadFile(buffer, "candidates/profile");
+          profileData = {
+            url: uploadResult.url,
+            publicId: uploadResult.publicId,
+          };
+        } catch (uploadError) {
+          console.error("Error uploading profile picture:", uploadError);
+          return NextResponse.json(
+            { success: false, error: "Failed to upload profile picture" },
+            { status: 500 },
+          );
+        }
+      }
+    }
 
     if (!courseId || !isValidObjectId(courseId)) {
       return NextResponse.json(
@@ -96,32 +149,6 @@ export async function POST(request) {
     }
 
     const userId = authUser._id.toString();
-
-    let profileData = null;
-    const profileFile = formData.get("profilePicture");
-
-    if (profileFile && profileFile.size > 0) {
-      try {
-        const bytes = await profileFile.arrayBuffer();
-        const buffer = Buffer.from(bytes);
-
-        const uploadResult = await uploadFile(
-          buffer,
-          "candidates/profile",
-        );
-
-        profileData = {
-          url: uploadResult.url,
-          publicId: uploadResult.publicId,
-        };
-      } catch (uploadError) {
-        console.error("Error uploading profile picture:", uploadError);
-        return NextResponse.json(
-          { success: false, error: "Failed to upload profile picture" },
-          { status: 500 },
-        );
-      }
-    }
 
     const existingCandidateId = await Candidate.findOne({
       traineeId: id,

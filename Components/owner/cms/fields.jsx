@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import axios from "axios";
 import { Upload, Loader2, Link2, Bold, Italic, List, Heading2, Heading3 } from "lucide-react";
+import { uploadToSupabase } from "@/utils/supabaseUpload";
 
 /* ---------------- primitive inputs ---------------- */
 
@@ -110,19 +111,14 @@ export function ImagePicker({ value, onChange }) {
     setUploading(true);
     try {
       const uploadFile = await optimizeImageForUpload(file);
-      const fd = new FormData();
-      fd.append("file", uploadFile);
-      const res = await axios.post("/api/owner/cms/upload", fd, {
-        headers: { "Content-Type": "multipart/form-data" },
-        withCredentials: true,
-      });
-      if (res.data?.success && res.data.url) {
-        onChange(res.data.url);
+      const res = await uploadToSupabase(uploadFile, "cms");
+      if (res?.url) {
+        onChange(res.url);
       } else {
-        setError(res.data?.error || "Upload failed");
+        setError("Upload failed");
       }
     } catch (e) {
-      setError(e?.response?.data?.error || "Upload failed");
+      setError(e?.message || "Upload failed");
     } finally {
       setUploading(false);
     }
@@ -219,18 +215,14 @@ export function VideoPicker({ value, onChange }) {
     setNote("");
     setUploading(true);
     try {
-      const fd = new FormData();
-      fd.append("file", file);
-      const res = await axios.post("/api/owner/cms/upload", fd, {
-        headers: { "Content-Type": "multipart/form-data" },
-        withCredentials: true,
-      });
-      if (res.data?.success && res.data.url) {
-        onChange(res.data.url);
-        setNote(res.data.data?.videoNote || res.data.videoNote || "");
-      } else setError(res.data?.error || "Upload failed");
+      const res = await uploadToSupabase(file, "cms");
+      if (res?.url) {
+        onChange(res.url);
+      } else {
+        setError("Upload failed");
+      }
     } catch (e) {
-      setError(e?.response?.data?.error || "Upload failed");
+      setError(e?.message || "Upload failed");
     } finally {
       setUploading(false);
     }

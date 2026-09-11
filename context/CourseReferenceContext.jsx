@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect } from "react";
 import axios from "axios";
+import { uploadToSupabase } from "@/utils/supabaseUpload";
 
 const CourseReferenceContext = createContext();
 
@@ -142,28 +143,31 @@ export const CourseReferenceProvider = ({ children }) => {
   // Add candidate to course
   const addCandidate = async (courseId, candidateData, userId) => {
     try {
-      // Create FormData for file upload
-      const formData = new FormData();
+      const payload = { ...candidateData, courseId, userId: userId || "" };
 
-      // Add candidate data
-      Object.keys(candidateData).forEach((key) => {
-        if (key === "profilePicture" && candidateData[key]) {
-          formData.append(key, candidateData[key]);
-        } else if (key !== "profilePicture") {
-          formData.append(key, candidateData[key]);
-        }
-      });
-
-      // Add courseId and userId
-      formData.append("courseId", courseId);
-      formData.append("userId", userId || "");
+      // If a file was selected for profile picture, upload directly to Supabase Storage
+      if (
+        candidateData.profilePicture &&
+        typeof candidateData.profilePicture === "object" &&
+        (candidateData.profilePicture instanceof File || candidateData.profilePicture instanceof Blob)
+      ) {
+        const uploadResult = await uploadToSupabase(
+          candidateData.profilePicture,
+          "candidates/profile",
+        );
+        payload.profile = {
+          url: uploadResult.url,
+          publicId: uploadResult.publicId,
+        };
+        delete payload.profilePicture;
+      }
 
       const response = await axios.post(
         "/api/course-ref/candidates/add",
-        formData,
+        payload,
         {
           headers: {
-            "Content-Type": "multipart/form-data",
+            "Content-Type": "application/json",
           },
         },
       );
@@ -201,32 +205,31 @@ export const CourseReferenceProvider = ({ children }) => {
 
   const updateCandidate = async (candidateId, candidateData, courseId) => {
     try {
-      // Create FormData for file upload
-      const formData = new FormData();
+      const payload = { ...candidateData, candidateId, courseId };
 
-      // Add candidate data
-      Object.keys(candidateData).forEach((key) => {
-        if (key === "profilePicture" && candidateData[key]) {
-          formData.append(key, candidateData[key]);
-        } else if (
-          key !== "profilePicture" &&
-          candidateData[key] !== undefined &&
-          candidateData[key] !== null
-        ) {
-          formData.append(key, candidateData[key]);
-        }
-      });
-
-      // Add candidateId and courseId for identification
-      formData.append("candidateId", candidateId);
-      formData.append("courseId", courseId);
+      // If a new file was selected for profile picture, upload directly to Supabase Storage
+      if (
+        candidateData.profilePicture &&
+        typeof candidateData.profilePicture === "object" &&
+        (candidateData.profilePicture instanceof File || candidateData.profilePicture instanceof Blob)
+      ) {
+        const uploadResult = await uploadToSupabase(
+          candidateData.profilePicture,
+          "candidates/profiles",
+        );
+        payload.profile = {
+          url: uploadResult.url,
+          publicId: uploadResult.publicId,
+        };
+        delete payload.profilePicture;
+      }
 
       const response = await axios.put(
         `/api/course-ref/candidates/update`,
-        formData,
+        payload,
         {
           headers: {
-            "Content-Type": "multipart/form-data",
+            "Content-Type": "application/json",
           },
         },
       );
@@ -258,12 +261,17 @@ export const CourseReferenceProvider = ({ children }) => {
           candidate: updatedCandidate,
           message: data.message || "Candidate updated successfully",
         };
+      } else {
+        return {
+          success: false,
+          error: data.error || "Failed to update candidate",
+        };
       }
     } catch (error) {
       const backendMessage =
         error.response?.data?.error ||
         error.response?.data?.message ||
-        "Failed to add candidate";
+        "Failed to update candidate";
       return {
         success: false,
         error: backendMessage,
