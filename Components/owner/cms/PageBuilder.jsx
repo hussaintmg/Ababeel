@@ -12,6 +12,7 @@ import {
   BarChart3, HelpCircle, Columns2, Columns3, MousePointerClick, Megaphone, MoveVertical,
   GalleryHorizontal, Images, Quote, BadgeDollarSign, Building2, UsersRound, Video,
   Bookmark, Star, Database, Repeat, Film, Bug, Play, RefreshCw, SlidersHorizontal, Globe,
+  Search, Layers, Grid, List, Monitor, Tablet, Smartphone,
 } from "lucide-react";
 import { BLOCK_TYPE_LIST, BLOCK_TYPES, createBlock, isContainer } from "@/Components/cms/blockSchemas";
 import { TEMPLATES, TEMPLATE_CATEGORIES, createBlocksFromTemplate } from "@/Components/cms/templates";
@@ -540,7 +541,7 @@ function PageBuilderInner({ pageKey, meta }) {
       {/* Add / Templates buttons */}
       <div className="mt-5 flex flex-wrap gap-2">
         <button onClick={() => setShowTemplates(true)} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 text-white text-sm font-medium shadow-sm hover:shadow-md hover:scale-[1.02] transition-all">
-          <LayoutTemplate size={17} /> Browse Templates
+          <LayoutTemplate size={17} /> Browse Sections
         </button>
         <button onClick={() => setShowPalette(true)} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-300 text-gray-700 text-sm font-medium hover:border-blue-400 hover:text-blue-600 transition-colors">
           <Plus size={17} /> Add Single Block
@@ -555,7 +556,7 @@ function PageBuilderInner({ pageKey, meta }) {
         <div className="min-w-0">
           {blocks.length === 0 ? (
             <div className="rounded-xl border-2 border-dashed border-gray-200 py-16 text-center text-gray-400">
-              No blocks yet. Use <b>Browse Templates</b> for ready-made designs, or add a single block.
+              No blocks yet. Use <b>Browse Sections</b> for ready-made designs, or add a single block.
             </div>
           ) : (
             <Reorder.Group axis="y" values={blocks} onReorder={setBlocks} className="space-y-3">
@@ -823,15 +824,44 @@ function PageBuilderInner({ pageKey, meta }) {
 }
 
 /* ---------------- modal shell ---------------- */
-function Modal({ title, onClose, children, wide }) {
+function Modal({ title, onClose, children, wide, extraWide, scrollable = true, headerRight }) {
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[999] bg-black/40 flex items-end sm:items-center justify-center p-2 sm:p-4" onClick={onClose}>
-      <motion.div initial={{ y: 30, opacity: 0, scale: 0.98 }} animate={{ y: 0, opacity: 1, scale: 1 }} exit={{ y: 20, opacity: 0 }} onClick={(e) => e.stopPropagation()} className={`w-full ${wide ? "max-w-5xl" : "max-w-2xl"} max-h-[92vh] sm:max-h-[85vh] flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden`}>
-        <div className="flex items-center justify-between px-4 sm:px-5 py-3 sm:py-3.5 border-b border-gray-100 shrink-0">
-          <h3 className="font-semibold text-gray-900 text-sm sm:text-base">{title}</h3>
-          <button onClick={onClose} className="p-1.5 rounded hover:bg-gray-100 text-gray-500"><X size={18} /></button>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[999] bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center p-2 sm:p-4"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ y: 25, opacity: 0, scale: 0.98 }}
+        animate={{ y: 0, opacity: 1, scale: 1 }}
+        exit={{ y: 20, opacity: 0 }}
+        onClick={(e) => e.stopPropagation()}
+        className={`w-full ${
+          extraWide
+            ? "max-w-[1450px] w-[97vw]"
+            : wide
+            ? "max-w-6xl w-[95vw]"
+            : "max-w-2xl"
+        } max-h-[94vh] sm:max-h-[90vh] flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-100`}
+      >
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-3.5 border-b border-gray-100 bg-white shrink-0">
+          <h3 className="font-semibold text-gray-900 text-sm sm:text-base flex items-center gap-2">
+            {title}
+          </h3>
+          <div className="flex items-center gap-2">
+            {headerRight}
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors"
+              title="Close modal"
+            >
+              <X size={18} />
+            </button>
+          </div>
         </div>
-        <div className="flex-1 min-h-0 overflow-y-auto">
+        <div className={`flex-1 min-h-0 ${scrollable ? "overflow-y-auto" : "overflow-hidden flex flex-col"}`}>
           {children}
         </div>
       </motion.div>
@@ -841,75 +871,441 @@ function Modal({ title, onClose, children, wide }) {
 
 /* ---------------- templates gallery ---------------- */
 function TemplatesModal({ onClose, onInsert, customTemplates = [], onDeleteCustom }) {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [viewMode, setViewMode] = useState("grid"); // "grid" | "expanded"
+  const [previewingTemplate, setPreviewingTemplate] = useState(null);
+
   const hasCustom = customTemplates.length > 0;
-  const categories = hasCustom ? ["My Templates", ...TEMPLATE_CATEGORIES] : TEMPLATE_CATEGORIES;
-  const [cat, setCat] = useState(categories[0]);
-  const all = hasCustom ? [...customTemplates, ...TEMPLATES] : TEMPLATES;
-  const list = all.filter((t) => t.category === cat);
+  const categories = [
+    "All Sections",
+    ...(hasCustom ? ["My Templates"] : []),
+    ...TEMPLATE_CATEGORIES,
+  ];
+  const [cat, setCat] = useState("All Sections");
+
+  const all = useMemo(
+    () => (hasCustom ? [...customTemplates, ...TEMPLATES] : TEMPLATES),
+    [hasCustom, customTemplates]
+  );
+
+  const filteredList = useMemo(() => {
+    let list = all;
+    if (cat === "My Templates") {
+      list = customTemplates;
+    } else if (cat !== "All Sections") {
+      list = all.filter((t) => t.category === cat);
+    }
+
+    const q = searchQuery.trim().toLowerCase();
+    if (q) {
+      list = list.filter((t) => {
+        const nameMatch = (t.name || "").toLowerCase().includes(q);
+        const descMatch = (t.desc || "").toLowerCase().includes(q);
+        const catMatch = (t.category || "").toLowerCase().includes(q);
+        const blockMatch = (t.blocks || []).some((b) =>
+          (b.type || "").toLowerCase().includes(q)
+        );
+        return nameMatch || descMatch || catMatch || blockMatch;
+      });
+    }
+    return list;
+  }, [all, cat, searchQuery, customTemplates]);
+
   return (
-    <Modal title={`Templates (${all.length})`} onClose={onClose} wide>
-      <div className="grid grid-cols-1 sm:grid-cols-[190px_minmax(0,1fr)]">
-        <div className="border-r border-gray-100 p-2 sm:max-h-[65vh] overflow-y-auto flex sm:block gap-1 overflow-x-auto">
-          {categories.map((c) => {
-            const n = all.filter((t) => t.category === c).length;
-            if (!n) return null;
-            const isMine = c === "My Templates";
+    <>
+      <Modal
+        title={`Browse Sections & Templates (${all.length})`}
+        onClose={onClose}
+        extraWide
+        scrollable={false}
+      >
+        {/* Top filter bar: Search, View mode toggle, count */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 px-4 sm:px-6 py-3 border-b border-gray-100 bg-gray-50/70">
+          {/* Search box */}
+          <div className="relative flex-1 max-w-md">
+            <Search
+              size={16}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+            />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search sections by name, style, or block type..."
+              className="w-full pl-9 pr-8 py-2 bg-white border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400 transition-all shadow-sm"
+            />
+            {searchQuery ? (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-0.5"
+              >
+                <X size={14} />
+              </button>
+            ) : null}
+          </div>
+
+          <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
+            <span className="text-xs text-gray-500 font-medium">
+              Showing <b className="text-gray-800">{filteredList.length}</b> {filteredList.length === 1 ? "section" : "sections"}
+            </span>
+
+            {/* View mode toggle */}
+            <div className="flex items-center bg-gray-200/80 p-0.5 rounded-lg">
+              <button
+                onClick={() => setViewMode("grid")}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all ${
+                  viewMode === "grid"
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-600 hover:text-gray-900"
+                }`}
+                title="2-Column Grid View"
+              >
+                <Grid size={13} />
+                <span className="hidden sm:inline">Grid</span>
+              </button>
+              <button
+                onClick={() => setViewMode("expanded")}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all ${
+                  viewMode === "expanded"
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-600 hover:text-gray-900"
+                }`}
+                title="Expanded 1-Column View (Full Width)"
+              >
+                <List size={13} />
+                <span className="hidden sm:inline">Expanded</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content: Categories Sidebar + Sections Grid */}
+        <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-[220px_minmax(0,1fr)] overflow-hidden">
+          {/* Categories Sidebar */}
+          <div className="border-r border-gray-100 p-3 overflow-y-auto preview-scrollbar flex md:block gap-1.5 overflow-x-auto bg-gray-50/40 shrink-0">
+            {categories.map((c) => {
+              const isAll = c === "All Sections";
+              const isMine = c === "My Templates";
+              const count = isAll
+                ? all.length
+                : isMine
+                ? customTemplates.length
+                : all.filter((t) => t.category === c).length;
+
+              if (count === 0 && !isMine && !isAll) return null;
+              const active = cat === c;
+
+              return (
+                <button
+                  key={c}
+                  onClick={() => setCat(c)}
+                  className={`whitespace-nowrap md:w-full text-left px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all flex items-center justify-between gap-2 shrink-0 ${
+                    active
+                      ? "bg-blue-600 text-white shadow-sm shadow-blue-500/20"
+                      : "text-gray-600 hover:bg-gray-100/80 hover:text-gray-900"
+                  }`}
+                >
+                  <span className="flex items-center gap-1.5 truncate">
+                    {isMine ? (
+                      <Star
+                        size={13}
+                        className={active ? "text-amber-200" : "text-amber-400"}
+                      />
+                    ) : null}
+                    <span className="truncate">{c}</span>
+                  </span>
+                  <span
+                    className={`text-[11px] px-1.5 py-0.5 rounded-md ${
+                      active
+                        ? "bg-blue-700/60 text-blue-100"
+                        : "bg-gray-200/70 text-gray-500"
+                    }`}
+                  >
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Cards scrollable viewport */}
+          <div className="p-4 sm:p-6 overflow-y-auto preview-scrollbar bg-slate-100/60 flex-1 min-h-0">
+            {filteredList.length === 0 ? (
+              <div className="py-20 text-center text-gray-500">
+                <LayoutTemplate size={40} className="mx-auto text-gray-300 mb-3" />
+                <p className="font-medium text-base text-gray-800">No sections found</p>
+                <p className="text-xs text-gray-400 mt-1 max-w-sm mx-auto">
+                  {searchQuery
+                    ? `No sections match "${searchQuery}". Try a different keyword or category.`
+                    : cat === "My Templates"
+                    ? "No custom templates saved yet. Design a section on your page and click “Save as Template”."
+                    : "No sections available in this category."}
+                </p>
+                {searchQuery ? (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="mt-4 px-3.5 py-1.5 rounded-lg bg-blue-50 text-blue-600 text-xs font-semibold hover:bg-blue-100 transition-colors"
+                  >
+                    Clear Search
+                  </button>
+                ) : null}
+              </div>
+            ) : (
+              <div
+                className={`grid gap-5 content-start ${
+                  viewMode === "grid"
+                    ? "grid-cols-1 xl:grid-cols-2"
+                    : "grid-cols-1 max-w-5xl mx-auto"
+                }`}
+              >
+                {filteredList.map((t) => {
+                  const blockCount = (t.blocks || []).length;
+                  const blockTypes = Array.from(
+                    new Set((t.blocks || []).map((b) => b.type))
+                  );
+
+                  return (
+                    <div
+                      key={t.id}
+                      className="group flex flex-col rounded-2xl border border-gray-200/90 shadow-sm hover:shadow-xl hover:border-blue-400 transition-all duration-300 bg-white overflow-hidden"
+                    >
+                      {/* Card Header */}
+                      <div className="px-4 py-2.5 bg-white border-b border-gray-100 flex items-center justify-between gap-2 shrink-0">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 text-[11px] font-semibold tracking-wide">
+                            {t.category}
+                          </span>
+                          <span className="inline-flex items-center gap-1 text-[11px] text-gray-400 font-medium">
+                            <Layers size={12} />
+                            {blockCount} {blockCount === 1 ? "block" : "blocks"}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => setPreviewingTemplate(t)}
+                            title="Interactive full-screen preview"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                          >
+                            <Eye size={13} />
+                            <span className="hidden sm:inline">Preview</span>
+                          </button>
+                          {t.custom ? (
+                            <button
+                              onClick={() => onDeleteCustom?.(t.id)}
+                              title="Delete template"
+                              className="p-1 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          ) : null}
+                        </div>
+                      </div>
+
+                      {/* Live scaled preview with vertical scrollbar */}
+                      <div
+                        className={`relative w-full ${
+                          viewMode === "grid" ? "h-[390px]" : "h-[470px]"
+                        } bg-slate-50 border-b border-gray-100 overflow-hidden`}
+                      >
+                        <TemplatePreview
+                          template={t}
+                          minHeight={viewMode === "grid" ? 390 : 470}
+                        />
+
+                        {/* Floating quick insert pill on card top-right */}
+                        <div className="absolute top-3 right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={() => onInsert(t)}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-600/90 hover:bg-blue-600 backdrop-blur text-white text-xs font-semibold shadow-md transition-transform hover:scale-105"
+                          >
+                            <Plus size={13} /> Insert
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Card Footer */}
+                      <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 mt-auto bg-white">
+                        <div className="min-w-0 flex-1">
+                          <h4 className="font-semibold text-sm text-gray-900 truncate">
+                            {t.name}
+                          </h4>
+                          <p className="text-xs text-gray-500 line-clamp-1 mt-0.5">
+                            {t.desc || "Pre-designed section"}
+                          </p>
+
+                          {/* Block tags chips */}
+                          {blockTypes.length > 0 ? (
+                            <div className="flex flex-wrap gap-1 mt-2">
+                              {blockTypes.slice(0, 4).map((type) => (
+                                <span
+                                  key={type}
+                                  className="px-2 py-0.5 rounded bg-gray-100 text-gray-600 text-[10px] font-medium uppercase tracking-wider"
+                                >
+                                  {BLOCK_TYPES[type]?.label || type}
+                                </span>
+                              ))}
+                              {blockTypes.length > 4 ? (
+                                <span className="px-1.5 py-0.5 text-[10px] text-gray-400 font-medium">
+                                  +{blockTypes.length - 4} more
+                                </span>
+                              ) : null}
+                            </div>
+                          ) : null}
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                          <button
+                            onClick={() => setPreviewingTemplate(t)}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors"
+                          >
+                            <Eye size={13} /> Full Preview
+                          </button>
+                          <button
+                            onClick={() => onInsert(t)}
+                            className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-semibold shadow-sm hover:shadow-md transition-all active:scale-[0.98]"
+                          >
+                            <Plus size={14} /> Insert Section
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      </Modal>
+
+      {/* Full Interactive Preview Modal */}
+      <AnimatePresence>
+        {previewingTemplate ? (
+          <SectionPreviewModal
+            template={previewingTemplate}
+            onClose={() => setPreviewingTemplate(null)}
+            onInsert={(t) => {
+              setPreviewingTemplate(null);
+              onInsert(t);
+            }}
+          />
+        ) : null}
+      </AnimatePresence>
+    </>
+  );
+}
+
+/* ---------------- full-screen interactive preview modal ---------------- */
+function SectionPreviewModal({ template, onClose, onInsert }) {
+  const [deviceWidth, setDeviceWidth] = useState("100%");
+  const blocks = useMemo(
+    () => createBlocksFromTemplate(template),
+    [template]
+  );
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[1000] bg-black/70 backdrop-blur-md flex flex-col justify-between"
+      onClick={onClose}
+    >
+      {/* Top bar */}
+      <div
+        className="w-full bg-white border-b border-gray-200 px-4 sm:px-6 py-3 flex items-center justify-between gap-4 z-20 shadow-sm"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center gap-3 min-w-0">
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-800 transition-colors"
+            title="Back to gallery"
+          >
+            <ArrowLeft size={18} />
+          </button>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <h2 className="font-semibold text-gray-900 text-sm sm:text-base truncate">
+                {template.name}
+              </h2>
+              <span className="px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 text-xs font-medium shrink-0">
+                {template.category}
+              </span>
+            </div>
+            <p className="text-xs text-gray-500 truncate hidden sm:block">
+              {template.desc || "Pre-designed section"}
+            </p>
+          </div>
+        </div>
+
+        {/* Device Switcher */}
+        <div className="hidden md:flex items-center gap-1 bg-gray-100 p-1 rounded-xl">
+          {[
+            { id: "100%", label: "Full Width", icon: Monitor },
+            { id: "1200px", label: "Desktop (1200px)", icon: Monitor },
+            { id: "768px", label: "Tablet (768px)", icon: Tablet },
+            { id: "390px", label: "Mobile (390px)", icon: Smartphone },
+          ].map((d) => {
+            const Icon = d.icon;
+            const active = deviceWidth === d.id;
             return (
-              <button key={c} onClick={() => setCat(c)} className={`whitespace-nowrap sm:w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-1.5 ${cat === c ? "bg-blue-600 text-white" : "text-gray-600 hover:bg-gray-100"}`}>
-                {isMine ? <Star size={13} className={cat === c ? "text-amber-200" : "text-amber-400"} /> : null}
-                {c} <span className={`text-xs ${cat === c ? "text-blue-100" : "text-gray-400"}`}>({n})</span>
+              <button
+                key={d.id}
+                onClick={() => setDeviceWidth(d.id)}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
+                  active
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-600 hover:text-gray-900"
+                }`}
+                title={d.label}
+              >
+                <Icon size={14} />
+                <span className="hidden lg:inline">{d.label}</span>
               </button>
             );
           })}
         </div>
-        <div className="p-3 grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[72vh] overflow-y-auto content-start">
-          {cat === "My Templates" && !list.length ? (
-            <div className="col-span-full py-16 text-center text-gray-400 text-sm">
-              No saved templates yet. Design a section, then click <b>Save as Template</b>.
-            </div>
-          ) : null}
-          {list.map((t) => (
-            <div key={t.id} className="group flex flex-col rounded-xl border border-gray-200 overflow-hidden hover:border-blue-400 hover:shadow-md transition-all bg-white">
-              {/* Live scaled preview — 40% of the popup (viewport) height */}
-              <div className="relative h-[40vh] bg-white border-b border-gray-100 overflow-hidden">
-                <TemplatePreview template={t} />
-                {t.custom ? (
-                  <button onClick={() => onDeleteCustom?.(t.id)} title="Delete template" className="absolute top-2 right-2 z-10 p-1.5 rounded-lg bg-white/90 text-red-500 hover:bg-white shadow-sm">
-                    <Trash2 size={13} />
-                  </button>
-                ) : null}
-                {/* hover overlay with a quick insert */}
-                <button
-                  onClick={() => onInsert(t)}
-                  className="absolute inset-0 z-10 flex items-center justify-center bg-blue-600/0 group-hover:bg-blue-600/10 opacity-0 group-hover:opacity-100 transition-all"
-                  title="Insert this template"
-                >
-                  <span className="px-4 py-2 rounded-lg bg-white text-blue-700 text-xs font-semibold shadow-lg">+ Insert</span>
-                </button>
-              </div>
-              {/* Footer — always visible */}
-              <div className="flex items-center justify-between gap-2 p-3 mt-auto">
-                <div className="min-w-0">
-                  <p className="font-medium text-sm text-gray-900 truncate">{t.name}</p>
-                  <p className="text-xs text-gray-500 line-clamp-1">{t.desc}</p>
-                </div>
-                <button onClick={() => onInsert(t)} className="shrink-0 px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-medium hover:bg-blue-700">
-                  Insert
-                </button>
-              </div>
-            </div>
-          ))}
+
+        {/* Action Buttons */}
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={() => onInsert(template)}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-semibold shadow-sm hover:shadow transition-all"
+          >
+            <Plus size={16} /> Insert into Page
+          </button>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-xl hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors"
+          >
+            <X size={20} />
+          </button>
         </div>
       </div>
-    </Modal>
+
+      {/* Main Preview Container */}
+      <div
+        className="flex-1 min-h-0 overflow-y-auto bg-slate-200/70 p-3 sm:p-6 flex justify-center items-start preview-scrollbar"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div
+          className="bg-white rounded-xl shadow-xl overflow-hidden transition-all duration-300 w-full"
+          style={{
+            maxWidth: deviceWidth,
+            minHeight: "400px",
+          }}
+        >
+          <BlockRenderer blocks={blocks} />
+        </div>
+      </div>
+    </motion.div>
   );
 }
 
-// Live, scaled-down snapshot of a template's actual rendered blocks. Rendered at
-// full width inside a fixed box then scaled to fit, so the thumbnail looks like
-// the real design. Interactions are disabled and animations frozen.
+// Live, scaled-down snapshot of a template's actual rendered blocks with full vertical scrolling.
 const PREVIEW_WIDTH = 1200; // virtual render width
-function TemplatePreview({ template }) {
+
+function TemplatePreview({ template, minHeight = 390 }) {
   // Build the blocks once, and freeze any auto-playing carousels to a static
   // first slide so the thumbnail is a calm snapshot (no perpetual timers).
   const blocks = useMemo(
@@ -921,28 +1317,98 @@ function TemplatePreview({ template }) {
       ),
     [template]
   );
-  const boxRef = useRef(null);
-  const [scale, setScale] = useState(0.24);
+
+  const containerRef = useRef(null);
+  const contentRef = useRef(null);
+  const [scale, setScale] = useState(0.4);
+  const [contentHeight, setContentHeight] = useState(600);
+  const [hasScrolled, setHasScrolled] = useState(false);
+  const [isOverflowing, setIsOverflowing] = useState(false);
 
   useEffect(() => {
-    const el = boxRef.current;
-    if (!el) return;
-    const fit = () => setScale(el.clientWidth / PREVIEW_WIDTH);
-    fit();
-    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(fit) : null;
-    ro?.observe(el);
-    return () => ro?.disconnect();
-  }, []);
+    const container = containerRef.current;
+    const content = contentRef.current;
+    if (!container) return;
+
+    const measure = () => {
+      const containerWidth = container.clientWidth;
+      if (containerWidth > 0) {
+        const nextScale = containerWidth / PREVIEW_WIDTH;
+        setScale(nextScale);
+        if (content) {
+          const rawHeight = content.offsetHeight || content.scrollHeight || 600;
+          setContentHeight(rawHeight);
+          const scaledH = rawHeight * nextScale;
+          setIsOverflowing(scaledH > container.clientHeight + 15);
+        }
+      }
+    };
+
+    measure();
+
+    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(measure) : null;
+    if (ro) {
+      ro.observe(container);
+      if (content) ro.observe(content);
+    }
+
+    const t1 = setTimeout(measure, 100);
+    const t2 = setTimeout(measure, 400);
+
+    return () => {
+      ro?.disconnect();
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [template, blocks]);
+
+  const scaledHeight = Math.max(Math.ceil(contentHeight * scale), minHeight);
 
   return (
-    <div ref={boxRef} className="absolute inset-0 overflow-hidden bg-white">
+    <div
+      ref={containerRef}
+      onScroll={(e) => {
+        if (e.currentTarget.scrollTop > 15 && !hasScrolled) {
+          setHasScrolled(true);
+        }
+      }}
+      className="relative w-full h-full overflow-y-auto overflow-x-hidden bg-slate-50 preview-scrollbar select-none"
+      style={{
+        scrollbarWidth: "thin",
+        scrollbarColor: "#94a3b8 #f1f5f9",
+      }}
+    >
+      {/* Spacer div in normal flow that gives the scroll container its exact scaled height */}
       <div
-        className="cms-preview pointer-events-none select-none absolute top-0 left-0 origin-top-left"
-        style={{ width: PREVIEW_WIDTH, transform: `scale(${scale})` }}
+        style={{
+          height: `${scaledHeight}px`,
+          width: "100%",
+          position: "relative",
+          minHeight: "100%",
+        }}
       >
-        <BlockRenderer blocks={blocks} />
+        <div
+          ref={contentRef}
+          className="cms-preview pointer-events-none select-none absolute top-0 left-0 origin-top-left bg-white shadow-sm"
+          style={{
+            width: `${PREVIEW_WIDTH}px`,
+            transform: `scale(${scale})`,
+            transformOrigin: "top left",
+          }}
+        >
+          <BlockRenderer blocks={blocks} />
+        </div>
       </div>
+
+      {/* Floating scroll hint pill if content is taller than viewport and user hasn't scrolled yet */}
+      {isOverflowing && !hasScrolled && (
+        <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-slate-900/85 backdrop-blur text-white text-[11px] font-medium flex items-center gap-1.5 shadow-lg border border-white/20 z-10 transition-opacity">
+          <span className="text-blue-300 font-bold">↕</span>
+          <span>Scroll to explore full section</span>
+        </div>
+      )}
     </div>
   );
 }
+
 
