@@ -8,6 +8,7 @@ import {
   getPlaceholderFields,
 } from "@/constants/Templateplaceholders";
 import { AVAILABLE_FONTS, loadCustomFonts } from "@/constants/fonts";
+import PdfPreviewText from "@/Components/PdfPreviewText";
 import QRCode from "qrcode";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -29,6 +30,8 @@ const CSS_PROPERTIES = [
   "font-size",
   "font-weight",
   "font-family",
+  "--text-fit",
+  "--min-font-size",
   "color",
   "background-color",
   "top",
@@ -893,6 +896,24 @@ function ElementEditorModal({
                 placeholder="Enter text or type {{ for placeholders"
                 className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-none"
               />
+              <label className="block mt-3 text-xs font-medium text-gray-600">
+                Text fitting
+                <select
+                  className="block w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg"
+                  value={local.css?.find(c => c.property === '--text-fit')?.value || ''}
+                  onChange={e => updateField('css', [
+                    ...(local.css || []).filter(c => c.property !== '--text-fit'),
+                    {property:'--text-fit', value:e.target.value},
+                  ])}
+                >
+                  <option value="">Fit long or clipped text automatically</option>
+                  <option value="shrink">Fit text inside the box</option>
+                  <option value="none">Keep original text size</option>
+                </select>
+              </label>
+              <p className="mt-1 text-xs text-gray-500">
+                Long values wrap and shrink to fit. An amber outline means the box needs more room for readable text.
+              </p>
               <Btn
                 size="xs"
                 variant="ghost"
@@ -1540,6 +1561,7 @@ function LivePreview({
   const scaledHeight = dims.height * zoom;
 
   const toCamelCase = (str) => {
+    if (str.startsWith('--')) return str;
     return str.replace(/-([a-z])/g, (g) => g[1].toUpperCase());
   };
 
@@ -2072,6 +2094,7 @@ function LivePreview({
         <style>{`
           .preview-scroll-container { scrollbar-width: none; -ms-overflow-style: none; }
           .preview-scroll-container::-webkit-scrollbar { display: none; }
+          [data-text-fit="overflow"], [data-text-fit="small"] { box-shadow: 0 0 0 1px #d97706; }
           .resize-handle {
             position: absolute;
             width: 10px;
@@ -2312,7 +2335,7 @@ function LivePreview({
 
               return (
                 <div key={el.id} style={{ display: "contents" }}>
-                  <div
+                  <PdfPreviewText
                     onMouseDown={(e) => handleMouseDown(e, el.id, el)}
                     data-element-id={el.id}
                     style={{
@@ -2320,9 +2343,11 @@ function LivePreview({
                       cursor: isDragging ? "grabbing" : "grab",
                       outline: isSelected ? "2px solid #6366f1" : "none",
                       outlineOffset: "1px",
+                      lineHeight: 1.5,
                       ...scaledStyleMap,
                     }}
-                    dangerouslySetInnerHTML={{ __html: displayText }}
+                    html={displayText}
+                    zoom={zoom}
                     draggable={false}
                   />
                   {isSelected && (

@@ -1,4 +1,9 @@
+import { FONT_FACES } from './fontFaces.js';
+
 export const AVAILABLE_FONTS = [
+  // Backward-compatible alias used by existing seeded/saved templates.
+  { id: "font-local-georgia", family: "LocalGeorgiaPro", value: "'LocalGeorgiaPro', serif", url: "/fonts/georgia-pro/GeorgiaPro-Regular.ttf", weight: "normal", style: "normal", hidden: true },
+  { id: "font-local-georgia-bold", family: "LocalGeorgiaPro", value: "'LocalGeorgiaPro', serif", url: "/fonts/georgia-pro/GeorgiaPro-Bold.ttf", weight: "bold", style: "normal", hidden: true },
   // System Fonts
   { id: "font-1", family: "Arial", value: "Arial, sans-serif", url: null, weight: "normal", style: "normal" },
   { id: "font-2", family: "Times New Roman", value: "Times New Roman, serif", url: null, weight: "normal", style: "normal" },
@@ -63,8 +68,14 @@ export const AVAILABLE_FONTS = [
   { id: "font-53", family: "Lucida Sans Unicode", value: "'Lucida Sans Unicode', sans-serif", url: "/fonts/lucida-sans/l_10646.ttf", weight: "normal", style: "normal" },
 
   // Montserrat Font Family
-  { id: "font-54", family: "Montserrat", value: "'Montserrat', sans-serif", url: "/fonts/Montserrat/Montserrat-VariableFont_wght.ttf", weight: "normal", style: "normal" },
-  { id: "font-55", family: "Montserrat Italic", value: "'Montserrat Italic', sans-serif", url: "/fonts/Montserrat/Montserrat-Italic-VariableFont_wght.ttf", weight: "normal", style: "italic" },
+  { id: "font-54", family: "Montserrat", value: "'Montserrat', sans-serif", url: "/fonts/Montserrat/static/Montserrat-Regular.ttf", weight: "normal", style: "normal" },
+  { id: "font-54-400", family: "Montserrat", value: "'Montserrat', sans-serif", url: "/fonts/Montserrat/static/Montserrat-Regular.ttf", weight: "400", style: "normal", hidden: true },
+  { id: "font-54-bold", family: "Montserrat", value: "'Montserrat', sans-serif", url: "/fonts/Montserrat/static/Montserrat-Bold.ttf", weight: "bold", style: "normal", hidden: true },
+  { id: "font-54-700", family: "Montserrat", value: "'Montserrat', sans-serif", url: "/fonts/Montserrat/static/Montserrat-Bold.ttf", weight: "700", style: "normal", hidden: true },
+  { id: "font-54-semibold", family: "Montserrat", value: "'Montserrat', sans-serif", url: "/fonts/Montserrat/static/Montserrat-SemiBold.ttf", weight: "600", style: "normal", hidden: true },
+  { id: "font-54-medium", family: "Montserrat", value: "'Montserrat', sans-serif", url: "/fonts/Montserrat/static/Montserrat-Medium.ttf", weight: "500", style: "normal", hidden: true },
+  { id: "font-54-light", family: "Montserrat", value: "'Montserrat', sans-serif", url: "/fonts/Montserrat/static/Montserrat-Light.ttf", weight: "300", style: "normal", hidden: true },
+  { id: "font-55", family: "Montserrat Italic", value: "'Montserrat Italic', sans-serif", url: "/fonts/Montserrat/static/Montserrat-Italic.ttf", weight: "normal", style: "italic" },
   { id: "font-56", family: "Montserrat Thin", value: "'Montserrat Thin', sans-serif", url: "/fonts/Montserrat/static/Montserrat-Thin.ttf", weight: "100", style: "normal" },
   { id: "font-57", family: "Montserrat Thin Italic", value: "'Montserrat Thin Italic', sans-serif", url: "/fonts/Montserrat/static/Montserrat-ThinItalic.ttf", weight: "100", style: "italic" },
   { id: "font-58", family: "Montserrat ExtraLight", value: "'Montserrat ExtraLight', sans-serif", url: "/fonts/Montserrat/static/Montserrat-ExtraLight.ttf", weight: "200", style: "normal" },
@@ -85,8 +96,12 @@ export const AVAILABLE_FONTS = [
   { id: "font-73", family: "Montserrat Black Italic", value: "'Montserrat Black Italic', sans-serif", url: "/fonts/Montserrat/static/Montserrat-BlackItalic.ttf", weight: "900", style: "italic" },
 
   // Source Sans 3 Font Family
-  { id: "font-74", family: "Source Sans 3", value: "'Source Sans 3', sans-serif", url: "/fonts/Source_Sans_3/SourceSans3-VariableFont_wght.ttf", weight: "normal", style: "normal" },
-  { id: "font-75", family: "Source Sans 3 Italic", value: "'Source Sans 3 Italic', sans-serif", url: "/fonts/Source_Sans_3/SourceSans3-Italic-VariableFont_wght.ttf", weight: "normal", style: "italic" },
+  { id: "font-74", family: "Source Sans 3", value: "'Source Sans 3', sans-serif", url: "/fonts/Source_Sans_3/static/SourceSans3-Regular.ttf", weight: "normal", style: "normal" },
+  { id: "font-74-400", family: "Source Sans 3", value: "'Source Sans 3', sans-serif", url: "/fonts/Source_Sans_3/static/SourceSans3-Regular.ttf", weight: "400", style: "normal", hidden: true },
+  { id: "font-74-bold", family: "Source Sans 3", value: "'Source Sans 3', sans-serif", url: "/fonts/Source_Sans_3/static/SourceSans3-Bold.ttf", weight: "bold", style: "normal", hidden: true },
+  { id: "font-74-700", family: "Source Sans 3", value: "'Source Sans 3', sans-serif", url: "/fonts/Source_Sans_3/static/SourceSans3-Bold.ttf", weight: "700", style: "normal", hidden: true },
+  { id: "font-74-semibold", family: "Source Sans 3", value: "'Source Sans 3', sans-serif", url: "/fonts/Source_Sans_3/static/SourceSans3-SemiBold.ttf", weight: "600", style: "normal", hidden: true },
+  { id: "font-75", family: "Source Sans 3 Italic", value: "'Source Sans 3 Italic', sans-serif", url: "/fonts/Source_Sans_3/static/SourceSans3-Italic.ttf", weight: "normal", style: "italic" },
   { id: "font-76", family: "Source Sans 3 ExtraLight", value: "'Source Sans 3 ExtraLight', sans-serif", url: "/fonts/Source_Sans_3/static/SourceSans3-ExtraLight.ttf", weight: "200", style: "normal" },
   { id: "font-77", family: "Source Sans 3 ExtraLight Italic", value: "'Source Sans 3 ExtraLight Italic', sans-serif", url: "/fonts/Source_Sans_3/static/SourceSans3-ExtraLightItalic.ttf", weight: "200", style: "italic" },
   { id: "font-78", family: "Source Sans 3 Light", value: "'Source Sans 3 Light', sans-serif", url: "/fonts/Source_Sans_3/static/SourceSans3-Light.ttf", weight: "300", style: "normal" },
@@ -108,28 +123,37 @@ export const AVAILABLE_FONTS = [
   { id: "font-92", family: "Anton", value: "'Anton', sans-serif", url: "/fonts/Anton/Anton-Regular.ttf", weight: "normal", style: "normal" },
 ];
 
-// Function to dynamically load all custom fonts
-export async function loadCustomFonts() {
-  const loadedFonts = [];
-  
-  for (const font of AVAILABLE_FONTS) {
-    if (font.url && !document.fonts.check(`12px "${font.family}"`)) {
-      try {
-        const fontFace = new FontFace(font.family, `url(${font.url})`, {
-          weight: font.weight,
-          style: font.style
-        });
-        const loadedFont = await fontFace.load();
-        document.fonts.add(loadedFont);
-        loadedFonts.push(font.family);
-        console.log(`Loaded font: ${font.family}`);
-      } catch (e) {
-        console.warn(`Failed to load font ${font.family}:`, e);
+const fontLoads = new Map();
+
+// FontFaceSet.check can return true for a missing family (system fallback).
+// Register explicit faces, keyed by weight/style, before awaiting their loads.
+export async function loadCustomFonts(families) {
+  if (typeof document === "undefined" || !document.fonts) return [];
+  const wanted = families ? new Set(families) : null;
+  const faces = [...FONT_FACES.map(f => ({...f, url:f.path})), ...AVAILABLE_FONTS];
+  const tasks = [];
+  for (const font of faces) {
+    if (font.url && (!wanted || wanted.has(font.family))) {
+      const weight = String(({normal:400, bold:700})[font.weight] || font.weight || 400);
+      const style = font.style || "normal";
+      const key = `${font.family}:${weight}:${style}`;
+      if (!fontLoads.has(key)) {
+          const fontFace = new FontFace(font.family, `url(${font.url})`, {
+            weight: weight,
+            style: style,
+          });
+          document.fonts.add(fontFace);
+          fontLoads.set(key, fontFace.load().then(() => key).catch(e => {
+            document.fonts.delete(fontFace);
+            fontLoads.delete(key);
+            console.warn(`Failed to load font ${font.family} (${weight}):`, e);
+            return null;
+          }));
       }
+      tasks.push(fontLoads.get(key));
     }
   }
-  
-  return loadedFonts;
+  return [...new Set((await Promise.all(tasks)).filter(Boolean))];
 }
 
 // Helper to get fonts for select dropdown with grouping
@@ -145,6 +169,7 @@ export function getFontOptions() {
   };
   
   for (const font of AVAILABLE_FONTS) {
+    if (font.hidden) continue;
     if (font.family === "Arial" || font.family === "Times New Roman" || font.family === "Courier New" || 
         font.family === "Georgia" || font.family === "Verdana") {
       groups.system.fonts.push(font);

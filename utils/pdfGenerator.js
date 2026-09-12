@@ -1,14 +1,16 @@
-import { Worker } from "worker_threads";
-import archiver from "archiver";
+import * as archiverModule from "archiver";
 import path from "path";
 import fs from "fs";
-import { FONT_FACES } from "@/constants/fontFaces";
-import PDFDocument from "pdfkit";
+import { FONT_FACES } from "../constants/fontFaces.js";
+import { fitTextToBox, shouldFitText } from "./textFit.js";
+import * as pdfkitModule from "pdfkit";
+const PDFDocument = pdfkitModule.default || pdfkitModule;
 
 // ─── Helper: resolve page dimensions to PDF points ─────────────────────────
 export function resolvePageDimensions(config = {}) {
   const {
     format = "A4",
+    orientation = "portrait",
     customWidth,
     customHeight,
     margin = 0,
@@ -22,15 +24,25 @@ export function resolvePageDimensions(config = {}) {
     CUSTOM: { width: customWidth || 595, height: customHeight || 842 },
   };
   let dims = formats[format.toUpperCase()] || formats.A4;
+  let w = dims.width;
+  let h = dims.height;
   if (format.toUpperCase() === "CUSTOM" && customWidth && customHeight) {
-    dims = {
-      width: Number(customWidth) * 0.75,
-      height: Number(customHeight) * 0.75,
-    }; // px to points approx
+    w = Number(customWidth) * 0.75;
+    h = Number(customHeight) * 0.75;
+  }
+  const isLandscape = String(orientation).toLowerCase() === "landscape";
+  if (isLandscape && w < h) {
+    const temp = w;
+    w = h;
+    h = temp;
+  } else if (!isLandscape && w > h && format.toUpperCase() !== "CUSTOM") {
+    const temp = w;
+    w = h;
+    h = temp;
   }
   return {
-    width: dims.width,
-    height: dims.height,
+    width: w,
+    height: h,
     margin: Number(margin),
     scale: Number(scale) || 1,
   };
@@ -38,7 +50,6 @@ export function resolvePageDimensions(config = {}) {
 
 const parseSize = (value) => {
   if (value === undefined || value === null) return null;
-
   return cssUnitToPoints(value);
 };
 
@@ -62,26 +73,49 @@ function mimeFromExt(filePath) {
   }
 }
 
+import QRCode from "qrcode";
+
+// In-memory cache for static and fetched assets (prevents redundant disk reads and network requests)
+const assetCache = new Map();
+const pendingAssets = new Map();
+
 async function urlToBase64(url, timeoutMs = 4000) {
   if (!url) return "";
   if (url.startsWith("data:")) return url;
 
+  if (assetCache.has(url)) {
+    return assetCache.get(url);
+  }
+  if (pendingAssets.has(url)) return pendingAssets.get(url);
+  const pending = loadAsset(url, timeoutMs);
+  pendingAssets.set(url, pending);
+  try {
+    return await pending;
+  } finally {
+    pendingAssets.delete(url);
+  }
+}
+
+async function loadAsset(url, timeoutMs) {
   if (!url.startsWith("http")) {
-    // Root-relative web path (e.g. "/uploads/...") maps to the /public directory,
-    // not the filesystem root. Try /public first, then cwd, then the raw path.
     try {
       const cleaned = url.split("?")[0].split("#")[0];
       const relative = cleaned.replace(/^[\\/]+/, "");
-      const candidatePaths = [
-        path.join(process.cwd(), "public", relative),
-        path.join(process.cwd(), relative),
-        cleaned,
-      ];
-      for (const filePath of candidatePaths) {
-        if (fs.existsSync(filePath)) {
-          const buf = fs.readFileSync(filePath);
-          return `data:${mimeFromExt(filePath)};base64,${buf.toString("base64")}`;
-        }
+      const publicRoot = path.resolve(process.cwd(), "public");
+      const filePath = path.resolve(publicRoot, relative);
+      const isPublicAsset =
+        filePath === publicRoot || filePath.startsWith(`${publicRoot}${path.sep}`);
+
+      if (!isPublicAsset) {
+        console.warn(`[Prefetch] Refusing local path outside public/: ${url}`);
+        return "";
+      }
+
+      if (fs.existsSync(filePath)) {
+        const buf = fs.readFileSync(filePath);
+        const b64 = `data:${mimeFromExt(filePath)};base64,${buf.toString("base64")}`;
+        assetCache.set(url, b64);
+        return b64;
       }
       console.warn(`[Prefetch] Local file not found for ${url}`);
     } catch (e) {
@@ -94,53 +128,67 @@ async function urlToBase64(url, timeoutMs = 4000) {
   const id = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    console.log(`[Prefetch] Fetching remote image: ${url}`);
     const res = await fetch(url, { signal: controller.signal });
-    clearTimeout(id);
     if (!res.ok) throw new Error(`Status ${res.status}`);
     const arrayBuffer = await res.arrayBuffer();
     const contentType = res.headers.get("content-type") || "image/png";
-    const b64 = Buffer.from(arrayBuffer).toString("base64");
-    return `data:${contentType};base64,${b64}`;
+    const b64 = `data:${contentType};base64,${Buffer.from(arrayBuffer).toString("base64")}`;
+    assetCache.set(url, b64);
+    return b64;
   } catch (err) {
-    clearTimeout(id);
-    console.warn(
-      `[Prefetch] Failed or timed out fetching ${url}:`,
-      err.message,
-    );
-    // Return a 1x1 transparent PNG fallback to prevent the layout engine from failing/hanging
+    console.warn(`[Prefetch] Failed or timed out fetching ${url}:`, err.message);
     return "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+  } finally {
+    clearTimeout(id);
   }
+}
+
+async function prefetchPageAssets(page) {
+  const promises = [];
+
+  // 1. Prefetch background image
+  if (page.backgroundImage && !page.backgroundImage.startsWith("data:")) {
+    promises.push(
+      urlToBase64(page.backgroundImage).then((b64) => {
+        page.backgroundImage = b64;
+      })
+    );
+  }
+
+  // 2. Prefetch elements (local in-memory QR generation + images)
+  for (const el of page.elements || []) {
+    if (el.type === "qr" && el.qrUrl && !el.qrBase64) {
+      promises.push(
+        QRCode.toDataURL(el.qrUrl, {
+          margin: 0,
+          width: 300,
+          errorCorrectionLevel: "M",
+        })
+          .then((b64) => {
+            el.qrBase64 = b64;
+          })
+          .catch(async (err) => {
+            console.warn("[QRCode] Local generation failed, trying fallback:", err.message);
+            const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(el.qrUrl)}`;
+            el.qrBase64 = await urlToBase64(qrApiUrl);
+          })
+      );
+    } else if (el.type === "image" && el.src && !el.src.startsWith("data:")) {
+      promises.push(
+        urlToBase64(el.src).then((b64) => {
+          el.src = b64;
+        })
+      );
+    }
+  }
+
+  await Promise.all(promises);
 }
 
 async function prefetchAssets(pagesData) {
-  console.log("[Prefetch] Starting comprehensive assets prefetch...");
-  const start = Date.now();
-  for (const page of pagesData) {
-    // 1. Prefetch background image
-    if (page.backgroundImage) {
-      page.backgroundImage = await urlToBase64(page.backgroundImage);
-    }
-
-    // 2. Prefetch elements (QR and other images)
-    for (const el of page.elements || []) {
-      if (el.type === "qr" && el.qrUrl) {
-        const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(el.qrUrl)}`;
-        el.qrBase64 = await urlToBase64(qrApiUrl);
-      } else if (el.type === "image" && el.src) {
-        el.src = await urlToBase64(el.src);
-      }
-    }
-  }
-  console.log(
-    `[Prefetch] Asset prefetch completed successfully in ${Date.now() - start}ms`,
-  );
+  await Promise.all(pagesData.map((page) => prefetchPageAssets(page)));
 }
 
-// ─── Render PDF via isolated worker thread ────────────────────────────────
-// pdf().toBuffer() hangs in Next.js because Turbopack's React reconciler
-// conflicts with @react-pdf/renderer's own reconciler.
-// Running it in a worker thread gives it a clean, isolated JS environment.
 function resolveScript(script = []) {
   if (!script || script.length === 0) return {};
   const resolved = {};
@@ -152,7 +200,8 @@ function resolveScript(script = []) {
       condBlock = rule.condition;
       cssBlock = rule.css;
     }
-    const { compare1, condition, compare2 } = condBlock?._doc || {};
+    const conditionData = condBlock?._doc || condBlock || {};
+    const { compare1, condition, compare2 } = conditionData;
     let passes = false;
     if (!condition) {
       passes = true;
@@ -229,6 +278,169 @@ function cssUnitToPoints(val) {
   }
 }
 
+function getBorderWidth(styles = {}) {
+  if (styles.borderWidth) return Math.max(0, cssUnitToPoints(styles.borderWidth));
+  if (!styles.border) return 0;
+  const widthToken = String(styles.border)
+    .split(/\s+/)
+    .find((token) => /^(?:\d*\.)?\d+(?:px|pt|cm|mm|in)?$/i.test(token));
+  return widthToken ? Math.max(0, cssUnitToPoints(widthToken)) : 0;
+}
+
+function getPadding(styles = {}) {
+  const raw = String(styles.padding || "0").trim().split(/\s+/);
+  const values = raw.map(cssUnitToPoints);
+  const [a = 0, b = a, c = a, d = b] = values;
+  const sides =
+    values.length === 1
+      ? { top: a, right: a, bottom: a, left: a }
+      : values.length === 2
+        ? { top: a, right: b, bottom: a, left: b }
+        : values.length === 3
+          ? { top: a, right: b, bottom: c, left: b }
+          : { top: a, right: b, bottom: c, left: d };
+
+  if (styles.paddingTop) sides.top = cssUnitToPoints(styles.paddingTop);
+  if (styles.paddingRight) sides.right = cssUnitToPoints(styles.paddingRight);
+  if (styles.paddingBottom) sides.bottom = cssUnitToPoints(styles.paddingBottom);
+  if (styles.paddingLeft) sides.left = cssUnitToPoints(styles.paddingLeft);
+  return sides;
+}
+
+function parseBackgroundPosition(value = "center center") {
+  const tokens = String(value).trim().toLowerCase().split(/\s+/);
+  const horizontal = tokens.find((token) => ["left", "center", "right"].includes(token)) || "center";
+  const vertical = tokens.find((token) => ["top", "center", "bottom"].includes(token)) || "center";
+  return { align: horizontal, valign: vertical };
+}
+
+function cssToStyleMap(css = [], script = []) {
+  const styles = {};
+  for (const item of css || []) {
+    if (!item?.property) continue;
+    const property = item.property.startsWith("--") ? item.property : item.property.replace(/-([a-z])/g, (_, char) => char.toUpperCase());
+    styles[property] = item.value;
+  }
+  for (const [propertyName, value] of Object.entries(resolveScript(script))) {
+    const property = propertyName.startsWith("--") ? propertyName : propertyName.replace(/-([a-z])/g, (_, char) => char.toUpperCase());
+    styles[property] = value;
+  }
+  return styles;
+}
+
+function drawMediaElement(doc, mediaUrl, styles, pageWidth, pageHeight, type) {
+  if (!mediaUrl) return;
+
+  const commaIndex = mediaUrl.indexOf(",");
+  const encoded = commaIndex >= 0 ? mediaUrl.slice(commaIndex + 1) : mediaUrl;
+  const imgBuffer = Buffer.from(encoded, "base64");
+  const image = doc.openImage(imgBuffer);
+  const ratio = image.width / image.height || 1;
+  const borderWidth = getBorderWidth(styles);
+  const padding = getPadding(styles);
+  const horizontalInsets = borderWidth * 2 + padding.left + padding.right;
+  const verticalInsets = borderWidth * 2 + padding.top + padding.bottom;
+
+  const declaredWidth = styles.width ? cssUnitToPoints(styles.width) : null;
+  const declaredHeight = styles.height ? cssUnitToPoints(styles.height) : null;
+  let boxWidth;
+  let boxHeight;
+
+  if (declaredWidth && declaredHeight) {
+    boxWidth = declaredWidth;
+    boxHeight = declaredHeight;
+  } else if (declaredWidth) {
+    boxWidth = declaredWidth;
+    boxHeight = Math.max(1, (declaredWidth - horizontalInsets) / ratio + verticalInsets);
+  } else if (declaredHeight) {
+    boxHeight = declaredHeight;
+    boxWidth = Math.max(1, (declaredHeight - verticalInsets) * ratio + horizontalInsets);
+  } else {
+    boxWidth = image.width * 0.75 + horizontalInsets;
+    boxHeight = image.height * 0.75 + verticalInsets;
+  }
+
+  const maxWidth = styles.maxWidth ? cssUnitToPoints(styles.maxWidth) : null;
+  const maxHeight = styles.maxHeight ? cssUnitToPoints(styles.maxHeight) : null;
+  const scale = Math.min(
+    1,
+    maxWidth ? maxWidth / boxWidth : 1,
+    maxHeight ? maxHeight / boxHeight : 1,
+  );
+  boxWidth = Math.max(1, boxWidth * scale);
+  boxHeight = Math.max(1, boxHeight * scale);
+
+  const leftValue = styles.left !== undefined ? cssUnitToPoints(styles.left) : null;
+  const rightValue = styles.right !== undefined ? cssUnitToPoints(styles.right) : null;
+  const topValue = styles.top !== undefined ? cssUnitToPoints(styles.top) : null;
+  const bottomValue = styles.bottom !== undefined ? cssUnitToPoints(styles.bottom) : null;
+  const left = leftValue ?? (rightValue !== null ? pageWidth - rightValue - boxWidth : 0);
+  const top = topValue ?? (bottomValue !== null ? pageHeight - bottomValue - boxHeight : 0);
+  const radius = Math.max(
+    0,
+    Math.min(
+      String(styles.borderRadius || "").trim().endsWith("%")
+        ? (parseFloat(styles.borderRadius) / 100) * Math.min(boxWidth, boxHeight)
+        : cssUnitToPoints(styles.borderRadius),
+      Math.min(boxWidth, boxHeight) / 2,
+    ),
+  );
+
+  const contentX = left + borderWidth + padding.left;
+  const contentY = top + borderWidth + padding.top;
+  const contentWidth = Math.max(1, boxWidth - horizontalInsets);
+  const contentHeight = Math.max(1, boxHeight - verticalInsets);
+  const innerRadius = Math.max(0, radius - borderWidth);
+  const objectFit = String(styles.objectFit || (type === "qr" ? "fill" : "cover")).toLowerCase();
+
+  doc.save();
+  if (styles.opacity !== undefined) {
+    doc.opacity(Math.max(0, Math.min(1, Number(styles.opacity))));
+  }
+  drawContainerBackground(doc, left, top, boxWidth, boxHeight, styles, radius);
+  if (innerRadius > 0) {
+    doc.roundedRect(contentX, contentY, contentWidth, contentHeight, innerRadius).clip();
+  } else {
+    doc.rect(contentX, contentY, contentWidth, contentHeight).clip();
+  }
+
+  if (objectFit === "contain" || objectFit === "scale-down") {
+    doc.image(imgBuffer, contentX, contentY, {
+      fit: [contentWidth, contentHeight],
+      align: "center",
+      valign: "center",
+    });
+  } else if (objectFit === "cover") {
+    doc.image(imgBuffer, contentX, contentY, {
+      cover: [contentWidth, contentHeight],
+      align: "center",
+      valign: "center",
+    });
+  } else {
+    doc.image(imgBuffer, contentX, contentY, {
+      width: contentWidth,
+      height: contentHeight,
+    });
+  }
+  doc.restore();
+  drawContainerBorder(doc, left, top, boxWidth, boxHeight, styles, radius);
+}
+
+function decodeHtmlText(value) {
+  return String(value || "")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/div>\s*<div[^>]*>/gi, "\n")
+    .replace(/<[^>]*>/g, "")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number(code)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(parseInt(code, 16)));
+}
+
 function drawContainerBorder(doc, x, y, width, height, styles, borderRadius) {
   let borderWidth = 0;
   let borderColor = null;
@@ -295,7 +507,6 @@ function drawContainerBackground(
   let fillSpec = null;
 
   if (styles.background && styles.background.includes("linear-gradient")) {
-    // Extract hex colors or common standard names from the gradient string
     const colors =
       styles.background.match(
         /(#[0-9a-fA-F]{6}|#[0-9a-fA-F]{3}|rgba?\([^)]+\)|[a-zA-Z]+)/g,
@@ -309,7 +520,6 @@ function drawContainerBackground(
     );
 
     if (validColors.length >= 2) {
-      // Create a top-left to bottom-right linear gradient
       const grad = doc.linearGradient(x, y, x + width, y + height);
       validColors.forEach((col, idx) => {
         grad.stop(idx / (validColors.length - 1), col);
@@ -328,7 +538,7 @@ function drawContainerBackground(
       } else if (styles.background.trim().startsWith("#")) {
         fillSpec = styles.background.trim();
       } else {
-        fillSpec = styles.background; // direct hex or standard name fallback
+        fillSpec = styles.background;
       }
     }
   }
@@ -340,6 +550,7 @@ function drawContainerBackground(
     } else {
       doc.rect(x, y, width, height).fill(fillSpec);
     }
+    doc.restore();
   }
 }
 
@@ -367,17 +578,26 @@ const PAGE_FORMATS = {
 
 function resolvePagePoints(config = {}) {
   const format = String(config.format || "A4").toUpperCase();
+  const orientation = String(config.orientation || "portrait").toLowerCase();
+  let w, h;
   if (format === "CUSTOM") {
-    const w = unitToPoints(config.customWidth, config.widthUnit || "px");
-    const h = unitToPoints(config.customHeight, config.heightUnit || "px");
-    return { width: w, height: h };
+    w = unitToPoints(config.customWidth, config.widthUnit || "px");
+    h = unitToPoints(config.customHeight, config.heightUnit || "px");
   } else {
     const base = PAGE_FORMATS[format] || PAGE_FORMATS.A4;
-    return {
-      width: base.width * 0.75,
-      height: base.height * 0.75,
-    };
+    w = base.width * 0.75;
+    h = base.height * 0.75;
   }
+  if (orientation === "landscape" && w < h) {
+    const temp = w;
+    w = h;
+    h = temp;
+  } else if (orientation === "portrait" && w > h && format !== "CUSTOM") {
+    const temp = w;
+    w = h;
+    h = temp;
+  }
+  return { width: w, height: h };
 }
 
 async function renderPdfFromReact(pagesData, title = "") {
@@ -393,12 +613,75 @@ async function renderPdfFromReact(pagesData, title = "") {
         info: { Title: title },
       });
 
-      // Register all custom fonts
+      // Only inspect/register font families that this document can use.
+      const neededFamilies = new Set();
+      for (const page of pagesData) {
+        for (const element of page.elements || []) {
+          if (["image", "qr"].includes(element.type)) continue;
+          const styles = cssToStyleMap(element.css, element.script);
+          const family = styles.fontFamily?.replace(/['"]/g, "").split(",")[0].trim() || "Helvetica";
+          const base = family.replace(/\s+(Bold|Regular|Medium|SemiBold|Light|Thin|Black|ExtraBold)$/i, "").trim();
+          for (const name of [family, base, `${base} Bold`, `${base} SemiBold`, `${base} Regular`]) neededFamilies.add(name);
+        }
+      }
+
       for (const font of FONT_FACES) {
+        if (!neededFamilies.has(font.family)) continue;
         const fullPath = path.join(process.cwd(), "public", font.path);
         if (fs.existsSync(fullPath)) {
           const weight = String(font.weight).toLowerCase();
-          doc.registerFont(`${font.family}-${weight}`, fullPath);
+          const style = String(font.style || "normal").toLowerCase();
+          const isItalic =
+            style === "italic" || /italic|oblique/i.test(font.family);
+
+          try {
+            if (isItalic) {
+              doc.registerFont(`${font.family}`, fullPath);
+              doc.registerFont(`${font.family}-italic`, fullPath);
+              doc.registerFont(`${font.family}-${weight}`, fullPath);
+              doc.registerFont(`${font.family}-${weight}-italic`, fullPath);
+            } else {
+              doc.registerFont(`${font.family}-${weight}`, fullPath);
+
+              if (weight === "bold" || weight === "700") {
+                doc.registerFont(`${font.family}-bold`, fullPath);
+                doc.registerFont(`${font.family}-700`, fullPath);
+                doc.registerFont(`${font.family}-Bold`, fullPath);
+              }
+              if (weight === "normal" || weight === "400") {
+                doc.registerFont(font.family, fullPath);
+                doc.registerFont(`${font.family}-normal`, fullPath);
+                doc.registerFont(`${font.family}-400`, fullPath);
+                doc.registerFont(`${font.family}-regular`, fullPath);
+                doc.registerFont(`${font.family}-Regular`, fullPath);
+              }
+              if (weight === "600" || weight === "semibold") {
+                doc.registerFont(`${font.family}-semibold`, fullPath);
+                doc.registerFont(`${font.family}-600`, fullPath);
+              }
+              if (weight === "800" || weight === "extrabold") {
+                doc.registerFont(`${font.family}-extrabold`, fullPath);
+                doc.registerFont(`${font.family}-800`, fullPath);
+              }
+              if (weight === "900" || weight === "black") {
+                doc.registerFont(`${font.family}-black`, fullPath);
+                doc.registerFont(`${font.family}-900`, fullPath);
+              }
+              const isBaseFamily =
+                font.family === "Montserrat" ||
+                font.family === "Source Sans 3" ||
+                font.family === "Bahnschrift" ||
+                font.family === "Georgia Pro" ||
+                font.family === "Evolventa" ||
+                font.family === "LocalGeorgiaPro" ||
+                font.family === "Georgia";
+              if (!isBaseFamily) {
+                doc.registerFont(font.family, fullPath);
+              }
+            }
+          } catch (e) {
+            // ignore duplicate registration
+          }
         }
       }
 
@@ -421,428 +704,346 @@ async function renderPdfFromReact(pagesData, title = "") {
 
         // 1. Background image
         if (pageData.backgroundImage) {
-  try {
-    const imgBuffer = Buffer.from(
-      pageData.backgroundImage.split(",")[1],
-      "base64",
-    );
-
-    const bg = doc.openImage(imgBuffer);
-
-    const imgWidth = bg.width;
-    const imgHeight = bg.height;
-
-    const imgRatio =
-      imgWidth / imgHeight;
-
-    const pageRatio =
-      w / h;
-
-    let drawWidth;
-    let drawHeight;
-    let drawX;
-    let drawY;
-
-    if (imgRatio > pageRatio) {
-      drawHeight = h;
-      drawWidth =
-        h * imgRatio;
-
-      drawX =
-        (w - drawWidth) / 2;
-
-      drawY = 0;
-    } else {
-      // image taller
-      drawWidth = w;
-      drawHeight =
-        w / imgRatio;
-
-      drawX = 0;
-
-      drawY =
-        (h - drawHeight) / 2;
-    }
-
-    console.log({
-      drawWidth,
-      drawHeight,
-      drawX,
-      drawY,
-    });
-
-    doc.image(
-      imgBuffer,
-      drawX,
-      drawY,
-      {
-        width: drawWidth,
-        height: drawHeight,
-      },
-    );
-  } catch (e) {
-    console.warn(
-      `[renderPdfFromReact] Failed to draw background image for page ${pIdx + 1}:`,
-      e.message,
-    );
-  }
-}
+          try {
+            const imgBuffer = Buffer.from(
+              pageData.backgroundImage.split(",")[1],
+              "base64",
+            );
+            const bgSize = String(pageData.bgSize || "cover").toLowerCase();
+            const position = parseBackgroundPosition(pageData.bgPosition);
+            if (bgSize === "contain") {
+              doc.image(imgBuffer, 0, 0, {
+                fit: [w, h],
+                ...position,
+              });
+            } else if (bgSize === "cover") {
+              doc.image(imgBuffer, 0, 0, {
+                cover: [w, h],
+                ...position,
+              });
+            } else {
+              doc.image(imgBuffer, 0, 0, { width: w, height: h });
+            }
+          } catch (e) {
+            console.warn(
+              `[renderPdfFromReact] Failed to draw background image for page ${pIdx + 1}:`,
+              e.message,
+            );
+          }
+        }
 
         // 2. Elements
-        const elements = pageData.elements || [];
+        const elements = [...(pageData.elements || [])].sort((a, b) => {
+          const aStyles = cssToStyleMap(a.css, a.script);
+          const bStyles = cssToStyleMap(b.css, b.script);
+          return Number(aStyles.zIndex || 0) - Number(bStyles.zIndex || 0);
+        });
+
         for (const el of elements) {
           const { type, text, src, qrBase64, css = [], script = [] } = el;
+          const styles = cssToStyleMap(css, script);
 
-          const styles = {};
-
-          // Apply standard css
-          css.forEach((c) => {
-            styles[c.property.replace(/-([a-z])/g, (g) => g[1].toUpperCase())] =
-              c.value;
-          });
-
-          // Evaluate and override with dynamic script styles
-          const scriptProps = resolveScript(script);
-          Object.entries(scriptProps).forEach(([prop, val]) => {
-            styles[prop.replace(/-([a-z])/g, (g) => g[1].toUpperCase())] = val;
-          });
-
-          const elWidth = cssUnitToPoints(styles.width);
-          let elHeight = cssUnitToPoints(styles.height);
-          if (elHeight === 0) {
-            if (styles.maxHeight) {
-              elHeight = cssUnitToPoints(styles.maxHeight);
-            } else {
-              elHeight = elWidth; // fallback to square shape
-            }
-          }
-          const elLeft = cssUnitToPoints(styles.left);
-          const elTop = cssUnitToPoints(styles.top);
           const borderRadius = cssUnitToPoints(styles.borderRadius);
-          const padding = cssUnitToPoints(styles.padding);
-          const fontSize = cssUnitToPoints(styles.fontSize) || 12 * 0.75;
+          let fontSize = cssUnitToPoints(styles.fontSize) || 12 * 0.75;
           const color = styles.color || "#000000";
 
           if (type === "qr" || type === "image") {
             const mediaUrl = type === "qr" ? qrBase64 : src;
-
-            if (mediaUrl) {
-              try {
-                console.log("=================================");
-                console.log(`[PDF IMAGE START] : ${type}`);
-                console.log("styles:", styles);
-
-                const parseSize = (value) => {
-                  if (value === undefined || value === null || value === "") {
-                    return null;
-                  }
-
-                  return cssUnitToPoints(value);
-                };
-
-                const imgBuffer = Buffer.from(mediaUrl.split(",")[1], "base64");
-
-                const img = doc.openImage(imgBuffer);
-
-                const originalWidth = img.width;
-                const originalHeight = img.height;
-
-                const aspectRatio = originalWidth / originalHeight;
-
-                console.log("original:", originalWidth, originalHeight);
-
-                // =========================
-                // PAGE SIZE
-                // =========================
-
-                const pageWidth = doc.page.width;
-                const pageHeight = doc.page.height;
-
-                console.log("pageWidth:", pageWidth);
-                console.log("pageHeight:", pageHeight);
-
-                // =========================
-                // STYLES
-                // =========================
-
-                const paddingValue = parseSize(styles?.padding) || padding || 0;
-
-                const width = parseSize(styles?.width) || elWidth || null;
-
-                const height = parseSize(styles?.height) || elHeight || null;
-
-                const maxWidth = parseSize(styles?.maxWidth);
-
-                const maxHeight = parseSize(styles?.maxHeight);
-
-                console.log({
-                  width,
-                  height,
-                  maxWidth,
-                  maxHeight,
-                });
-
-                // =========================
-                // FINAL SIZE
-                // =========================
-
-                let finalWidth = originalWidth;
-                let finalHeight = originalHeight;
-
-                // width + height
-                if (width && height) {
-                  finalWidth = width;
-                  finalHeight = height;
-                }
-
-                // only width
-                else if (width) {
-                  finalWidth = width;
-                  finalHeight = finalWidth / aspectRatio;
-                }
-
-                // only height
-                else if (height) {
-                  finalHeight = height;
-                  finalWidth = finalHeight * aspectRatio;
-                }
-
-                // maxWidth
-                if (maxWidth && finalWidth > maxWidth) {
-                  finalWidth = maxWidth;
-                  finalHeight = finalWidth / aspectRatio;
-                }
-
-                // maxHeight
-                if (maxHeight && finalHeight > maxHeight) {
-                  finalHeight = maxHeight;
-                  finalWidth = finalHeight * aspectRatio;
-                }
-
-                finalWidth = Math.max(1, finalWidth);
-                finalHeight = Math.max(1, finalHeight);
-
-                console.log({
-                  finalWidth,
-                  finalHeight,
-                });
-
-                // =========================
-                // CONTAINER SIZE
-                // =========================
-
-                const containerWidth = finalWidth + paddingValue * 2;
-
-                const containerHeight = finalHeight + paddingValue * 2;
-
-                // =========================
-                // POSITION
-                // =========================
-
-                let containerLeft = parseSize(styles?.left);
-
-                if (containerLeft === null || containerLeft === undefined) {
-                  containerLeft = elLeft || 0;
-                }
-
-                let containerTop = parseSize(styles?.top);
-
-                if (containerTop === null || containerTop === undefined) {
-                  containerTop = elTop || 0;
-                }
-
-                if (styles?.right !== undefined) {
-                  const right = parseSize(styles.right) || 0;
-
-                  containerLeft = pageWidth - right - containerWidth;
-                }
-
-                if (styles?.bottom !== undefined) {
-                  const bottom = parseSize(styles.bottom) || 0;
-
-                  containerTop = pageHeight - bottom - containerHeight;
-                }
-
-                console.log({
-                  containerLeft,
-                  containerTop,
-                });
-
-                // =========================
-                // DRAW BACKGROUND
-                // =========================
-
-                drawContainerBackground(
-                  doc,
-                  containerLeft,
-                  containerTop,
-                  containerWidth,
-                  containerHeight,
-                  styles,
-                  borderRadius,
-                );
-
-                // =========================
-                // IMAGE POSITION
-                // =========================
-
-                const imageLeft = containerLeft + paddingValue;
-
-                const imageTop = containerTop + paddingValue;
-
-                console.log({
-                  imageLeft,
-                  imageTop,
-                });
-
-                // =========================
-                // CLIP
-                // =========================
-
-                doc.save();
-
-                const r = Math.max(0, Number(borderRadius || 0) - 3);
-
-                if (r > 0) {
-                  doc
-                    .roundedRect(
-                      imageLeft,
-                      imageTop,
-                      finalWidth,
-                      finalHeight,
-                      r,
-                    )
-                    .clip();
-                }
-
-                // =========================
-                // DRAW IMAGE
-                // =========================
-
-                console.log("[DRAWING IMAGE NOW]");
-
-                doc.image(imgBuffer, imageLeft, imageTop, {
-                  width: finalWidth,
-                  height: finalHeight,
-                });
-
-                doc.restore();
-
-                // =========================
-                // BORDER
-                // =========================
-
-                drawContainerBorder(
-                  doc,
-                  containerLeft,
-                  containerTop,
-                  containerWidth,
-                  containerHeight,
-                  styles,
-                  borderRadius,
-                );
-
-                console.log("[IMAGE SUCCESS]");
-                console.log("=================================");
-              } catch (e) {
-                console.error(
-                  `[renderPdfFromReact] Failed to draw ${type}:`,
-                  e,
-                );
-              }
+            try {
+              drawMediaElement(doc, mediaUrl, styles, w, h, type);
+            } catch (error) {
+              console.error(`[renderPdfFromReact] Failed to draw ${type}:`, error);
             }
           } else {
             // Text element
-            let displayText = text || "";
-            if (
-              displayText.includes('<div class="first-line">') ||
-              displayText.includes('<div class="second-line">') ||
-              displayText.includes("second-line")
-            ) {
-              const matches = displayText.match(/<div[^>]*>([\s\S]*?)<\/div>/g);
-              if (matches && matches.length > 0) {
-                displayText = matches
-                  .map((m) => m.replace(/<[^>]*>/g, ""))
-                  .join("\n");
-              } else {
-                displayText = displayText.replace(/<[^>]*>/g, "");
-              }
-            } else {
-              displayText = displayText
-                .replace(/<br\s*\/?>/gi, "\n")
-                .replace(/<[^>]*>/g, "");
+            let displayText = decodeHtmlText(text);
+            const textTransform = String(styles.textTransform || "").toLowerCase();
+            if (textTransform === "uppercase") {
+              displayText = displayText.toUpperCase();
+            } else if (textTransform === "lowercase") {
+              displayText = displayText.toLowerCase();
+            } else if (textTransform === "capitalize") {
+              displayText = displayText.replace(/\b\p{L}/gu, (char) => char.toUpperCase());
             }
             doc.fillColor(color);
 
-            const family =
+            const rawFamily =
               styles.fontFamily?.replace(/['"]/g, "").split(",")[0].trim() ||
               "Helvetica";
-            let weight = String(styles.fontWeight || "normal").toLowerCase();
-            if (weight === "bold") weight = "bold";
+            const rawWeight = String(styles.fontWeight || "normal").toLowerCase();
+            const isBold =
+              rawWeight === "bold" ||
+              rawWeight === "700" ||
+              rawWeight === "800" ||
+              rawWeight === "900" ||
+              /bold/i.test(rawFamily);
+            const isSemiBold =
+              rawWeight === "600" ||
+              rawWeight === "semibold" ||
+              /semibold/i.test(rawFamily);
 
-            const fontKey = `${family}-${weight}`;
-            try {
-              doc.font(fontKey);
-            } catch {
-              doc.font(weight === "bold" ? "Helvetica-Bold" : "Helvetica");
+            const baseFamily = rawFamily
+              .replace(/\s+(Bold|Regular|Medium|SemiBold|Light|Thin|Black|ExtraBold)$/i, "")
+              .trim();
+
+            const candidateFontNames = [];
+            const numericWeight = ({ normal: "400", bold: "700", semibold: "600" })[rawWeight] || rawWeight;
+            if (styles.fontStyle === "italic") {
+              candidateFontNames.push(`${rawFamily}-${numericWeight}-italic`, `${rawFamily}-italic`);
+            }
+            candidateFontNames.push(`${rawFamily}-${numericWeight}`);
+            if (isBold) {
+              candidateFontNames.push(
+                `${rawFamily}-bold`,
+                `${rawFamily}-700`,
+                `${rawFamily}-Bold`,
+                `${baseFamily}-bold`,
+                `${baseFamily}-700`,
+                `${baseFamily}-Bold`,
+                `${baseFamily} Bold`,
+                `${baseFamily} Bold-700`,
+                `${baseFamily} Bold-bold`,
+                `${baseFamily} Bold-normal`,
+                rawFamily,
+              );
+            } else if (isSemiBold) {
+              candidateFontNames.push(
+                `${rawFamily}-semibold`,
+                `${rawFamily}-600`,
+                `${baseFamily}-semibold`,
+                `${baseFamily}-600`,
+                `${baseFamily} SemiBold`,
+                rawFamily,
+              );
+            }
+            candidateFontNames.push(
+              rawFamily,
+              `${rawFamily}-normal`,
+              `${rawFamily}-400`,
+              `${rawFamily}-regular`,
+              baseFamily,
+              `${baseFamily}-normal`,
+              `${baseFamily}-400`,
+              `${baseFamily}-regular`,
+              `${baseFamily} Regular`,
+            );
+
+            let fontApplied = false;
+            for (const fontName of candidateFontNames) {
+              if (!fontName) continue;
+              try {
+                doc.font(fontName);
+                fontApplied = true;
+                break;
+              } catch {}
+            }
+
+            if (!fontApplied) {
+              try {
+                doc.font(isBold ? "Helvetica-Bold" : "Helvetica");
+              } catch {}
             }
 
             doc.fontSize(fontSize);
 
-            // Vertical alignment based on alignItems / verticalAlign CSS properties
-            let yOffset = 0;
-            const textHeight = doc.heightOfString(displayText, {
-              width: elWidth || w,
-            });
-
-            const vAlign = String(
-              styles.alignItems || styles.verticalAlign || "center",
-            ).toLowerCase();
-            if (vAlign === "center" || vAlign === "middle") {
-              yOffset = elHeight > textHeight ? (elHeight - textHeight) / 2 : 0;
-            } else if (
-              vAlign === "flex-end" ||
-              vAlign === "end" ||
-              vAlign === "bottom"
-            ) {
-              yOffset = elHeight > textHeight ? elHeight - textHeight : 0;
-            } else {
-              // flex-start / start / normal / top -> top align
-              yOffset = 0;
-            }
-
-            // Horizontal alignment based on textAlign and justifyContent
             let align = "left";
             if (styles.textAlign) {
-              align = styles.textAlign;
+              const a = styles.textAlign.toLowerCase();
+              if (["left", "center", "right", "justify"].includes(a)) align = a;
             } else if (styles.justifyContent) {
-              const jContent = String(styles.justifyContent).toLowerCase();
-              if (jContent === "center") {
-                align = "center";
-              } else if (
-                jContent === "flex-end" ||
-                jContent === "end" ||
-                jContent === "right"
-              ) {
-                align = "right";
+              const j = styles.justifyContent.toLowerCase();
+              if (j === "center") align = "center";
+              else if (j === "flex-end" || j === "end") align = "right";
+              else if (j === "flex-start" || j === "start") align = "left";
+            }
+
+            let textWidth = parseSize(styles?.width);
+            let textHeightBox = parseSize(styles?.height);
+
+            const rightVal = parseSize(styles?.right);
+            const bottomVal = parseSize(styles?.bottom);
+
+            let textLeft = parseSize(styles?.left);
+            if (textLeft === null || textLeft === undefined) {
+              if (rightVal !== null && rightVal !== undefined) {
+                textLeft = w - rightVal - (textWidth || 0);
               } else {
-                align = "left";
+                textLeft = 0;
               }
             }
 
-            const textLeft = parseSize(styles?.left) || elLeft || 0;
+            if (textWidth === null || textWidth === undefined) {
+              const availableWidth = Math.max(1, w - textLeft - (rightVal || 0));
+              const naturalWidth = Math.max(1, doc.widthOfString(displayText || " "));
+              textWidth = Math.min(availableWidth, naturalWidth);
+            }
 
-            const textTop = parseSize(styles?.top) || elTop || 0;
+            let textTop = parseSize(styles?.top);
+            if (textTop === null || textTop === undefined) {
+              if (bottomVal !== null && bottomVal !== undefined) {
+                textTop = h - bottomVal - (textHeightBox || fontSize);
+              } else {
+                textTop = 0;
+              }
+            }
 
-            const textWidth = parseSize(styles?.width) || elWidth || w;
+            if (textLeft < 0) textLeft = 0;
+            if (textTop < 0) textTop = 0;
+            if (textLeft + textWidth > w) {
+              textWidth = Math.max(10, w - textLeft - 2);
+            }
 
-            const textHeightBox = parseSize(styles?.height) || elHeight || 0;
+            const borderWidth = getBorderWidth(styles);
+            const paddings = getPadding(styles);
 
-            doc.text(displayText, textLeft, textTop + yOffset, {
-              width: textWidth,
-              height: textHeightBox,
-              align,
-            });
+            const hasBg = styles.backgroundColor || styles.background;
+            const hasBorder = styles.border || styles.borderWidth || styles.borderColor;
+            if (hasBg || hasBorder) {
+              const bgHeight = textHeightBox > 0
+                ? textHeightBox
+                : fontSize + paddings.top + paddings.bottom + borderWidth * 2 + 4;
+              drawContainerBackground(
+                doc,
+                textLeft,
+                textTop,
+                textWidth,
+                bgHeight,
+                styles,
+                borderRadius,
+              );
+              drawContainerBorder(
+                doc,
+                textLeft,
+                textTop,
+                textWidth,
+                bgHeight,
+                styles,
+                borderRadius,
+              );
+            }
+
+            let fittedLines = null;
+            const overflowsWidth = displayText.split("\n").some(line =>
+              doc.widthOfString(line, { characterSpacing: cssUnitToPoints(styles.letterSpacing) || 0 }) >
+              textWidth - paddings.left - paddings.right - borderWidth * 2);
+            if (styles.width && textWidth > 0 && textHeightBox > 0 && shouldFitText(styles, overflowsWidth)) {
+              const originalSize = fontSize;
+              const rawLeading = String(styles.lineHeight || "1.5").trim();
+              const normalRatio = doc.currentLineHeight(true) / fontSize;
+              const fit = fitTextToBox({
+                text: displayText,
+                width: (textWidth - paddings.left - paddings.right - borderWidth * 2) / 0.75,
+                height: (textHeightBox - paddings.top - paddings.bottom - borderWidth * 2) / 0.75,
+                fontSize: originalSize / 0.75,
+                minFontSize: styles["--min-font-size"] ? cssUnitToPoints(styles["--min-font-size"]) / 0.75 : undefined,
+                lineHeight: size => rawLeading === "normal" ? normalRatio * size
+                  : /^[\d.]+$/.test(rawLeading) ? Number(rawLeading) * size : cssUnitToPoints(rawLeading) / 0.75,
+                measure: (value, size) => {
+                  doc.fontSize(size * 0.75);
+                  return doc.widthOfString(value, { characterSpacing: cssUnitToPoints(styles.letterSpacing) || 0 }) / 0.75;
+                },
+              });
+              displayText = fit.text;
+              fittedLines = fit.lines;
+              fontSize = fit.fontSize * 0.75;
+              doc.fontSize(fontSize);
+            }
+
+            const rawLineHeight = String(styles.lineHeight || "1.5").trim();
+            const lineHeight = rawLineHeight === "normal"
+              ? doc.currentLineHeight(true)
+              : (/^[\d.]+$/.test(rawLineHeight)
+                  ? Number(rawLineHeight) * fontSize
+                  : cssUnitToPoints(rawLineHeight));
+            const lineGap = lineHeight - doc.currentLineHeight(true);
+            const halfLeading = (lineHeight - doc.currentLineHeight(false)) / 2;
+            const characterSpacing = cssUnitToPoints(styles.letterSpacing) || 0;
+
+            let yOffset = 0;
+            if (textHeightBox > 0 && ["flex", "inline-flex"].includes(styles.display)) {
+              const innerWidth = Math.max(
+                1,
+                textWidth - paddings.left - paddings.right - borderWidth * 2,
+              );
+              const actualTextHeight = fittedLines ? fittedLines.length * lineHeight : doc.heightOfString(displayText, {
+                width: innerWidth,
+                lineGap,
+                characterSpacing,
+              });
+              const vAlign = String(
+                styles.flexDirection === "column"
+                  ? styles.justifyContent || "top"
+                  : styles.alignItems || "top",
+              ).toLowerCase();
+              if (vAlign === "center" || vAlign === "middle") {
+                const availableHeight = Math.max(
+                  0,
+                  textHeightBox - paddings.top - paddings.bottom - borderWidth * 2,
+                );
+                yOffset = (availableHeight - actualTextHeight) / 2;
+              } else if (
+                vAlign === "flex-end" ||
+                vAlign === "end" ||
+                vAlign === "bottom"
+              ) {
+                const availableHeight = Math.max(
+                  0,
+                  textHeightBox - paddings.top - paddings.bottom - borderWidth * 2,
+                );
+                yOffset = availableHeight - actualTextHeight;
+              }
+            }
+
+            const effectiveLeft = textLeft + borderWidth + paddings.left;
+            const effectiveTop = textTop + borderWidth + paddings.top + yOffset + halfLeading;
+            const effectiveWidth = Math.max(
+              1,
+              textWidth - borderWidth * 2 - paddings.left - paddings.right,
+            );
+
+            if (displayText && displayText.trim().length > 0) {
+              const textOptions = {
+                width: effectiveWidth,
+                align,
+                lineGap,
+                characterSpacing,
+                height: Infinity,
+              };
+              doc.save();
+              if (
+                textHeightBox > 0 &&
+                ["hidden", "clip"].includes(String(styles.overflow || "").toLowerCase())
+              ) {
+                doc.rect(
+                  textLeft + borderWidth,
+                  textTop + borderWidth,
+                  Math.max(0, textWidth - borderWidth * 2),
+                  Math.max(0, textHeightBox - borderWidth * 2),
+                ).clip();
+              }
+
+              if (fittedLines) {
+                const widths = fittedLines.map(line => doc.widthOfString(line, { characterSpacing }));
+                const isFlex = ["flex", "inline-flex"].includes(styles.display);
+                const horizontal = String(styles.flexDirection === "column"
+                  ? styles.alignItems || "stretch" : styles.justifyContent || "flex-start").toLowerCase();
+                const blockWidth = isFlex && !(styles.flexDirection === "column" && horizontal === "stretch")
+                  ? Math.max(0, ...widths) : effectiveWidth;
+                const blockOffset = !isFlex ? 0
+                  : ["center", "space-around", "space-evenly"].includes(horizontal) ? (effectiveWidth - blockWidth) / 2
+                  : ["end", "flex-end", "right"].includes(horizontal) ? effectiveWidth - blockWidth : 0;
+                const lineAlign = styles.textAlign || "left";
+                fittedLines.forEach((line, index) => {
+                  const offset = lineAlign === "center" ? (blockWidth - widths[index]) / 2
+                    : ["right", "end"].includes(lineAlign) ? blockWidth - widths[index] : 0;
+                  doc.text(line, effectiveLeft + blockOffset + offset, effectiveTop + index * lineHeight,
+                    { ...textOptions, width: undefined, align: "left", lineBreak: false });
+                });
+              } else {
+                doc.text(displayText, effectiveLeft, effectiveTop, textOptions);
+              }
+              doc.restore();
+            }
           }
         }
       }
@@ -854,19 +1055,34 @@ async function renderPdfFromReact(pagesData, title = "") {
   });
 }
 
-// ─── ZIP builder (unchanged) ───────────────────────────────────────────────
-function buildZipBuffer(files) {
+// ─── ZIP builder ───────────────────────────────────────────────────────────
+function createZipArchive(options = { zlib: { level: 4 } }) {
+  if (archiverModule.ZipArchive) {
+    return new archiverModule.ZipArchive(options);
+  }
+  const fn = archiverModule.default || archiverModule;
+  if (typeof fn === "function") {
+    return fn("zip", options);
+  }
+  if (typeof archiverModule === "function") {
+    return archiverModule("zip", options);
+  }
+  throw new Error("Cannot instantiate archiver zip");
+}
+
+function buildZipBuffer(pdfFiles) {
   return new Promise((resolve, reject) => {
-    const validFiles = files.filter(
-      (f) => f && f.buffer && Buffer.isBuffer(f.buffer),
-    );
-    if (!validFiles.length) reject(new Error("No valid files"));
     const chunks = [];
-    const archive = archiver("zip", { zlib: { level: 6 } });
-    archive.on("data", (c) => chunks.push(c));
+    const archive = createZipArchive({ zlib: { level: 4 } });
+
+    archive.on("data", (chunk) => chunks.push(chunk));
     archive.on("end", () => resolve(Buffer.concat(chunks)));
-    archive.on("error", reject);
-    validFiles.forEach((f) => archive.append(f.buffer, { name: f.name }));
+    archive.on("error", (err) => reject(err));
+
+    for (const file of pdfFiles) {
+      archive.append(file.buffer, { name: file.name });
+    }
+
     archive.finalize();
   });
 }
@@ -898,20 +1114,21 @@ export class SinglePdfGenerator {
 
 // ─── CLASS: BulkPdfGenerator (many students, one PDF each) ──────────────────
 export class BulkPdfGenerator {
-  constructor({ concurrency = 4 } = {}) {
+  constructor({ concurrency = 8 } = {}) {
     this.concurrency = concurrency;
   }
 
   async generate(students) {
-    // Prefetch all assets for all students
-    for (const student of students) {
-      await prefetchAssets(student.pagesData);
-    }
+    await Promise.all(
+      students.map((student) => prefetchAssets(student.pagesData))
+    );
+
     const tasks = students.map((student) => async () => {
       const safeName = student.name.replace(/[^a-z0-9._\- ]/gi, "_").trim();
       const pdfBuffer = await renderPdfFromReact(student.pagesData, safeName);
       return { name: `${safeName}.pdf`, buffer: pdfBuffer };
     });
+
     const pdfFiles = await parallelLimit(tasks, this.concurrency);
     return buildZipBuffer(pdfFiles);
   }
@@ -919,17 +1136,11 @@ export class BulkPdfGenerator {
 
 // ─── CLASS: MultiTemplateBulkGenerator (folders per student) ────────────────
 export class MultiTemplateBulkGenerator {
-  constructor({ concurrency = 3 } = {}) {
+  constructor({ concurrency = 8 } = {}) {
     this.concurrency = concurrency;
   }
 
   async generate(studentsData) {
-    // studentsData: [{ name: "John", pdfs: { "Certificate": pagesData, "ID": pagesData } }]
-    for (const student of studentsData) {
-      for (const pagesData of Object.values(student.pdfs)) {
-        await prefetchAssets(pagesData);
-      }
-    }
     const tasks = [];
     for (const student of studentsData) {
       const studentFolder = student.name
@@ -938,6 +1149,7 @@ export class MultiTemplateBulkGenerator {
       for (const [templateName, pagesData] of Object.entries(student.pdfs)) {
         const safeName = templateName.replace(/[^a-z0-9._\- ]/gi, "_").trim();
         tasks.push(async () => {
+          await prefetchAssets(pagesData);
           const pdfBuffer = await renderPdfFromReact(
             pagesData,
             `${student.name}_${templateName}`,

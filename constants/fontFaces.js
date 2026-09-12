@@ -1,4 +1,41 @@
 export const FONT_FACES = [
+  // LocalGeorgiaPro & Georgia Pro
+  {
+    family: "LocalGeorgiaPro",
+    path: "/fonts/georgia-pro/GeorgiaPro-Regular.ttf",
+    weight: "normal",
+    style: "normal",
+  },
+  {
+    family: "LocalGeorgiaPro",
+    path: "/fonts/georgia-pro/GeorgiaPro-Bold.ttf",
+    weight: "bold",
+    style: "normal",
+  },
+  {
+    family: "Georgia Pro",
+    path: "/fonts/georgia-pro/GeorgiaPro-Regular.ttf",
+    weight: "normal",
+    style: "normal",
+  },
+  {
+    family: "Georgia Pro",
+    path: "/fonts/georgia-pro/GeorgiaPro-Bold.ttf",
+    weight: "bold",
+    style: "normal",
+  },
+  {
+    family: "Georgia",
+    path: "/fonts/georgia-pro/GeorgiaPro-Regular.ttf",
+    weight: "normal",
+    style: "normal",
+  },
+  {
+    family: "Georgia",
+    path: "/fonts/georgia-pro/GeorgiaPro-Bold.ttf",
+    weight: "bold",
+    style: "normal",
+  },
   // Anton Font Family
   {
     family: "Anton",
@@ -11,6 +48,24 @@ export const FONT_FACES = [
     family: "Bahnschrift",
     path: "/fonts/Bahnschrift-Font-Family/BAHNSCHRIFT.TTF",
     weight: "normal",
+    style: "normal",
+  },
+  {
+    family: "Bahnschrift",
+    path: "/fonts/Bahnschrift-Font-Family/BAHNSCHRIFT 4.TTF",
+    weight: "bold",
+    style: "normal",
+  },
+  {
+    family: "Bahnschrift",
+    path: "/fonts/Bahnschrift-Font-Family/BAHNSCHRIFT 4.TTF",
+    weight: "700",
+    style: "normal",
+  },
+  {
+    family: "Bahnschrift",
+    path: "/fonts/Bahnschrift-Font-Family/BAHNSCHRIFT 3.TTF",
+    weight: "600",
     style: "normal",
   },
   {
@@ -106,6 +161,18 @@ export const FONT_FACES = [
     style: "normal",
   },
   {
+    family: "Evolventa",
+    path: "/fonts/evolventa-webfont/Evolventa-Bold.woff",
+    weight: "bold",
+    style: "normal",
+  },
+  {
+    family: "Evolventa",
+    path: "/fonts/evolventa-webfont/Evolventa-Bold.woff",
+    weight: "700",
+    style: "normal",
+  },
+  {
     family: "Evolventa Oblique",
     path: "/fonts/evolventa-webfont/Evolventa-Oblique.woff",
     weight: "normal",
@@ -129,6 +196,24 @@ export const FONT_FACES = [
     family: "Georgia Pro",
     path: "/fonts/georgia-pro/GeorgiaPro-Regular.ttf",
     weight: "normal",
+    style: "normal",
+  },
+  {
+    family: "Georgia Pro",
+    path: "/fonts/georgia-pro/GeorgiaPro-Bold.ttf",
+    weight: "bold",
+    style: "normal",
+  },
+  {
+    family: "Georgia Pro",
+    path: "/fonts/georgia-pro/GeorgiaPro-Bold.ttf",
+    weight: "700",
+    style: "normal",
+  },
+  {
+    family: "Georgia Pro",
+    path: "/fonts/georgia-pro/GeorgiaPro-Semibold.ttf",
+    weight: "600",
     style: "normal",
   },
   {
@@ -305,15 +390,57 @@ export const FONT_FACES = [
   // Montserrat Font Family
   {
     family: "Montserrat",
-    path: "/fonts/Montserrat/Montserrat-VariableFont_wght.ttf",
+    path: "/fonts/Montserrat/static/Montserrat-Regular.ttf",
     weight: "normal",
     style: "normal",
   },
   {
-    family: "Montserrat Italic",
-    path: "/fonts/Montserrat/Montserrat-Italic-VariableFont_wght.ttf",
-    weight: "normal",
-    style: "italic",
+    family: "Montserrat",
+    path: "/fonts/Montserrat/static/Montserrat-Regular.ttf",
+    weight: "400",
+    style: "normal",
+  },
+  {
+    family: "Montserrat",
+    path: "/fonts/Montserrat/static/Montserrat-Bold.ttf",
+    weight: "bold",
+    style: "normal",
+  },
+  {
+    family: "Montserrat",
+    path: "/fonts/Montserrat/static/Montserrat-Bold.ttf",
+    weight: "700",
+    style: "normal",
+  },
+  {
+    family: "Montserrat",
+    path: "/fonts/Montserrat/static/Montserrat-SemiBold.ttf",
+    weight: "600",
+    style: "normal",
+  },
+  {
+    family: "Montserrat",
+    path: "/fonts/Montserrat/static/Montserrat-Medium.ttf",
+    weight: "500",
+    style: "normal",
+  },
+  {
+    family: "Montserrat",
+    path: "/fonts/Montserrat/static/Montserrat-Light.ttf",
+    weight: "300",
+    style: "normal",
+  },
+  {
+    family: "Montserrat",
+    path: "/fonts/Montserrat/static/Montserrat-ExtraBold.ttf",
+    weight: "800",
+    style: "normal",
+  },
+  {
+    family: "Montserrat",
+    path: "/fonts/Montserrat/static/Montserrat-Black.ttf",
+    weight: "900",
+    style: "normal",
   },
   {
     family: "Montserrat Thin",
@@ -427,15 +554,45 @@ export const FONT_FACES = [
   // Source Sans 3 Font Family
   {
     family: "Source Sans 3",
-    path: "/fonts/Source_Sans_3/SourceSans3-VariableFont_wght.ttf",
+    path: "/fonts/Source_Sans_3/static/SourceSans3-Regular.ttf",
     weight: "normal",
     style: "normal",
   },
   {
-    family: "Source Sans 3 Italic",
-    path: "/fonts/Source_Sans_3/SourceSans3-Italic-VariableFont_wght.ttf",
-    weight: "normal",
-    style: "italic",
+    family: "Source Sans 3",
+    path: "/fonts/Source_Sans_3/static/SourceSans3-Regular.ttf",
+    weight: "400",
+    style: "normal",
+  },
+  {
+    family: "Source Sans 3",
+    path: "/fonts/Source_Sans_3/static/SourceSans3-Bold.ttf",
+    weight: "bold",
+    style: "normal",
+  },
+  {
+    family: "Source Sans 3",
+    path: "/fonts/Source_Sans_3/static/SourceSans3-Bold.ttf",
+    weight: "700",
+    style: "normal",
+  },
+  {
+    family: "Source Sans 3",
+    path: "/fonts/Source_Sans_3/static/SourceSans3-SemiBold.ttf",
+    weight: "600",
+    style: "normal",
+  },
+  {
+    family: "Source Sans 3",
+    path: "/fonts/Source_Sans_3/static/SourceSans3-Medium.ttf",
+    weight: "500",
+    style: "normal",
+  },
+  {
+    family: "Source Sans 3",
+    path: "/fonts/Source_Sans_3/static/SourceSans3-Light.ttf",
+    weight: "300",
+    style: "normal",
   },
   {
     family: "Source Sans 3 ExtraLight",
