@@ -1,6 +1,7 @@
 // app/professional-dev/[program]/page.jsx
 "use client";
 
+import CmsPageContent from "@/Components/cms/CmsPageContent";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -94,7 +95,7 @@ const scaleIn = {
   },
 };
 
-export default function ProgramPage() {
+function ProgramPageInner() {
   const params = useParams();
   const router = useRouter();
   const [program, setProgram] = useState(null);
@@ -1504,3 +1505,5 @@ export default function ProgramPage() {
     </div>
   );
 }
+
+export default function ProfessionalProgrammePage() { return <CmsPageContent pageKey="professional-detail"><ProgramPageInner /></CmsPageContent>; }

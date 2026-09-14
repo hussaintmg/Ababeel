@@ -9,6 +9,8 @@ import { expandBlocks } from "@/lib/cms/binding";
 import { scopeCss, blockScopeId, blockScopeSelector } from "@/lib/cms/scopeCss";
 import { decorationCss } from "@/lib/cms/decorations";
 import { TRAINING_RENDERERS } from "@/Components/cms/TrainingBlocks";
+import { PUBLIC_RENDERERS } from "@/Components/cms/publicPages/renderers";
+import StudioSection from "@/Components/cms/StudioSection";
 
 /* ---------- Tailwind runtime (for Custom HTML blocks) ---------- */
 // Loads the Tailwind browser build once so arbitrary Tailwind utility classes
@@ -1703,13 +1705,15 @@ const RENDERERS = {
   // server (lib/cms/trainingBlocks.js) before they reach here, so these are
   // presentational like every other renderer.
   ...TRAINING_RENDERERS,
+  ...PUBLIC_RENDERERS,
+  studioSection: StudioSection,
 };
 
 // Blocks that pin themselves with position: sticky. Their wrapper must not
 // clip or become a scroll container, because `position: sticky` resolves
 // against the nearest scrolling ancestor — an `overflow: hidden` wrapper makes
 // that wrapper the scrollport and the section silently stops pinning.
-const STICKY_BLOCK_TYPES = new Set(["scrollVideo"]);
+const STICKY_BLOCK_TYPES = new Set(["scrollVideo", "studioSection"]);
 
 const SHADOWS = {
   none: "none",

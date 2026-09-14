@@ -26,6 +26,8 @@ export const OVERLAY_KIND_OPTIONS = OVERLAY_KINDS;
 export const VISIBILITY_OPTIONS = VISIBILITY;
 
 import { TRAINING_BLOCK_TYPES } from "@/Components/cms/trainingBlockSchemas";
+import { PUBLIC_BLOCK_TYPES } from "@/Components/cms/publicPages/catalog";
+import { STUDIO_BLOCK_TYPES } from "@/Components/cms/studioCatalog";
 
 let _uid = 0;
 export function newId() {
@@ -1151,6 +1153,8 @@ export const BLOCK_TYPES = {
 // their content, which makes them a different kind of block worth reading as
 // one group. Merged here so the builder treats them like any other.
 Object.assign(BLOCK_TYPES, TRAINING_BLOCK_TYPES);
+Object.assign(BLOCK_TYPES, PUBLIC_BLOCK_TYPES);
+Object.assign(BLOCK_TYPES, STUDIO_BLOCK_TYPES);
 
 /** Blocks whose content comes from the training catalogue, not from props. */
 export const LIVE_BLOCK_TYPES = new Set(Object.keys(TRAINING_BLOCK_TYPES));

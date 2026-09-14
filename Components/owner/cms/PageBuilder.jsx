@@ -241,6 +241,7 @@ function PageBuilderInner({ pageKey, meta }) {
   const [dynamicRoute, setDynamicRoute] = useState(null);
   const [previewMode, setPreviewMode] = useState("static"); // static | live | sample
   const [previewData, setPreviewData] = useState(null);
+  const [previewCatalogue, setPreviewCatalogue] = useState({});
   const [previewMeta, setPreviewMeta] = useState({});
   const [previewLoading, setPreviewLoading] = useState(false);
   // Which viewport the preview is rendered at. "fluid" fills the panel.
@@ -307,7 +308,7 @@ function PageBuilderInner({ pageKey, meta }) {
           setOtherSettings(rest);
           setDataSources(Array.isArray(d.dataSources) ? d.dataSources : []);
           setDynamicRoute(d.dynamicRoute || null);
-          if ((d.dataSources?.length || d.dynamicRoute?.enabled) && previewMode === "static") {
+          if ((d.dataSources?.length || d.dynamicRoute?.enabled || d.blocks?.some(b => b.type?.startsWith('public_'))) && previewMode === "static") {
             setPreviewMode("live");
           }
         }
@@ -336,21 +337,23 @@ function PageBuilderInner({ pageKey, meta }) {
     try {
       const res = await axios.post(
         "/api/owner/cms/preview/data",
-        { dataSources, dynamicRoute, params: {}, mode: "mixed" },
+        { dataSources, dynamicRoute, blocks, params: {}, mode: "mixed" },
         { withCredentials: true }
       );
       setPreviewData(res.data?.data?.context || {});
       setPreviewMeta(res.data?.data?.meta || {});
+      setPreviewCatalogue(res.data?.data?.catalogue || {});
     } catch (e) {
       toast.error(e?.response?.data?.error || "Could not load live data");
       setPreviewData({});
     } finally {
       setPreviewLoading(false);
     }
-  }, [previewMode, dataSources, dynamicRoute, tree]);
+  }, [previewMode, dataSources, dynamicRoute, tree, blocks]);
 
   useEffect(() => {
-    loadPreviewData();
+    const timer = setTimeout(loadPreviewData, 400);
+    return () => clearTimeout(timer);
   }, [loadPreviewData]);
 
   const save = async () => {
@@ -771,7 +774,7 @@ function PageBuilderInner({ pageKey, meta }) {
             >
               {customCss ? <style dangerouslySetInnerHTML={{ __html: customCss }} /> : null}
               {blocks.length ? (
-                <BlockRenderer blocks={blocks} data={previewData} showWarnings />
+                <BlockRenderer blocks={previewMode === 'live' ? blocks.map(block => ({ ...block, props: { ...block.props, ...previewCatalogue[block.id] } })) : blocks} data={previewData} showWarnings />
               ) : (
                 <div className="py-24 text-center text-gray-300 text-sm">Preview appears here</div>
               )}

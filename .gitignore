@@ -75,3 +75,7 @@ public/ababeel-*.json
 
 # CMS content backups written by the seed scripts
 /backups/
+docs/superpowers/plans/2026-09-14-public-cms.md
+/__tests__/
+/scripts/
+/docs/

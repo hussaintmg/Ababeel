@@ -1,7 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { isRouteActive } from "@/lib/navigation/activeMenu";
 import {
   X,
   ChevronRight,
@@ -14,9 +16,23 @@ import { useAuth } from "@/context/AuthContext";
 
 const Sidebar = ({ isOpen, onClose, navLinks, loading = false }) => {
   const { user } = useAuth();
+  const pathname = usePathname();
   const [openDropdown, setOpenDropdown] = useState(null);
   const [isScrolling, setIsScrolling] = useState(false);
   const contentRef = React.useRef(null);
+
+  const allNavUrls = useMemo(() => {
+    const list = [];
+    (navLinks || []).forEach((item) => {
+      if (item.url) list.push(item.url);
+      (item.dropdown || []).forEach((d) => {
+        if (d.url) list.push(d.url);
+      });
+    });
+    return list;
+  }, [navLinks]);
+
+  const isActive = (url) => isRouteActive(url, pathname, allNavUrls);
   // A plain `let` here was reset on every render, so clearTimeout never saw
   // the previous handle and the scroll debounce never actually debounced.
   const scrollTimeoutRef = React.useRef(null);
@@ -131,30 +147,47 @@ const Sidebar = ({ isOpen, onClose, navLinks, loading = false }) => {
 
                         {openDropdown === index && (
                           <div className="mt-1 ml-6 pl-2 border-l-2 border-blue-200 animate-slideDown space-y-0.5">
-                            {item.dropdown.map((drop, i) => (
-                              <Link
-                                key={i}
-                                href={drop.url || `/qualification/${drop.id || ""}`}
-                                className="block py-2.5 px-3 text-gray-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all duration-200 text-sm group/link"
-                                onClick={onClose}
-                              >
-                                <div className="flex items-center">
-                                  <div className="w-1.5 h-1.5 rounded-full bg-gray-300 mr-3 group-hover/link:bg-blue-500 transition-all duration-300"></div>
-                                  <span className="truncate">{drop.name}</span>
-                                </div>
-                              </Link>
-                            ))}
+                            {item.dropdown.map((drop, i) => {
+                              const active = isActive(drop.url || `/qualification/${drop.id || ""}`);
+                              return (
+                                <Link
+                                  key={i}
+                                  href={drop.url || `/qualification/${drop.id || ""}`}
+                                  className={`block py-2.5 px-3 rounded-lg transition-all duration-200 text-sm group/link ${
+                                    active
+                                      ? "bg-blue-600 text-white font-semibold shadow-xs"
+                                      : "text-gray-600 hover:text-blue-700 hover:bg-blue-50"
+                                  }`}
+                                  onClick={onClose}
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center">
+                                      <div className={`w-1.5 h-1.5 rounded-full mr-3 ${active ? "bg-white" : "bg-gray-300 group-hover/link:bg-blue-500"} transition-all duration-300`}></div>
+                                      <span className="truncate">{drop.name}</span>
+                                    </div>
+                                    {active && <span className="w-1.5 h-1.5 rounded-full bg-white ml-2"></span>}
+                                  </div>
+                                </Link>
+                              );
+                            })}
                           </div>
                         )}
                       </div>
                     ) : (
                       <Link
                         href={item.url}
-                        className="flex items-center gap-3 p-3 text-gray-800 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all duration-200 group"
+                        className={`flex items-center justify-between p-3 rounded-lg transition-all duration-200 group ${
+                          isActive(item.url)
+                            ? "bg-blue-600 text-white font-semibold shadow-xs"
+                            : "text-gray-800 hover:text-blue-700 hover:bg-blue-50"
+                        }`}
                         onClick={onClose}
                       >
-                        <div className="w-2 h-2 rounded-full bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                        <span className="font-medium text-sm">{item.name}</span>
+                        <div className="flex items-center gap-3">
+                          <div className={`w-2 h-2 rounded-full ${isActive(item.url) ? "bg-white" : "bg-blue-500 opacity-0 group-hover:opacity-100"} transition-opacity`}></div>
+                          <span className="font-medium text-sm">{item.name}</span>
+                        </div>
+                        {isActive(item.url) && <span className="w-1.5 h-1.5 rounded-full bg-white"></span>}
                       </Link>
                     )}
                   </div>

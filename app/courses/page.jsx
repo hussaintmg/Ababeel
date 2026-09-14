@@ -18,7 +18,7 @@ export async function generateMetadata() {
   return trainingMetadata("Courses", null, {
     title: "Training Courses",
     description:
-      "Accredited health, safety and environmental training courses, with upcoming session dates and online enrolment.",
+    "Accredited health, safety and environmental training courses, with upcoming session dates and online enrolment."
   });
 }
 
@@ -26,14 +26,14 @@ export default async function CoursesPage() {
   // One round trip each, in parallel — the filter options and the first page
   // do not depend on each other.
   const [training, initial, filters] = await Promise.all([
-    getTrainingSettings(),
-    listPublicCourses({ limit: 12 }),
-    getCourseFilterOptions(),
-  ]);
+  getTrainingSettings(),
+  listPublicCourses({ limit: 12 }),
+  getCourseFilterOptions()]
+  );
 
   const perPage = Number(training?.coursesPerPage) || 12;
 
-  return (
+  return <CmsSlot pageKey="courses" fullPageOnly>
     <>
       <CmsSlot pageKey="courses">
   <Section tone="dark" size="sm" className="pt-10">
@@ -41,8 +41,8 @@ export default async function CoursesPage() {
             <Breadcrumb
               dark
               items={[{ label: "Home", href: "/" }, { label: "Courses" }]}
-              className="mb-6"
-            />
+              className="mb-6" />
+            
             <p className="t-eyebrow mb-3 text-brand-400">Training catalogue</p>
             <h1 className="t-h1 max-w-3xl text-white">
               Accredited safety training, built around competence
@@ -59,8 +59,8 @@ export default async function CoursesPage() {
         initial={initial}
         filters={filters}
         cardTemplate={training?.courseCardTemplate || "standard"}
-        perPage={perPage}
-      />
-    </>
-  );
+        perPage={perPage} />
+      
+    </></CmsSlot>;
+
 }

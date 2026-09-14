@@ -3,6 +3,7 @@
 // database. Guarded out of production builds.
 import { notFound } from "next/navigation";
 import BlockRenderer from "@/Components/cms/BlockRenderer";
+import { TEMPLATES, createBlocksFromTemplate } from '@/Components/cms/templates';
 import { homePageBlocks, trainingPageDocs, whyAbabeelDoc } from "@/scripts/lib/seed-data.mjs";
 
 export const dynamic = "force-dynamic";
@@ -81,9 +82,10 @@ const PAGES = () => {
 
 export default async function CmsPreview({ searchParams }) {
   if (process.env.NODE_ENV === "production") notFound();
-  const { page = "home" } = (await searchParams) || {};
+  const { page = "home", template } = (await searchParams) || {};
   const pages = PAGES();
-  const blocks = pages[page];
+  const selected = template ? TEMPLATES.find(item => item.id === template) : null;
+  const blocks = selected ? createBlocksFromTemplate(selected) : pages[page];
   if (!blocks) notFound();
   return (
     <div className="cms-fade-in">

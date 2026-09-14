@@ -20,7 +20,7 @@ import BlockRenderer from "@/Components/cms/BlockRenderer";
  * Server component: blocks are resolved here (live catalogue data included),
  * so the browser only ever receives what it should see.
  */
-export default async function CmsSlot({ pageKey, children }) {
+export default async function CmsSlot({ pageKey, children, fullPageOnly = false, params = {} }) {
   let doc = null;
   try {
     doc = await getCmsDoc(pageKey);
@@ -31,10 +31,13 @@ export default async function CmsSlot({ pageKey, children }) {
   }
 
   if (!doc?.enabled || !Array.isArray(doc.blocks) || !doc.blocks.length) return children;
+  // New original-page compositions include the working browser/form. Older
+  // documents replace the inner heading slot and retain their existing tool.
+  if (fullPageOnly && !doc.blocks.some(block => block.type?.startsWith('public_'))) return children;
 
   let blocks = doc.blocks;
   try {
-    ({ blocks } = await resolvePublicBlocks(doc, {}));
+    ({ blocks } = await resolvePublicBlocks(doc, { params }));
   } catch {
     // Unresolved blocks still render; live sections show their empty states.
   }

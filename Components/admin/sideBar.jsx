@@ -1,18 +1,15 @@
 // components/dashboard/Sidebar.jsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { activeMenuUrl, menuLinkIsActive } from "@/lib/navigation/activeMenu";
 import {
   ChevronLeft,
   ChevronRight,
   ChevronDown,
   ChevronUp,
-  X,
-  Settings,
-  Briefcase,
-  Home,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -21,30 +18,22 @@ const Sidebar = ({
   setSidebarOpen,
   mobileOpen,
   setMobileOpen,
-  menuItems,
+  menuItems = [],
 }) => {
   const pathname = usePathname();
   const { user } = useAuth();
   const [openDropdowns, setOpenDropdowns] = useState({});
 
+  const activeUrl = activeMenuUrl(pathname, menuItems);
+
   // Check if any dropdown item is active
   const isDropdownItemActive = (dropdownItems) => {
     if (!dropdownItems) return false;
-    return dropdownItems.some(
-      (item) => pathname === item.url || pathname.startsWith(item.url + "/"),
-    );
+    return dropdownItems.some((item) => menuLinkIsActive(item.url, activeUrl));
   };
 
   // Check if main menu item is active (for non-dropdown items)
-  const isMainItemActive = (item) => {
-    if (item.url && !item.dropdown) {
-      if (item.url === "/admin") {
-        return pathname === "/admin";
-      }
-      return pathname === item.url || pathname.startsWith(item.url + "/");
-    }
-    return false;
-  };
+  const isMainItemActive = (item) => !item.dropdown && menuLinkIsActive(item.url, activeUrl);
 
   // Check if dropdown should be open based on active route
   const shouldDropdownBeOpen = (dropdownItems, itemId) => {
@@ -61,11 +50,7 @@ const Sidebar = ({
     }));
   };
 
-  // Reset manual toggles when the route changes, so a dropdown left open on
-  // the previous page does not stay open here. shouldDropdownBeOpen() already
-  // forces the active section open during render, so this only needs to clear
-  // stale state — done by comparing against the last path during render
-  // instead of writing state from an effect.
+  // Reset manual toggles when route changes
   const [lastPathname, setLastPathname] = useState(null);
   if (pathname !== lastPathname) {
     setLastPathname(pathname);
@@ -80,7 +65,7 @@ const Sidebar = ({
 
   // Check if current path is active for sub items
   const isSubItemActive = (subItemUrl) => {
-    return pathname === subItemUrl || pathname.startsWith(subItemUrl + "/");
+    return menuLinkIsActive(subItemUrl, activeUrl);
   };
 
   return (
@@ -100,6 +85,7 @@ const Sidebar = ({
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className="p-1.5 bg-white border border-gray-300 rounded-full shadow-md hover:shadow-lg transition-shadow"
+            aria-label="Toggle sidebar"
           >
             {sidebarOpen ? (
               <ChevronLeft size={16} className="text-gray-600" />
@@ -115,7 +101,7 @@ const Sidebar = ({
             href="/dashboard"
             className="flex items-center gap-3 hover:opacity-80 transition-opacity"
           >
-            <div className="w-10 h-10 bg-linear-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">
+            <div className="w-10 h-10 bg-linear-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold shrink-0">
               {user?.username?.charAt(0).toUpperCase() || "U"}
             </div>
             {sidebarOpen && (
@@ -140,17 +126,15 @@ const Sidebar = ({
                       toggleDropdown(item.id);
                       if (!sidebarOpen) {
                         setSidebarOpen(true);
-                        isDropdownItemActive(item.dropdown);
                       }
                     }}
                     className={`
                       w-full flex items-center justify-between p-3 rounded-lg
                       transition-colors duration-200
-                      hover:bg-blue-50 hover:text-blue-600
                       ${
                         isDropdownItemActive(item.dropdown)
-                          ? "bg-blue-50 text-blue-600"
-                          : "text-gray-700"
+                          ? "bg-blue-50/70 text-blue-700 font-medium border border-blue-100/60"
+                          : "text-gray-700 hover:bg-gray-100/80 hover:text-blue-600"
                       }
                     `}
                   >
@@ -187,23 +171,29 @@ const Sidebar = ({
 
                   {sidebarOpen &&
                     shouldDropdownBeOpen(item.dropdown, item.id) && (
-                      <div className="ml-10 mt-1 space-y-1">
-                        {item.dropdown.map((subItem, index) => (
-                          <Link
-                            key={index}
-                            href={subItem.url}
-                            className={`
-                            block px-3 py-2 rounded text-sm transition-colors
-                            ${
-                              isSubItemActive(subItem.url)
-                                ? "bg-blue-100 text-blue-600 font-medium"
-                                : "text-gray-600 hover:text-blue-600 hover:bg-blue-50"
-                            }
-                          `}
-                          >
-                            {subItem.name}
-                          </Link>
-                        ))}
+                      <div className="ml-9 mt-1 space-y-1 pl-2 border-l border-gray-200">
+                        {item.dropdown.map((subItem, index) => {
+                          const active = isSubItemActive(subItem.url);
+                          return (
+                            <Link
+                              key={index}
+                              href={subItem.url}
+                              className={`
+                              flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all
+                              ${
+                                active
+                                  ? "bg-blue-600 text-white font-semibold shadow-xs"
+                                  : "text-gray-600 hover:text-blue-600 hover:bg-blue-50/70"
+                              }
+                            `}
+                            >
+                              <span className="truncate">{subItem.name}</span>
+                              {active ? (
+                                <span className="w-1.5 h-1.5 rounded-full bg-white ml-2 shrink-0"></span>
+                              ) : null}
+                            </Link>
+                          );
+                        })}
                       </div>
                     )}
                 </>
@@ -212,18 +202,17 @@ const Sidebar = ({
                   href={item.url}
                   className={`
                     flex items-center gap-3 p-3 rounded-lg
-                    transition-colors duration-200
-                    hover:bg-blue-50 hover:text-blue-600
+                    transition-all duration-200
                     ${
                       isMainItemActive(item)
-                        ? "bg-blue-50 text-blue-600"
-                        : "text-gray-700"
+                        ? "bg-blue-600 text-white font-semibold shadow-xs"
+                        : "text-gray-700 hover:bg-gray-100/80 hover:text-blue-600"
                     }
                   `}
                 >
                   <div
                     className={`${
-                      isMainItemActive(item) ? "text-blue-600" : "text-gray-500"
+                      isMainItemActive(item) ? "text-white" : "text-gray-500"
                     }`}
                   >
                     {item.icon}
@@ -237,10 +226,11 @@ const Sidebar = ({
           ))}
         </nav>
       </aside>
+
       {mobileOpen && (
         <div
           onClick={() => setMobileOpen(false)}
-          className="lg:hidden fixed z-39 bg-black/10 backdrop-blur-sm w-full h-screen top-0 left-0"
+          className="lg:hidden fixed z-39 bg-black/20 backdrop-blur-xs w-full h-screen top-0 left-0"
         ></div>
       )}
 
@@ -259,18 +249,17 @@ const Sidebar = ({
           <Link
             href="/dashboard"
             className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+            onClick={() => setMobileOpen(false)}
           >
-            <div className="w-10 h-10 bg-linear-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">
+            <div className="w-10 h-10 bg-linear-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold shrink-0">
               {user?.username?.charAt(0).toUpperCase() || "U"}
             </div>
-            {sidebarOpen && (
-              <div className="overflow-hidden">
-                <p className="font-medium text-gray-900 text-sm truncate">
-                  {user?.username || user?.email}
-                </p>
-                <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
-              </div>
-            )}
+            <div className="overflow-hidden">
+              <p className="font-medium text-gray-900 text-sm truncate">
+                {user?.username || user?.email}
+              </p>
+              <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
+            </div>
           </Link>
         </div>
 
@@ -285,11 +274,10 @@ const Sidebar = ({
                     className={`
                       w-full flex items-center justify-between p-3 rounded-lg
                       transition-colors duration-200
-                      hover:bg-blue-50 hover:text-blue-600
                       ${
                         isDropdownItemActive(item.dropdown)
-                          ? "bg-blue-50 text-blue-600"
-                          : "text-gray-700"
+                          ? "bg-blue-50/70 text-blue-700 font-medium border border-blue-100/60"
+                          : "text-gray-700 hover:bg-gray-100/80 hover:text-blue-600"
                       }
                     `}
                   >
@@ -321,24 +309,30 @@ const Sidebar = ({
                   </button>
 
                   {shouldDropdownBeOpen(item.dropdown, item.id) && (
-                    <div className="ml-10 mt-1 space-y-1">
-                      {item.dropdown.map((subItem, index) => (
-                        <Link
-                          key={index}
-                          href={subItem.url}
-                          className={`
-                            block px-3 py-2 rounded text-sm transition-colors
-                            ${
-                              isSubItemActive(subItem.url)
-                                ? "bg-blue-100 text-blue-600 font-medium"
-                                : "text-gray-600 hover:text-blue-600 hover:bg-blue-50"
-                            }
-                          `}
-                          onClick={() => setMobileOpen(false)}
-                        >
-                          {subItem.name}
-                        </Link>
-                      ))}
+                    <div className="ml-9 mt-1 space-y-1 pl-2 border-l border-gray-200">
+                      {item.dropdown.map((subItem, index) => {
+                        const active = isSubItemActive(subItem.url);
+                        return (
+                          <Link
+                            key={index}
+                            href={subItem.url}
+                            className={`
+                              flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all
+                              ${
+                                active
+                                  ? "bg-blue-600 text-white font-semibold shadow-xs"
+                                  : "text-gray-600 hover:text-blue-600 hover:bg-blue-50/70"
+                              }
+                            `}
+                            onClick={() => setMobileOpen(false)}
+                          >
+                            <span className="truncate">{subItem.name}</span>
+                            {active ? (
+                              <span className="w-1.5 h-1.5 rounded-full bg-white ml-2 shrink-0"></span>
+                            ) : null}
+                          </Link>
+                        );
+                      })}
                     </div>
                   )}
                 </>
@@ -347,19 +341,18 @@ const Sidebar = ({
                   href={item.url}
                   className={`
                     flex items-center gap-3 p-3 rounded-lg
-                    transition-colors duration-200
-                    hover:bg-blue-50 hover:text-blue-600
+                    transition-all duration-200
                     ${
                       isMainItemActive(item)
-                        ? "bg-blue-50 text-blue-600"
-                        : "text-gray-700"
+                        ? "bg-blue-600 text-white font-semibold shadow-xs"
+                        : "text-gray-700 hover:bg-gray-100/80 hover:text-blue-600"
                     }
                   `}
                   onClick={() => setMobileOpen(false)}
                 >
                   <div
                     className={`${
-                      isMainItemActive(item) ? "text-blue-600" : "text-gray-500"
+                      isMainItemActive(item) ? "text-white" : "text-gray-500"
                     }`}
                   >
                     {item.icon}

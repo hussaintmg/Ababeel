@@ -1,4 +1,4 @@
-import Link from "next/link";
+import CmsSlot from "@/Components/cms/CmsSlot";import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Clock, Award, Layers, FileBadge, ArrowRight } from "lucide-react";
 import {
@@ -16,13 +16,13 @@ import {
   SessionCard,
   EmptyState,
   Reveal,
-  RevealStagger,
-} from "@/Components/ui";
+  RevealStagger } from
+"@/Components/ui";
 import {
   getPublicCourseBySlug,
   getCourseSessions,
-  getRelatedCourses,
-} from "@/lib/training/queries";
+  getRelatedCourses } from
+"@/lib/training/queries";
 import { getTrainingSettings } from "@/lib/training/settings";
 import { resolveCertificate } from "@/lib/training/certificate";
 import { trainingMetadata } from "@/lib/training/metadata";
@@ -45,7 +45,7 @@ export async function generateMetadata({ params }) {
   return trainingMetadata(course.name, course, {
     title: course.name,
     description: course.shortDescription || truncate(stripHtml(course.description), 200),
-    image: course.featuredImage,
+    image: course.featuredImage
   });
 }
 
@@ -57,17 +57,17 @@ export default async function CourseDetailPage({ params }) {
   if (!course) notFound();
 
   const [sessions, related, training] = await Promise.all([
-    getCourseSessions(course._id, { limit: 8 }),
-    getRelatedCourses(course, 3),
-    getTrainingSettings(),
-  ]);
+  getCourseSessions(course._id, { limit: 8 }),
+  getRelatedCourses(course, 3),
+  getTrainingSettings()]
+  );
 
   const certificate = resolveCertificate(course, training);
   const body = course.awardingBody;
   const level = course.level;
   const firstOpen = sessions.find((s) => s.status === "open");
 
-  return (
+  return <CmsSlot pageKey="course-detail" params={{ slug }}>
     <>
       <CourseHero course={course} level={level} body={body} firstOpen={firstOpen} />
 
@@ -75,85 +75,85 @@ export default async function CourseDetailPage({ params }) {
         <Container>
           <div className="lg:grid lg:grid-cols-[1fr_340px] lg:gap-14">
             <div className="min-w-0 space-y-14">
-              {course.description ? (
-                <Prose title="Overview" html={course.description} />
-              ) : null}
-              {course.learningOutcomes ? (
-                <Prose title="What you will learn" html={course.learningOutcomes} />
-              ) : null}
-              {course.courseContent ? (
-                <Prose title="Course content" html={course.courseContent} />
-              ) : null}
-              {course.whoShouldAttend ? (
-                <Prose title="Who should attend" html={course.whoShouldAttend} />
-              ) : null}
-              {course.requirements ? (
-                <Prose title="Entry requirements" html={course.requirements} />
-              ) : null}
+              {course.description ?
+              <Prose title="Overview" html={course.description} /> :
+              null}
+              {course.learningOutcomes ?
+              <Prose title="What you will learn" html={course.learningOutcomes} /> :
+              null}
+              {course.courseContent ?
+              <Prose title="Course content" html={course.courseContent} /> :
+              null}
+              {course.whoShouldAttend ?
+              <Prose title="Who should attend" html={course.whoShouldAttend} /> :
+              null}
+              {course.requirements ?
+              <Prose title="Entry requirements" html={course.requirements} /> :
+              null}
 
-              {certificate ? (
-                <Reveal>
+              {certificate ?
+              <Reveal>
                   <h2 className="t-h2 text-ink-900">Certification</h2>
-                  {course.certificationInfo ? (
-                    <p className="t-body mt-3 text-ink-600">{course.certificationInfo}</p>
-                  ) : certificate.note ? (
-                    <p className="t-body mt-3 text-ink-600">{certificate.note}</p>
-                  ) : null}
+                  {course.certificationInfo ?
+                <p className="t-body mt-3 text-ink-600">{course.certificationInfo}</p> :
+                certificate.note ?
+                <p className="t-body mt-3 text-ink-600">{certificate.note}</p> :
+                null}
                   <div className="mt-6 overflow-hidden rounded-xl border border-ink-100 bg-ink-50 p-4">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={certificate.src}
-                      alt={
-                        certificate.isDefault
-                          ? "Example of the certificate awarded on completion"
-                          : `Certificate awarded for ${course.name}`
-                      }
-                      loading="lazy"
-                      className="mx-auto max-h-96 w-auto object-contain"
-                    />
+                    src={certificate.src}
+                    alt={
+                    certificate.isDefault ?
+                    "Example of the certificate awarded on completion" :
+                    `Certificate awarded for ${course.name}`
+                    }
+                    loading="lazy"
+                    className="mx-auto max-h-96 w-auto object-contain" />
+                  
                   </div>
-                  {certificate.isDefault ? (
-                    <p className="t-caption mt-2 text-ink-500">
+                  {certificate.isDefault ?
+                <p className="t-caption mt-2 text-ink-500">
                       Example certificate. The exact design may vary by awarding body.
-                    </p>
-                  ) : null}
-                </Reveal>
-              ) : null}
+                    </p> :
+                null}
+                </Reveal> :
+              null}
 
-              {course.gallery?.length ? (
-                <Reveal>
+              {course.gallery?.length ?
+              <Reveal>
                   <h2 className="t-h2 text-ink-900">Gallery</h2>
                   <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
-                    {course.gallery
-                      .filter((g) => g.url)
-                      .map((image, i) => (
-                        <figure key={`${image.url}-${i}`}>
+                    {course.gallery.
+                  filter((g) => g.url).
+                  map((image, i) =>
+                  <figure key={`${image.url}-${i}`}>
                           <ImageWell
-                            src={image.url}
-                            alt={image.alt || ""}
-                            ratio="4/3"
-                            zoom={false}
-                            className="rounded-lg"
-                          />
-                          {image.caption ? (
-                            <figcaption className="t-caption mt-1.5 text-ink-500">
+                      src={image.url}
+                      alt={image.alt || ""}
+                      ratio="4/3"
+                      zoom={false}
+                      className="rounded-lg" />
+                    
+                          {image.caption ?
+                    <figcaption className="t-caption mt-1.5 text-ink-500">
                               {image.caption}
-                            </figcaption>
-                          ) : null}
+                            </figcaption> :
+                    null}
                         </figure>
-                      ))}
+                  )}
                   </div>
-                </Reveal>
-              ) : null}
+                </Reveal> :
+              null}
 
-              {course.faqs?.length ? (
-                <Reveal>
+              {course.faqs?.length ?
+              <Reveal>
                   <h2 className="t-h2 mb-6 text-ink-900">Frequently asked questions</h2>
                   <Accordion
-                    items={course.faqs.filter((f) => f.question)}
-                  />
-                </Reveal>
-              ) : null}
+                  items={course.faqs.filter((f) => f.question)} />
+                
+                </Reveal> :
+              null}
             </div>
 
             <CourseAside course={course} body={body} level={level} firstOpen={firstOpen} />
@@ -170,46 +170,46 @@ export default async function CourseDetailPage({ params }) {
             </div>
             <Link
               href="/schedule"
-              className="aba-focus inline-flex items-center gap-1.5 t-small font-semibold text-brand-700"
-            >
+              className="aba-focus inline-flex items-center gap-1.5 t-small font-semibold text-brand-700">
+              
               See the full schedule
               <ArrowRight size={15} aria-hidden="true" />
             </Link>
           </div>
 
-          {sessions.length ? (
-            <RevealStagger className="space-y-4">
-              {sessions.map((session) => (
-                <SessionCard
-                  key={session._id}
-                  session={session}
-                  course={course}
-                  showCourseName={false}
-                />
-              ))}
-            </RevealStagger>
-          ) : (
-            <EmptyState
-              title="No dates scheduled yet"
-              message="We are not currently running this course on a published date. Contact our team and we will let you know as soon as a session opens."
-              action={<LinkButton href="/contact-us">Contact the team</LinkButton>}
-            />
-          )}
+          {sessions.length ?
+          <RevealStagger className="space-y-4">
+              {sessions.map((session) =>
+            <SessionCard
+              key={session._id}
+              session={session}
+              course={course}
+              showCourseName={false} />
+
+            )}
+            </RevealStagger> :
+
+          <EmptyState
+            title="No dates scheduled yet"
+            message="We are not currently running this course on a published date. Contact our team and we will let you know as soon as a session opens."
+            action={<LinkButton href="/contact-us">Contact the team</LinkButton>} />
+
+          }
         </Container>
       </Section>
 
-      {related.length ? (
-        <Section tone="light" size="md">
+      {related.length ?
+      <Section tone="light" size="md">
           <Container>
             <h2 className="t-h2 mb-8 text-ink-900">Related courses</h2>
             <RevealStagger className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {related.map((item) => (
-                <CourseCard key={item._id} course={item} template="standard" />
-              ))}
+              {related.map((item) =>
+            <CourseCard key={item._id} course={item} template="standard" />
+            )}
             </RevealStagger>
           </Container>
-        </Section>
-      ) : null}
+        </Section> :
+      null}
 
       <Section tone="dark" size="md">
         <Container>
@@ -222,14 +222,14 @@ export default async function CourseDetailPage({ params }) {
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
-              {firstOpen ? (
-                <LinkButton
-                  href={`/registration?course=${course._id}&reference=${firstOpen._id}`}
-                  size="lg"
-                >
+              {firstOpen ?
+              <LinkButton
+                href={`/registration?course=${course._id}&reference=${firstOpen._id}`}
+                size="lg">
+                
                   Register now
-                </LinkButton>
-              ) : null}
+                </LinkButton> :
+              null}
               <LinkButton href="/contact-us" variant="outlineLight" size="lg">
                 Talk to us
               </LinkButton>
@@ -237,8 +237,8 @@ export default async function CourseDetailPage({ params }) {
           </div>
         </Container>
       </Section>
-    </>
-  );
+    </></CmsSlot>;
+
 }
 
 /* ------------------------------------------------------------------ pieces */
@@ -250,12 +250,12 @@ function CourseHero({ course, level, body, firstOpen }) {
         <Breadcrumb
           dark
           items={[
-            { label: "Home", href: "/" },
-            { label: "Courses", href: "/courses" },
-            { label: course.name },
-          ]}
-          className="mb-7"
-        />
+          { label: "Home", href: "/" },
+          { label: "Courses", href: "/courses" },
+          { label: course.name }]
+          }
+          className="mb-7" />
+        
 
         <div className="grid gap-10 lg:grid-cols-[1.15fr_1fr] lg:items-center">
           <div>
@@ -267,45 +267,45 @@ function CourseHero({ course, level, body, firstOpen }) {
 
             <h1 className="t-h1 text-white">{course.name}</h1>
 
-            {course.shortDescription ? (
-              <p className="t-body-lg mt-4 max-w-2xl text-ink-200">{course.shortDescription}</p>
-            ) : null}
+            {course.shortDescription ?
+            <p className="t-body-lg mt-4 max-w-2xl text-ink-200">{course.shortDescription}</p> :
+            null}
 
             <dl className="mt-8 flex flex-wrap gap-x-10 gap-y-4">
-              {course.duration ? (
-                <HeroFact icon={Clock} label="Duration" value={course.duration} />
-              ) : null}
+              {course.duration ?
+              <HeroFact icon={Clock} label="Duration" value={course.duration} /> :
+              null}
               {level?.name ? <HeroFact icon={Layers} label="Level" value={level.name} /> : null}
-              {body?.name ? (
-                <HeroFact
-                  icon={Award}
-                  label="Awarding body"
-                  value={
-                    body.slug ? (
-                      <Link href={`/awarding-bodies/${body.slug}`} className="hover:text-brand-400">
+              {body?.name ?
+              <HeroFact
+                icon={Award}
+                label="Awarding body"
+                value={
+                body.slug ?
+                <Link href={`/awarding-bodies/${body.slug}`} className="hover:text-brand-400">
                         {body.name}
-                      </Link>
-                    ) : (
-                      body.name
-                    )
-                  }
-                />
-              ) : null}
+                      </Link> :
+
+                body.name
+
+                } /> :
+
+              null}
             </dl>
 
             <div className="mt-8 flex flex-wrap gap-3">
-              {firstOpen ? (
-                <LinkButton
-                  href={`/registration?course=${course._id}&reference=${firstOpen._id}`}
-                  size="lg"
-                >
+              {firstOpen ?
+              <LinkButton
+                href={`/registration?course=${course._id}&reference=${firstOpen._id}`}
+                size="lg">
+                
                   Register now
-                </LinkButton>
-              ) : (
-                <LinkButton href="#sessions" variant="primary" size="lg">
+                </LinkButton> :
+
+              <LinkButton href="#sessions" variant="primary" size="lg">
                   See available dates
                 </LinkButton>
-              )}
+              }
               <LinkButton href="/contact-us" variant="outlineLight" size="lg">
                 Ask a question
               </LinkButton>
@@ -320,13 +320,13 @@ function CourseHero({ course, level, body, firstOpen }) {
               ratio="4/3"
               zoom={false}
               priority
-              className="rounded-xl"
-            />
+              className="rounded-xl" />
+            
           </Reveal>
         </div>
       </Container>
-    </Section>
-  );
+    </Section>);
+
 }
 
 function HeroFact({ icon: Icon, label, value }) {
@@ -337,8 +337,8 @@ function HeroFact({ icon: Icon, label, value }) {
         {label}
       </dt>
       <dd className="t-h4 text-white">{value}</dd>
-    </div>
-  );
+    </div>);
+
 }
 
 /**
@@ -353,10 +353,10 @@ function Prose({ title, html }) {
       <h2 className="t-h2 text-ink-900">{title}</h2>
       <div
         className="cms-prose t-body mt-4 text-ink-700"
-        dangerouslySetInnerHTML={{ __html: html }}
-      />
-    </Reveal>
-  );
+        dangerouslySetInnerHTML={{ __html: html }} />
+      
+    </Reveal>);
+
 }
 
 /** The sticky summary column: the facts a visitor checks before enrolling. */
@@ -374,50 +374,50 @@ function CourseAside({ course, body, level, firstOpen }) {
             <AsideRow label="Category" value={course.category} />
           </dl>
 
-          {body?.logo ? (
-            <div className="mt-5 flex items-center gap-3 rounded-lg bg-ink-50 p-3">
+          {body?.logo ?
+          <div className="mt-5 flex items-center gap-3 rounded-lg bg-ink-50 p-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={body.logo}
-                alt=""
-                loading="lazy"
-                className="h-10 w-auto max-w-24 object-contain"
-              />
+              src={body.logo}
+              alt=""
+              loading="lazy"
+              className="h-10 w-auto max-w-24 object-contain" />
+            
               <div className="min-w-0">
                 <p className="t-caption text-ink-500">Awarded by</p>
                 <p className="t-small font-semibold text-ink-900">{body.name}</p>
               </div>
-            </div>
-          ) : null}
+            </div> :
+          null}
 
           <div className="mt-6 space-y-2.5">
-            {firstOpen ? (
-              <LinkButton
-                href={`/registration?course=${course._id}&reference=${firstOpen._id}`}
-                fullWidth
-              >
+            {firstOpen ?
+            <LinkButton
+              href={`/registration?course=${course._id}&reference=${firstOpen._id}`}
+              fullWidth>
+              
                 Register now
-              </LinkButton>
-            ) : (
-              <LinkButton href="#sessions" fullWidth>
+              </LinkButton> :
+
+            <LinkButton href="#sessions" fullWidth>
                 See available dates
               </LinkButton>
-            )}
+            }
             <LinkButton href="/contact-us" variant="outline" fullWidth>
               Request a callback
             </LinkButton>
           </div>
 
-          {course.certificateImage ? (
-            <p className="t-caption mt-4 flex items-center gap-1.5 text-ink-500">
+          {course.certificateImage ?
+          <p className="t-caption mt-4 flex items-center gap-1.5 text-ink-500">
               <FileBadge size={13} aria-hidden="true" />
               Certificate issued on successful completion
-            </p>
-          ) : null}
+            </p> :
+          null}
         </Card>
       </div>
-    </aside>
-  );
+    </aside>);
+
 }
 
 function AsideRow({ label, value }) {
@@ -426,6 +426,6 @@ function AsideRow({ label, value }) {
     <div className="flex items-baseline justify-between gap-4 py-2.5">
       <dt className="t-small text-ink-500">{label}</dt>
       <dd className="t-small text-right font-semibold text-ink-900">{value}</dd>
-    </div>
-  );
+    </div>);
+
 }

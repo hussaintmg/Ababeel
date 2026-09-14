@@ -3,8 +3,8 @@ import CmsSlot from "@/Components/cms/CmsSlot";
 import {
   getScheduleForMonth,
   getScheduleMonths,
-  listAwardingBodies,
-} from "@/lib/training/queries";
+  listAwardingBodies } from
+"@/lib/training/queries";
 import { getTrainingSettings } from "@/lib/training/settings";
 import { trainingMetadata } from "@/lib/training/metadata";
 import ScheduleBrowser from "@/app/schedule/ScheduleBrowser";
@@ -23,7 +23,7 @@ export async function generateMetadata() {
   return trainingMetadata("Training Schedule", null, {
     title: "Training Schedule",
     description:
-      "Upcoming dates for our accredited safety training courses, with start, end and examination dates.",
+    "Upcoming dates for our accredited safety training courses, with start, end and examination dates."
   });
 }
 
@@ -35,15 +35,15 @@ export default async function SchedulePage() {
   const month = now.getUTCMonth() + 1;
 
   const [sessions, months, bodies, training] = await Promise.all([
-    getScheduleForMonth({ year, month }),
-    getScheduleMonths(),
-    listAwardingBodies(),
-    getTrainingSettings(),
-  ]);
+  getScheduleForMonth({ year, month }),
+  getScheduleMonths(),
+  listAwardingBodies(),
+  getTrainingSettings()]
+  );
 
   const copy = training?.schedule || {};
 
-  return (
+  return <CmsSlot pageKey="schedule" fullPageOnly>
     <>
       <CmsSlot pageKey="schedule">
   <Section tone="dark" size="sm" className="pt-10">
@@ -51,8 +51,8 @@ export default async function SchedulePage() {
             <Breadcrumb
               dark
               items={[{ label: "Home", href: "/" }, { label: "Schedule" }]}
-              className="mb-6"
-            />
+              className="mb-6" />
+            
             <p className="t-eyebrow mb-3 text-brand-400">Upcoming dates</p>
             <h1 className="t-h1 max-w-3xl text-white">{copy.title || "Training Schedule"}</h1>
             <p className="t-body-lg mt-4 max-w-2xl text-ink-200">
@@ -65,8 +65,8 @@ export default async function SchedulePage() {
       <ScheduleBrowser
         initial={{ year, month, sessions, months }}
         awardingBodies={bodies}
-        emptyMessage={copy.emptyMessage}
-      />
-    </>
-  );
+        emptyMessage={copy.emptyMessage} />
+      
+    </></CmsSlot>;
+
 }

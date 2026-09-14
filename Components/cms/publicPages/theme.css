@@ -1,0 +1,7 @@
+.public-page-background>section,.public-page-background>div,.public-page-background>div>section,.public-page-background>div>div{background:var(--public-bg)!important}
+.public-page-text p,.public-page-text li{color:var(--public-text)!important}
+.public-page-heading h1,.public-page-heading h2,.public-page-heading h3,.public-page-heading h1 span,.public-page-heading h2 span{color:var(--public-heading)!important;background-image:none!important;-webkit-text-fill-color:var(--public-heading)}
+.public-page-accent [class*="text-blue-"],.public-page-accent [class*="text-brand-"],.public-page-accent [class*="text-orange-"]{color:var(--public-accent)!important}
+.public-page-accent a[class*="bg-blue-"],.public-page-accent button[class*="bg-blue-"]{background:var(--public-accent)!important}
+.public-page-font,.public-page-font h1,.public-page-font h2,.public-page-font h3{font-family:var(--public-font)!important}
+.public-page-size h1,.public-page-size h2{font-size:clamp(28px,6vw,var(--public-size))!important}

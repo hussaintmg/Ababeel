@@ -5,6 +5,8 @@ import { resolvePageContext } from "@/lib/cms/pageData";
 import { getGlobalSettings } from "@/lib/cms";
 import { schemaTree } from "@/lib/cms/variableRegistry";
 import { buildSampleContext, fillMissing } from "@/lib/cms/sampleData";
+import { injectPublicSectionData } from "@/lib/cms/publicSectionData";
+import { injectTrainingData } from "@/lib/cms/trainingBlocks";
 
 export const dynamic = "force-dynamic";
 
@@ -49,7 +51,9 @@ export async function POST(request) {
     const finalContext =
       mode === "mixed" ? fillMissing(context, buildSampleContext(schemaTree())) : context;
 
-    return successResponse({ data: { mode, context: finalContext, meta } });
+    const filled = await injectPublicSectionData(await injectTrainingData(Array.isArray(body.blocks) ? body.blocks.slice(0, 200) : []), body.params || {});
+    const catalogue = Object.fromEntries(filled.filter(block => block.props?._data || block.props?._items).map(block => [block.id, { _data: block.props._data, _items: block.props._items }]));
+    return successResponse({ data: { mode, context: finalContext, meta, catalogue } });
   } catch (error) {
     console.error("CMS preview data error:", error);
     return safeErrorResponse(error, 500);

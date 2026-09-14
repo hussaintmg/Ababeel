@@ -17,21 +17,21 @@ export async function generateMetadata() {
   return trainingMetadata("Resources", null, {
     title: "Resources",
     description:
-      "Guides, articles and downloads on workplace safety, competence and professional development.",
+    "Guides, articles and downloads on workplace safety, competence and professional development."
   });
 }
 
 export default async function ResourcesPage() {
   const [initial, types] = await Promise.all([
-    listPublicResources({ limit: 12 }),
-    getResourceTypes(),
-  ]);
+  listPublicResources({ limit: 12 }),
+  getResourceTypes()]
+  );
 
   // Only lead with a featured item on the unfiltered first page, and only when
   // there is enough behind it that pulling one out still leaves a grid.
   const featured = initial.items.length > 3 ? initial.items.find((r) => r.featured) : null;
 
-  return (
+  return <CmsSlot pageKey="resources" fullPageOnly>
     <>
       <CmsSlot pageKey="resources">
   <Section tone="dark" size="sm" className="pt-10">
@@ -39,8 +39,8 @@ export default async function ResourcesPage() {
             <Breadcrumb
               dark
               items={[{ label: "Home", href: "/" }, { label: "Resources" }]}
-              className="mb-6"
-            />
+              className="mb-6" />
+            
             <p className="t-eyebrow mb-3 text-brand-400">Knowledge</p>
             <h1 className="t-h1 max-w-3xl text-white">Resources</h1>
             <p className="t-body-lg mt-4 max-w-2xl text-ink-200">
@@ -50,8 +50,8 @@ export default async function ResourcesPage() {
         </Section>
       </CmsSlot>
 
-      {featured ? (
-        <Section tone="muted" size="sm">
+      {featured ?
+      <Section tone="muted" size="sm">
           <Container>
             <Reveal>
               <p className="t-eyebrow mb-4 text-brand-700">Featured</p>
@@ -60,10 +60,10 @@ export default async function ResourcesPage() {
               </div>
             </Reveal>
           </Container>
-        </Section>
-      ) : null}
+        </Section> :
+      null}
 
       <ResourcesBrowser initial={initial} types={types} />
-    </>
-  );
+    </></CmsSlot>;
+
 }

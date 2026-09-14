@@ -6,6 +6,9 @@
 // these into real blocks (fresh ids + merged default _style). `style` seeds the
 // block's Design tab (gradients, animations, spacing, hover, etc.).
 import { newId, defaultStyle } from "@/Components/cms/blockSchemas";
+import { PUBLIC_TEMPLATES } from "@/Components/cms/publicPages/catalog";
+import { PUBLIC_WEBSITE_TEMPLATES } from "@/Components/cms/publicPageSections";
+import { STUDIO_TEMPLATES, refreshLegacyTemplate } from "@/Components/cms/studioCatalog";
 import {
   TRAINING_TEMPLATES,
   TRAINING_TEMPLATE_CATEGORIES,
@@ -39,6 +42,9 @@ export const TEMPLATE_CATEGORIES = [
   // inside the categories above, beside the existing patterns — see
   // trainingTemplates.js.
   ...TRAINING_TEMPLATE_CATEGORIES,
+  "Public Page Sections",
+  "Scroll Stories",
+  "Contact",
 ];
 
 /* ---------- reusable pieces ---------- */
@@ -539,8 +545,11 @@ export const TEMPLATES = [
   { id: "cta-newsletter", name: "CTA — Newsletter (Tailwind)", category: "Call To Action", desc: "Email capture band", blocks: [b("customCode", { tailwind: true, html: '<section class="bg-gradient-to-br from-slate-900 to-indigo-900 text-white">\n  <div class="max-w-3xl mx-auto px-6 py-16 text-center">\n    <h2 class="text-3xl font-bold">Stay in the loop</h2>\n    <p class="mt-3 text-slate-300">Get updates on new qualifications and offers.</p>\n    <form class="mt-6 flex flex-col sm:flex-row gap-3 max-w-md mx-auto">\n      <input type="email" placeholder="you@email.com" class="flex-1 px-4 py-3 rounded-xl text-gray-900 outline-none" />\n      <button type="button" class="px-6 py-3 rounded-xl bg-blue-500 hover:bg-blue-400 font-semibold transition">Subscribe</button>\n    </form>\n  </div>\n</section>' })] },
   // Appended to the same array the existing patterns live in, so the picker
   // shows one library: the ABA heroes appear under "Heroes" with the others.
+  ...PUBLIC_WEBSITE_TEMPLATES,
   ...TRAINING_TEMPLATES,
-];
+  ...PUBLIC_TEMPLATES,
+  ...STUDIO_TEMPLATES,
+].map(template => (template.id.startsWith('aba-') || template.id.startsWith('public') || template.id.startsWith('pub-') || template.id.startsWith('studio-')) ? template : refreshLegacyTemplate(template));
 
 // Turn a template's block specs into real, editable blocks.
 export function createBlocksFromTemplate(template) {

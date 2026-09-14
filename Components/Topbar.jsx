@@ -8,6 +8,7 @@ import axios from "axios";
 import { usePath } from "@/context/PathContext";
 import { useRouter } from "next/navigation";
 import { useSiteContent } from "@/context/SiteContentContext";
+import { isRouteActive } from "@/lib/navigation/activeMenu";
 
 // Build the scoped CSS overrides for the topbar from its style settings. Only
 // emits a rule when a value is set, so unset options keep the Tailwind defaults.
@@ -160,13 +161,21 @@ export default function Topbar({ mobileOpen, setMobileOpen, navLinks, loading = 
   const logoH = parseInt(tb.logoHeight, 10);
   const maxLogoH = Number.isNaN(barH) ? 48 : Math.max(32, barH - 12);
   const effectiveLogoH = Number.isNaN(logoH) ? undefined : Math.min(logoH, maxLogoH);
+  const allNavUrls = React.useMemo(() => {
+    const list = [];
+    (navLinks || []).forEach((item) => {
+      if (item.url) list.push(item.url);
+      (item.dropdown || []).forEach((d) => {
+        if (d.url) list.push(d.url);
+      });
+    });
+    return list;
+  }, [navLinks]);
+
   const tbCss = buildTopbarCss(tb);
-  // Active-link detection (case-insensitive; "/" only matches home exactly).
-  const isActive = (url) => {
-    if (!url || !pathname) return false;
-    if (url === "/") return pathname === "/";
-    return pathname === url || pathname.startsWith(url + "/");
-  };
+
+  // Priority-based active link detection (exact matches win; subpaths only match if no exact match exists).
+  const isActive = (url) => isRouteActive(url, pathname, allNavUrls);
 
   return (
     <header
