@@ -840,7 +840,7 @@ function Modal({ title, onClose, children, wide, extraWide, scrollable = true, h
         onClick={(e) => e.stopPropagation()}
         className={`w-full ${
           extraWide
-            ? "max-w-[1450px] w-[97vw]"
+            ? "max-w-[1450px] w-[97vw] h-[92vh] sm:h-[88vh]"
             : wide
             ? "max-w-6xl w-[95vw]"
             : "max-w-2xl"
@@ -1029,7 +1029,7 @@ function TemplatesModal({ onClose, onInsert, customTemplates = [], onDeleteCusto
           </div>
 
           {/* Cards scrollable viewport */}
-          <div className="p-4 sm:p-6 overflow-y-auto preview-scrollbar bg-slate-100/60 flex-1 min-h-0">
+          <div className="p-3 sm:p-5 overflow-y-scroll preview-scrollbar bg-slate-100/60 min-h-0 h-full">
             {filteredList.length === 0 ? (
               <div className="py-20 text-center text-gray-500">
                 <LayoutTemplate size={40} className="mx-auto text-gray-300 mb-3" />
@@ -1052,9 +1052,9 @@ function TemplatesModal({ onClose, onInsert, customTemplates = [], onDeleteCusto
               </div>
             ) : (
               <div
-                className={`grid gap-5 content-start ${
+                className={`grid gap-4 sm:gap-5 content-start ${
                   viewMode === "grid"
-                    ? "grid-cols-1 xl:grid-cols-2"
+                    ? "grid-cols-1 md:grid-cols-2"
                     : "grid-cols-1 max-w-5xl mx-auto"
                 }`}
               >
@@ -1067,26 +1067,30 @@ function TemplatesModal({ onClose, onInsert, customTemplates = [], onDeleteCusto
                   return (
                     <div
                       key={t.id}
-                      className="group flex flex-col rounded-2xl border border-gray-200/90 shadow-sm hover:shadow-xl hover:border-blue-400 transition-all duration-300 bg-white overflow-hidden"
+                      className={`group flex flex-col ${
+                        viewMode === "grid"
+                          ? "h-[44vh] sm:h-[42vh] min-h-[280px] max-h-[400px]"
+                          : "h-[52vh] min-h-[360px] max-h-[480px]"
+                      } rounded-2xl border border-gray-200/90 shadow-sm hover:shadow-xl hover:border-blue-400 transition-all duration-300 bg-white overflow-hidden`}
                     >
                       {/* Card Header */}
-                      <div className="px-4 py-2.5 bg-white border-b border-gray-100 flex items-center justify-between gap-2 shrink-0">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span className="px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 text-[11px] font-semibold tracking-wide">
+                      <div className="px-3.5 py-2 bg-white border-b border-gray-100 flex items-center justify-between gap-2 shrink-0">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className="px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 text-[11px] font-semibold tracking-wide truncate">
                             {t.category}
                           </span>
-                          <span className="inline-flex items-center gap-1 text-[11px] text-gray-400 font-medium">
-                            <Layers size={12} />
+                          <span className="inline-flex items-center gap-1 text-[11px] text-gray-400 font-medium shrink-0">
+                            <Layers size={11} />
                             {blockCount} {blockCount === 1 ? "block" : "blocks"}
                           </span>
                         </div>
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 shrink-0">
                           <button
                             onClick={() => setPreviewingTemplate(t)}
                             title="Interactive full-screen preview"
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-medium text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-colors"
                           >
-                            <Eye size={13} />
+                            <Eye size={12} />
                             <span className="hidden sm:inline">Preview</span>
                           </button>
                           {t.custom ? (
@@ -1095,28 +1099,40 @@ function TemplatesModal({ onClose, onInsert, customTemplates = [], onDeleteCusto
                               title="Delete template"
                               className="p-1 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
                             >
-                              <Trash2 size={13} />
+                              <Trash2 size={12} />
                             </button>
                           ) : null}
                         </div>
                       </div>
 
-                      {/* Live scaled preview with vertical scrollbar */}
+                      {/* Live scaled preview */}
                       <div
-                        className={`relative w-full ${
-                          viewMode === "grid" ? "h-[390px]" : "h-[470px]"
-                        } bg-slate-50 border-b border-gray-100 overflow-hidden`}
+                        className="relative w-full flex-1 min-h-0 bg-slate-50 border-b border-gray-100 overflow-hidden cursor-pointer group/preview"
+                        onClick={() => setPreviewingTemplate(t)}
+                        title="Click to preview full section"
                       >
                         <TemplatePreview
                           template={t}
-                          minHeight={viewMode === "grid" ? 390 : 470}
+                          minHeight={viewMode === "grid" ? 200 : 280}
                         />
 
-                        {/* Floating quick insert pill on card top-right */}
-                        <div className="absolute top-3 right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {/* Hover Overlay with Preview & Insert Buttons */}
+                        <div className="absolute inset-0 bg-slate-900/30 backdrop-blur-[1px] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 z-10">
                           <button
-                            onClick={() => onInsert(t)}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-600/90 hover:bg-blue-600 backdrop-blur text-white text-xs font-semibold shadow-md transition-transform hover:scale-105"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPreviewingTemplate(t);
+                            }}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-white/95 hover:bg-white text-gray-800 text-xs font-semibold shadow-md transition-transform hover:scale-105"
+                          >
+                            <Eye size={13} /> Full Preview
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onInsert(t);
+                            }}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-md transition-transform hover:scale-105"
                           >
                             <Plus size={13} /> Insert
                           </button>
@@ -1124,47 +1140,29 @@ function TemplatesModal({ onClose, onInsert, customTemplates = [], onDeleteCusto
                       </div>
 
                       {/* Card Footer */}
-                      <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 mt-auto bg-white">
+                      <div className="px-3.5 py-2.5 flex items-center justify-between gap-3 mt-auto bg-white shrink-0">
                         <div className="min-w-0 flex-1">
-                          <h4 className="font-semibold text-sm text-gray-900 truncate">
+                          <h4 className="font-semibold text-xs sm:text-sm text-gray-900 truncate">
                             {t.name}
                           </h4>
-                          <p className="text-xs text-gray-500 line-clamp-1 mt-0.5">
+                          <p className="text-[11px] text-gray-500 truncate">
                             {t.desc || "Pre-designed section"}
                           </p>
-
-                          {/* Block tags chips */}
-                          {blockTypes.length > 0 ? (
-                            <div className="flex flex-wrap gap-1 mt-2">
-                              {blockTypes.slice(0, 4).map((type) => (
-                                <span
-                                  key={type}
-                                  className="px-2 py-0.5 rounded bg-gray-100 text-gray-600 text-[10px] font-medium uppercase tracking-wider"
-                                >
-                                  {BLOCK_TYPES[type]?.label || type}
-                                </span>
-                              ))}
-                              {blockTypes.length > 4 ? (
-                                <span className="px-1.5 py-0.5 text-[10px] text-gray-400 font-medium">
-                                  +{blockTypes.length - 4} more
-                                </span>
-                              ) : null}
-                            </div>
-                          ) : null}
                         </div>
 
-                        <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                        <div className="flex items-center gap-1.5 shrink-0">
                           <button
                             onClick={() => setPreviewingTemplate(t)}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors"
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors"
                           >
-                            <Eye size={13} /> Full Preview
+                            <Eye size={12} />
+                            <span className="hidden xl:inline">Full</span> Preview
                           </button>
                           <button
                             onClick={() => onInsert(t)}
-                            className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-semibold shadow-sm hover:shadow-md transition-all active:scale-[0.98]"
+                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-semibold shadow-sm hover:shadow-md transition-all active:scale-[0.98]"
                           >
-                            <Plus size={14} /> Insert Section
+                            <Plus size={13} /> Insert
                           </button>
                         </div>
                       </div>
@@ -1302,10 +1300,10 @@ function SectionPreviewModal({ template, onClose, onInsert }) {
   );
 }
 
-// Live, scaled-down snapshot of a template's actual rendered blocks with full vertical scrolling.
+// Live, scaled-down snapshot of a template's actual rendered blocks.
 const PREVIEW_WIDTH = 1200; // virtual render width
 
-function TemplatePreview({ template, minHeight = 390 }) {
+function TemplatePreview({ template, minHeight = 200 }) {
   // Build the blocks once, and freeze any auto-playing carousels to a static
   // first slide so the thumbnail is a calm snapshot (no perpetual timers).
   const blocks = useMemo(
@@ -1320,10 +1318,8 @@ function TemplatePreview({ template, minHeight = 390 }) {
 
   const containerRef = useRef(null);
   const contentRef = useRef(null);
-  const [scale, setScale] = useState(0.4);
+  const [scale, setScale] = useState(0.35);
   const [contentHeight, setContentHeight] = useState(600);
-  const [hasScrolled, setHasScrolled] = useState(false);
-  const [isOverflowing, setIsOverflowing] = useState(false);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -1338,8 +1334,6 @@ function TemplatePreview({ template, minHeight = 390 }) {
         if (content) {
           const rawHeight = content.offsetHeight || content.scrollHeight || 600;
           setContentHeight(rawHeight);
-          const scaledH = rawHeight * nextScale;
-          setIsOverflowing(scaledH > container.clientHeight + 15);
         }
       }
     };
@@ -1367,18 +1361,9 @@ function TemplatePreview({ template, minHeight = 390 }) {
   return (
     <div
       ref={containerRef}
-      onScroll={(e) => {
-        if (e.currentTarget.scrollTop > 15 && !hasScrolled) {
-          setHasScrolled(true);
-        }
-      }}
-      className="relative w-full h-full overflow-y-auto overflow-x-hidden bg-slate-50 preview-scrollbar select-none"
-      style={{
-        scrollbarWidth: "thin",
-        scrollbarColor: "#94a3b8 #f1f5f9",
-      }}
+      className="relative w-full h-full overflow-hidden pointer-events-none select-none bg-slate-50"
     >
-      {/* Spacer div in normal flow that gives the scroll container its exact scaled height */}
+      {/* Spacer div in normal flow that gives the container its exact scaled height */}
       <div
         style={{
           height: `${scaledHeight}px`,
@@ -1399,14 +1384,6 @@ function TemplatePreview({ template, minHeight = 390 }) {
           <BlockRenderer blocks={blocks} />
         </div>
       </div>
-
-      {/* Floating scroll hint pill if content is taller than viewport and user hasn't scrolled yet */}
-      {isOverflowing && !hasScrolled && (
-        <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-slate-900/85 backdrop-blur text-white text-[11px] font-medium flex items-center gap-1.5 shadow-lg border border-white/20 z-10 transition-opacity">
-          <span className="text-blue-300 font-bold">↕</span>
-          <span>Scroll to explore full section</span>
-        </div>
-      )}
     </div>
   );
 }
