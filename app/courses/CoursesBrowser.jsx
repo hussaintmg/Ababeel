@@ -27,12 +27,12 @@ import {
  * actually filters — which is why it starts by rendering exactly what the
  * server already produced rather than fetching it again on mount.
  */
-export default function CoursesBrowser({ initial, filters, cardTemplate = "standard", perPage = 12 }) {
+export default function CoursesBrowser({ initial = {}, filters = {}, cardTemplate = "standard", perPage = 12 }) {
   const [state, setState] = useState({
-    items: initial.items || [],
-    total: initial.total || 0,
-    page: initial.page || 1,
-    pages: initial.pages || 1,
+    items: initial?.items || [],
+    total: initial?.total || 0,
+    page: initial?.page || 1,
+    pages: initial?.pages || 1,
   });
   const [query, setQuery] = useState({
     search: "",

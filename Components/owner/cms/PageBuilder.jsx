@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { BLOCK_TYPE_LIST, BLOCK_TYPES, createBlock, isContainer } from "@/Components/cms/blockSchemas";
 import { loadCustomTemplates, saveCustomTemplate, deleteCustomTemplate, fetchRemoteCustomSections } from "@/Components/cms/customTemplates";
+import { TEMPLATES, TEMPLATE_CATEGORIES, createBlocksFromTemplate } from "@/Components/cms/templates";
 import SectionStudioModal from "@/Components/owner/cms/SectionStudioModal";
 import BlockEditor from "@/Components/owner/cms/BlockEditor";
 import BlockRenderer from "@/Components/cms/BlockRenderer";
@@ -973,41 +974,44 @@ function TemplatesModal({ onClose, onInsert, customTemplates = [], onDeleteCusto
   const [viewMode, setViewMode] = useState("grid"); // "grid" | "expanded"
   const [previewingTemplate, setPreviewingTemplate] = useState(null);
 
-  const hasCustom = customTemplates.length > 0;
+  const safeCustom = Array.isArray(customTemplates) ? customTemplates.filter(Boolean) : [];
+  const safeTemplates = Array.isArray(TEMPLATES) ? TEMPLATES.filter(Boolean) : [];
+  const hasCustom = safeCustom.length > 0;
   const categories = [
     "All Sections",
     ...(hasCustom ? ["My Templates"] : []),
-    ...TEMPLATE_CATEGORIES,
+    ...(Array.isArray(TEMPLATE_CATEGORIES) ? TEMPLATE_CATEGORIES : []),
   ];
   const [cat, setCat] = useState("All Sections");
 
   const all = useMemo(
-    () => (hasCustom ? [...customTemplates, ...TEMPLATES] : TEMPLATES),
-    [hasCustom, customTemplates]
+    () => (hasCustom ? [...safeCustom, ...safeTemplates] : safeTemplates),
+    [hasCustom, safeCustom, safeTemplates]
   );
 
   const filteredList = useMemo(() => {
     let list = all;
     if (cat === "My Templates") {
-      list = customTemplates;
+      list = safeCustom;
     } else if (cat !== "All Sections") {
-      list = all.filter((t) => t.category === cat);
+      list = all.filter((t) => t && t.category === cat);
     }
 
     const q = searchQuery.trim().toLowerCase();
     if (q) {
       list = list.filter((t) => {
+        if (!t) return false;
         const nameMatch = (t.name || "").toLowerCase().includes(q);
         const descMatch = (t.desc || "").toLowerCase().includes(q);
         const catMatch = (t.category || "").toLowerCase().includes(q);
         const blockMatch = (t.blocks || []).some((b) =>
-          (b.type || "").toLowerCase().includes(q)
+          b && (b.type || "").toLowerCase().includes(q)
         );
         return nameMatch || descMatch || catMatch || blockMatch;
       });
     }
     return list;
-  }, [all, cat, searchQuery, customTemplates]);
+  }, [all, cat, searchQuery, safeCustom]);
 
   const [visibleLimit, setVisibleLimit] = useState(24);
 
