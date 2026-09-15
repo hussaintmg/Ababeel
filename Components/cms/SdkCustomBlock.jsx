@@ -62,9 +62,18 @@ export function ensureBabel() {
   if (typeof window === "undefined") return Promise.resolve(null);
   if (window.Babel) return Promise.resolve(window.Babel);
   if (_babelLoading) return _babelLoading;
-  _babelLoading = loadExternalScript("https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.24.4/babel.min.js").then(() => {
-    return window.Babel || null;
-  });
+  _babelLoading = loadExternalScript("/cms/babel.min.js")
+    .then(() => {
+      if (window.Babel) return window.Babel;
+      return loadExternalScript("https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.24.4/babel.min.js").then(() => {
+        return window.Babel || null;
+      });
+    })
+    .catch(() => {
+      return loadExternalScript("https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.24.4/babel.min.js").then(() => {
+        return window.Babel || null;
+      });
+    });
   return _babelLoading;
 }
 
@@ -129,6 +138,59 @@ function interpolateHtml(html, props = {}, data = {}) {
     }
     return match; // Leave unreplaced if not found
   });
+}
+
+/**
+ * Wraps user script into a valid executable React Component function so that:
+ * 1. Hooks (useState, useEffect, useRef, etc.) execute inside the component render lifecycle.
+ * 2. Props and Data are available both via arguments and outer scope.
+ * 3. Lucide icons can be used directly as JSX elements without 'ReferenceError'.
+ */
+export function prepareExecutableCode(rawCode) {
+  let clean = (rawCode || "").trim();
+  if (!clean) return "return function EmptySection() { return null; };";
+
+  // 1. If author uses "export default"
+  if (clean.includes("export default")) {
+    return clean.replace(/export\s+default\s+/, "return ");
+  }
+
+  // 2. If author already wrote an explicit return of a function component:
+  // e.g. "return function...", "return (props) =>", "return (function..."
+  if (/^return\s+(function|\(?props\)?\s*=>|\(\s*function)/.test(clean)) {
+    return clean;
+  }
+
+  // 3. If author wrote a named component function at top level without returning it:
+  // e.g. "function HeroSection(props) { ... }"
+  const namedFuncMatch = clean.match(/^function\s+([A-Z][A-Za-z0-9_]*)\s*\(/m);
+  if (namedFuncMatch && namedFuncMatch[1]) {
+    const funcName = namedFuncMatch[1];
+    if (!new RegExp(`return\\s+${funcName}\\b`).test(clean)) {
+      return `${clean}\nreturn ${funcName};`;
+    }
+    return clean;
+  }
+
+  // 4. If author wrote a const component at top level:
+  // e.g. "const HeroSection = (props) => { ... }"
+  const constFuncMatch = clean.match(/^const\s+([A-Z][A-Za-z0-9_]*)\s*=\s*(\(|function)/m);
+  if (constFuncMatch && constFuncMatch[1]) {
+    const funcName = constFuncMatch[1];
+    if (!new RegExp(`return\\s+${funcName}\\b`).test(clean)) {
+      return `${clean}\nreturn ${funcName};`;
+    }
+    return clean;
+  }
+
+  // 5. Standard SDK Pattern:
+  // The user script is the body of the component (can contain hooks, state, variables, and returns JSX)
+  let innerBody = clean;
+  if (!innerBody.includes("return ") && !innerBody.includes("return(") && !innerBody.includes("return\n")) {
+    innerBody = `return (\n${innerBody}\n);`;
+  }
+
+  return `return function SdkSectionComponent(props) {\n  const data = props?.data || {};\n  ${innerBody}\n};`;
 }
 
 /**
@@ -224,21 +286,8 @@ export default function SdkCustomBlock({ p = {}, s = {}, block = null, data = nu
         const Babel = await ensureBabel();
         if (!active) return;
 
-        // Wrap code if author wrote a bare component or return statement
-        let codeToCompile = trimmed;
-
-        // If author wrote `function MyComponent(...) { ... }` without returning it:
-        if (codeToCompile.includes("function") && !codeToCompile.includes("return ")) {
-          const match = codeToCompile.match(/function\s+([A-Za-z0-9_]+)/);
-          if (match && match[1]) {
-            codeToCompile += `\nreturn ${match[1]};`;
-          }
-        } else if (!codeToCompile.startsWith("return ") && !codeToCompile.includes("export default")) {
-          // If author wrote an expression or component definition:
-          if (!codeToCompile.includes("return ")) {
-            codeToCompile = `return (function CustomComponent(props) {\n  return (\n${codeToCompile}\n  );\n});`;
-          }
-        }
+        // Wrap code if author wrote a bare component, hooks, or return statement
+        const codeToCompile = prepareExecutableCode(trimmed);
 
         let jsCode = codeToCompile;
         if (Babel) {
@@ -248,23 +297,14 @@ export default function SdkCustomBlock({ p = {}, s = {}, block = null, data = nu
           jsCode = transformed.code;
         }
 
-        // Scope creation
-        const scope = {
-          React,
-          useState,
-          useEffect,
-          useRef,
-          useMemo,
-          useCallback,
-          motion: FramerMotion.motion,
-          AnimatePresence: FramerMotion.AnimatePresence,
-          icons: LucideIcons,
-          gsap: typeof window !== "undefined" ? window.gsap : null,
-          axios,
-          toast,
-        };
+        // Scope creation with full Lucide icon components directly available
+        const lucideEntries = Object.entries(LucideIcons).filter(
+          ([name]) => /^[A-Z]/.test(name) && name !== "default"
+        );
+        const lucideNames = lucideEntries.map(([name]) => name);
+        const lucideValues = lucideEntries.map(([, comp]) => comp);
 
-        const fn = new Function(
+        const scopeNames = [
           "React",
           "useState",
           "useEffect",
@@ -277,23 +317,32 @@ export default function SdkCustomBlock({ p = {}, s = {}, block = null, data = nu
           "gsap",
           "axios",
           "toast",
-          jsCode
-        );
+          "props",
+          "data",
+          ...lucideNames,
+        ];
 
-        const ResultComponent = fn(
-          scope.React,
-          scope.useState,
-          scope.useEffect,
-          scope.useRef,
-          scope.useMemo,
-          scope.useCallback,
-          scope.motion,
-          scope.AnimatePresence,
-          scope.icons,
-          scope.gsap,
-          scope.axios,
-          scope.toast
-        );
+        const scopeValues = [
+          React,
+          useState,
+          useEffect,
+          useRef,
+          useMemo,
+          useCallback,
+          FramerMotion.motion,
+          FramerMotion.AnimatePresence,
+          LucideIcons,
+          typeof window !== "undefined" ? window.gsap : null,
+          axios,
+          toast,
+          actualProps,
+          data,
+          ...lucideValues,
+        ];
+
+        const fn = new Function(...scopeNames, jsCode);
+
+        const ResultComponent = fn(...scopeValues);
 
         if (typeof ResultComponent === "function") {
           if (active) {
@@ -356,6 +405,7 @@ export default function SdkCustomBlock({ p = {}, s = {}, block = null, data = nu
         ) : CompiledComponent ? (
           <CompiledComponent
             props={actualProps}
+            {...actualProps}
             data={data}
             motion={FramerMotion.motion}
             icons={LucideIcons}

@@ -20,6 +20,7 @@ import ReducedMotionNotice from "@/Components/owner/cms/ReducedMotionNotice";
 import { scopeCss } from "@/lib/cms/scopeCss";
 
 export default function BlockEditor({ block, onChange, features = {}, scopeHint = "", previewDoc = null, onOpenStudio = null }) {
+  if (!block) return null;
   const def = BLOCK_TYPES[block.type];
   const [tab, setTab] = useState("content");
   if (!def) return <p className="text-sm text-red-500">Unknown block type: {block.type}</p>;
@@ -502,7 +503,8 @@ function FieldList({ fields, props, setProp, renderLeaf, block }) {
   // Everything else still gets its fields.
   const usesTimeline = block?.type === "scrollVideo";
 function cleanFieldLabel(label, key = "") {
-  if (!label) return key || "Content Field";
+  if (!label && !key) return "Content Field";
+  if (typeof label !== "string") return String(label || key || "Content Field");
   if (label.startsWith("Text UK Regulated Qualifications")) return "Badge / Eyebrow Text";
   if (label.startsWith("Heading Accredited Qualifications")) return "Main Heading";
   if (label.startsWith("Text Real-World Competence")) return "Heading Accent Line";
@@ -517,13 +519,16 @@ function cleanFieldLabel(label, key = "") {
   return label;
 }
 
-  const one = (field) => (
-    <div key={field.key}>
-      {field.type !== "boolean" && field.type !== "animation" ? <Label>{cleanFieldLabel(field.label, field.key)}</Label> : null}
-      {renderLeaf(field, props[field.key], (v) => setProp(field.key, v), field.key)}
-      {field.help ? <p className="mt-1 text-[11px] text-gray-400">{field.help}</p> : null}
-    </div>
-  );
+  const one = (field) => {
+    if (!field || !field.key) return null;
+    return (
+      <div key={field.key}>
+        {field.type !== "boolean" && field.type !== "animation" ? <Label>{cleanFieldLabel(field.label, field.key)}</Label> : null}
+        {renderLeaf(field, props[field.key], (v) => setProp(field.key, v), field.key)}
+        {field.help ? <p className="mt-1 text-[11px] text-gray-400">{field.help}</p> : null}
+      </div>
+    );
+  };
 
   const shown = usesTimeline ? fields.filter((f) => f.key !== "scenes") : fields;
   const grouped = shown.some((f) => f.group);

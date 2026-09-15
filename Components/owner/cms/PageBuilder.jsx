@@ -131,6 +131,41 @@ function ChildBlocks({ block, onChange, features, scopeHint, previewDoc, onOpenS
   );
 }
 
+class BlockEditorErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, info) {
+    console.warn("BlockEditor error caught by boundary:", error, info);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-900">
+          <div className="font-semibold flex items-center gap-1.5 mb-1">
+            <span>Notice: Could not load some block settings</span>
+          </div>
+          <p className="font-mono text-[11px] text-amber-700 bg-white/70 p-1.5 rounded border border-amber-200 mb-2">
+            {this.state.error?.message || "Render error"}
+          </p>
+          <button
+            type="button"
+            onClick={() => this.setState({ hasError: false, error: null })}
+            className="px-2.5 py-1 bg-amber-200 hover:bg-amber-300 text-amber-900 rounded font-medium text-xs transition-colors"
+          >
+            Retry Settings
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 /* ---------------- single draggable block card ---------------- */
 function BlockCard({ block, index, total, expanded, onToggle, onChange, onMove, onDuplicate, onRemove, features, previewDoc, onOpenStudio }) {
   const controls = useDragControls();
@@ -189,7 +224,9 @@ function BlockCard({ block, index, total, expanded, onToggle, onChange, onMove, 
         {expanded ? (
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} className="overflow-hidden">
             <div className="p-4 space-y-4">
-              <BlockEditor block={block} onChange={onChange} features={features} previewDoc={previewDoc} onOpenStudio={onOpenStudio} />
+              <BlockEditorErrorBoundary>
+                <BlockEditor block={block} onChange={onChange} features={features} previewDoc={previewDoc} onOpenStudio={onOpenStudio} />
+              </BlockEditorErrorBoundary>
               {container ? (
                 <ChildBlocks block={block} onChange={onChange} features={features} scopeHint={scopeHint} previewDoc={previewDoc} onOpenStudio={onOpenStudio} />
               ) : null}

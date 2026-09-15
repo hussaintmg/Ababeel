@@ -29,8 +29,52 @@ import SdkCustomBlock from "@/Components/cms/SdkCustomBlock";
 import { saveSdkCustomTemplate } from "@/Components/cms/customTemplates";
 import { toast } from "react-toastify";
 
+/* ---------------- Master Prompt for AI Code Agents ---------------- */
+export const AI_CUSTOM_SECTION_PROMPT = `You are an expert React / Tailwind CSS / Web Component developer creating custom section templates for the Ababeel CMS Section Code Studio (SDK).
+
+Please generate a high-converting, visually stunning section according to the user's specification.
+
+### OUTPUT SPECIFICATION:
+Respond with a valid JSON object adhering to this exact schema (enclosed in a \`\`\`json markdown code block):
+
+\`\`\`json
+{
+  "name": "Section Name",
+  "category": "Hero Sections | Features | Stats | Testimonials | CTA | Pricing | Courses | Forms",
+  "description": "Clear 1-2 sentence description of what this section displays.",
+  "options": {
+    "enableFramerMotion": true,
+    "enableGsap": false,
+    "enableTailwind": true,
+    "googleFont": "Outfit"
+  },
+  "fields": [
+    // Dynamic fields editable from CMS sidebar
+    { "key": "badgeText", "label": "Badge Text", "type": "text", "default": "Accredited Training" },
+    { "key": "heading", "label": "Main Heading", "type": "text", "default": "Elevate Your Career Standards" },
+    { "key": "subheading", "label": "Subtitle", "type": "textarea", "default": "Internationally recognized qualifications tailored for professionals." },
+    { "key": "buttonText", "label": "Button Text", "type": "text", "default": "Explore Courses" },
+    { "key": "buttonUrl", "label": "Button URL", "type": "text", "default": "/courses" },
+    { "key": "accentColor", "label": "Accent Color", "type": "color", "default": "#0284c7" }
+  ],
+  "css": "/* Scoped CSS styling (optional) */\\n.glow-effect { filter: drop-shadow(0 0 20px rgba(2, 132, 199, 0.3)); }\\n",
+  "code": "// React 19 JSX Component\\n// In scope: React, useState, useEffect, useRef, motion, AnimatePresence, Lucide icons (Sparkles, ArrowRight, Shield, CheckCircle, Award, Star, etc.), toast, props, data\\nreturn (\\n  <section className=\\"relative overflow-hidden bg-slate-950 py-20 px-4 sm:px-6 lg:px-8 text-white\\">\\n    <div className=\\"max-w-6xl mx-auto text-center\\">\\n      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className=\\"inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/10 border border-sky-500/30 text-sky-400 text-xs font-semibold mb-6\\">\\n        <Sparkles size={14} />\\n        <span>{props.badgeText}</span>\\n      </motion.div>\\n      <h2 className=\\"text-3xl sm:text-5xl font-bold tracking-tight mb-4\\">{props.heading}</h2>\\n      <p className=\\"text-slate-300 max-w-2xl mx-auto text-base sm:text-lg mb-8\\">{props.subheading}</p>\\n      <a href={props.buttonUrl} className=\\"inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-white font-semibold transition-all shadow-lg hover:shadow-sky-500/25\\">\\n        <span>{props.buttonText}</span>\\n        <ArrowRight size={16} />\\n      </a>\\n    </div>\\n  </section>\\n);"
+}
+\`\`\`
+
+### CRITICAL RULES:
+1. ALL dynamic/customizable text, URLs, colors, and images MUST be accessed through \`props.<key>\` (e.g. \`props.heading\`, \`props.buttonUrl\`).
+2. Every \`props.<key>\` referenced in the code MUST have a corresponding entry in the \`fields\` array so users can edit it from the CMS sidebar. Supported field types: \`text\`, \`textarea\`, \`color\`, \`image\`, \`boolean\`, \`link\`, \`select\`.
+3. All Lucide React icon components (e.g. \`<Sparkles />\`, \`<ArrowRight />\`, \`<Shield />\`, \`<CheckCircle />\`, \`<Award />\`, \`<Star />\`, \`<Phone />\`, \`<Mail />\`, etc.) are directly in scope!
+4. Framer Motion (\`motion.div\`, \`motion.h1\`, \`AnimatePresence\`) and standard React hooks (\`useState\`, \`useEffect\`, \`useRef\`) work natively.
+5. Use modern Tailwind CSS classes for responsive layouts, flex, grid, gradients, and shadows.
+6. Return a valid JSX element: either \`return (<section ...>...</section>);\` or \`export default function Section(props) { return ... }\`.
+
+Please generate a custom section for:
+[DESCRIBE YOUR SECTION OR REQUIREMENT HERE]`;
+
 /* ---------------- Pre-designed SDK Starter Presets ---------------- */
-const STARTER_PRESETS = [
+export const STARTER_PRESETS = [
   {
     id: "framer_hero",
     name: "Animated Hero with Framer Motion & Glow",
@@ -420,6 +464,9 @@ export default function SectionStudioModal({
   // Saving / feedback status
   const [isSaving, setIsSaving] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [copiedPrompt, setCopiedPrompt] = useState(false);
+  const [showAiImportModal, setShowAiImportModal] = useState(false);
+  const [aiJsonInput, setAiJsonInput] = useState("");
 
   // Initialize or load existing section if passed
   useEffect(() => {
@@ -479,6 +526,63 @@ export default function SectionStudioModal({
     setCode((prev) => formatCodeLocally(prev));
     setCss((prev) => prev.trim());
     toast.success("Code formatted");
+  };
+
+  // Copy structured prompt for AI agents (ChatGPT, Claude, Gemini, Antigravity)
+  const handleCopyAiPrompt = () => {
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard
+        .writeText(AI_CUSTOM_SECTION_PROMPT)
+        .then(() => {
+          setCopiedPrompt(true);
+          setTimeout(() => setCopiedPrompt(false), 2500);
+          toast.success("AI Prompt copied! Paste it in ChatGPT, Claude, or Gemini to generate custom section templates.");
+        })
+        .catch(() => {
+          toast.error("Failed to copy to clipboard automatically.");
+        });
+    } else {
+      toast.info("Clipboard not accessible in current environment.");
+    }
+  };
+
+  // Import JSON generated by AI
+  const handleImportAiJson = () => {
+    if (!aiJsonInput.trim()) {
+      toast.error("Please paste the AI-generated JSON first.");
+      return;
+    }
+    try {
+      let raw = aiJsonInput.trim();
+      const match = raw.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+      if (match) {
+        raw = match[1].trim();
+      }
+      const parsed = JSON.parse(raw);
+      if (!parsed.code && !parsed.name) {
+        toast.error("Invalid format: expected 'name', 'code', or 'fields'.");
+        return;
+      }
+      if (parsed.name) setName(parsed.name);
+      if (parsed.category) setCategory(parsed.category);
+      if (parsed.description) setDescription(parsed.description);
+      if (parsed.code) setCode(parsed.code);
+      if (parsed.css) setCss(parsed.css);
+      if (Array.isArray(parsed.fields)) setFields(parsed.fields);
+      if (parsed.options) setOptions(parsed.options);
+
+      const defs = {};
+      (parsed.fields || []).forEach((f) => {
+        defs[f.key] = f.default !== undefined ? f.default : "";
+      });
+      setTestValues(defs);
+
+      setShowAiImportModal(false);
+      setAiJsonInput("");
+      toast.success(`Successfully loaded "${parsed.name || "Custom Section"}" into Studio!`);
+    } catch (e) {
+      toast.error(`JSON Parse Error: ${e.message}`);
+    }
   };
 
   // Auto-detect variables from code: scans for `props.XYZ` or `props['XYZ']`
@@ -679,6 +783,26 @@ export default function SectionStudioModal({
                   </option>
                 ))}
               </select>
+
+              <button
+                type="button"
+                onClick={handleCopyAiPrompt}
+                title="Copy ready-made structured prompt to ask ChatGPT, Claude, or Gemini to build custom sections"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-xs font-semibold border border-violet-400/40 transition-all shadow-sm hover:shadow-violet-600/30 hover:scale-[1.02] active:scale-[0.98]"
+              >
+                {copiedPrompt ? <Check size={13} className="text-emerald-300" /> : <Sparkles size={13} className="text-violet-200 animate-pulse" />}
+                <span>{copiedPrompt ? "Prompt Copied!" : "Copy AI Prompt"}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowAiImportModal(true)}
+                title="Import custom section JSON created by AI"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-sky-300 hover:text-sky-200 text-xs font-medium border border-sky-500/30 transition-colors shadow-xs"
+              >
+                <Copy size={13} className="text-sky-400" />
+                <span className="hidden sm:inline">Import AI JSON</span>
+              </button>
 
               <button
                 type="button"
@@ -1233,6 +1357,80 @@ export default function SectionStudioModal({
               </div>
             </div>
           </div>
+          {/* ================= IMPORT AI JSON MODAL ================= */}
+          <AnimatePresence>
+            {showAiImportModal ? (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[1100] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+                onClick={() => setShowAiImportModal(false)}
+              >
+                <motion.div
+                  initial={{ scale: 0.95, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.95, opacity: 0 }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="w-full max-w-2xl bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl p-6 text-slate-100 flex flex-col gap-4"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-lg bg-sky-500/20 text-sky-400 flex items-center justify-center font-bold">
+                        <Sparkles size={16} />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-sm text-white">Import Template from AI</h3>
+                        <p className="text-[11px] text-slate-400">Paste the JSON response received from ChatGPT, Claude, or Gemini</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setShowAiImportModal(false)}
+                      className="p-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+
+                  <textarea
+                    value={aiJsonInput}
+                    onChange={(e) => setAiJsonInput(e.target.value)}
+                    placeholder={'{\n  "name": "My Hero Section",\n  "category": "Hero Sections",\n  "code": "return (<section ...>...</section>);",\n  "fields": [...]\n}'}
+                    rows={12}
+                    className="w-full font-mono text-xs p-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-200 outline-none focus:border-sky-500"
+                  />
+
+                  <div className="flex items-center justify-between gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={handleCopyAiPrompt}
+                      className="inline-flex items-center gap-1.5 text-xs text-violet-400 hover:text-violet-300"
+                    >
+                      <Copy size={13} />
+                      <span>Need prompt? Copy AI Prompt</span>
+                    </button>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowAiImportModal(false)}
+                        className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleImportAiJson}
+                        className="px-5 py-2 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white text-xs font-semibold shadow-md shadow-sky-900/30"
+                      >
+                        Load into Studio
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
         </motion.div>
       </motion.div>
     </AnimatePresence>

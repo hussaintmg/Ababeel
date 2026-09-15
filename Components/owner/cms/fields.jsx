@@ -453,21 +453,33 @@ import { Plus, Trash2, ChevronUp, ChevronDown } from "lucide-react";
 
 export function ListEditor({ field, value, onChange, renderField }) {
   const items = Array.isArray(value) ? value : [];
+  const itemFields = Array.isArray(field?.itemFields)
+    ? field.itemFields
+    : Array.isArray(field?.fields)
+    ? field.fields
+    : [{ key: "value", label: field?.itemLabel || "Value", type: "text" }];
 
   const update = (i, key, v) => {
-    const next = items.map((it, idx) => (idx === i ? { ...it, [key]: v } : it));
+    const next = items.map((it, idx) => {
+      if (idx !== i) return it;
+      if (typeof it === "object" && it !== null) {
+        return { ...it, [key]: v };
+      }
+      return v;
+    });
     onChange(next);
   };
   const addItem = () => {
     const blank = {};
-    field.itemFields.forEach((f) => {
+    itemFields.forEach((f) => {
       blank[f.key] = f.type === "boolean" ? false : f.type === "link" ? { label: "", href: "" } : "";
     });
     // A list whose items only work once several numbers are filled in — a
     // scroll scene needs a range, an easing and a position — added a row that
     // was invisible until the author guessed all of them. `itemDefaults` lets
     // the schema say what a usable new row looks like.
-    onChange([...items, { ...blank, ...(field.itemDefaults || {}) }]);
+    const defaultVal = field?.itemDefaults || (itemFields.length === 1 && itemFields[0].key === "value" ? "" : blank);
+    onChange([...items, typeof defaultVal === "object" ? { ...blank, ...defaultVal } : defaultVal]);
   };
   const remove = (i) => onChange(items.filter((_, idx) => idx !== i));
   const move = (i, dir) => {
@@ -484,7 +496,7 @@ export function ListEditor({ field, value, onChange, renderField }) {
         <div key={i} className="rounded-lg border border-gray-200 bg-gray-50 p-3">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-semibold text-gray-500">
-              {field.itemLabel || "Item"} {i + 1}
+              {field?.itemLabel || "Item"} {i + 1}
             </span>
             <div className="flex items-center gap-1">
               <button type="button" onClick={() => move(i, -1)} className="p-1 rounded hover:bg-gray-200 text-gray-500" title="Move up">
@@ -499,16 +511,19 @@ export function ListEditor({ field, value, onChange, renderField }) {
             </div>
           </div>
           <div className="space-y-2.5">
-            {field.itemFields.map((f) => (
-              <div key={f.key}>
-                {f.type !== "boolean" ? <Label>{f.label}</Label> : null}
-                {renderField ? (
-                  renderField(f, item[f.key], (v) => update(i, f.key, v), `${field.key}.${i}.${f.key}`)
-                ) : (
-                  <FieldRenderer field={f} value={item[f.key]} onChange={(v) => update(i, f.key, v)} />
-                )}
-              </div>
-            ))}
+            {itemFields.map((f) => {
+              const val = typeof item === "object" && item !== null ? item[f.key] : item;
+              return (
+                <div key={f.key}>
+                  {f.type !== "boolean" ? <Label>{f.label}</Label> : null}
+                  {renderField ? (
+                    renderField(f, val, (v) => update(i, f.key, v), `${field?.key || "item"}.${i}.${f.key}`)
+                  ) : (
+                    <FieldRenderer field={f} value={val} onChange={(v) => update(i, f.key, v)} />
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       ))}
@@ -517,7 +532,7 @@ export function ListEditor({ field, value, onChange, renderField }) {
         onClick={addItem}
         className="w-full inline-flex items-center justify-center gap-1.5 py-2 rounded-lg border-2 border-dashed border-gray-300 text-sm text-gray-500 hover:border-blue-400 hover:text-blue-600 transition-colors"
       >
-        <Plus size={15} /> Add {field.itemLabel || "item"}
+        <Plus size={15} /> Add {field?.itemLabel || "item"}
       </button>
     </div>
   );
