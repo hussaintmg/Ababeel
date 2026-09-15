@@ -5,6 +5,8 @@ import * as LucideIcons from "lucide-react";
 import * as FramerMotion from "framer-motion";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { getPath } from "@/lib/cms/expression";
+import { createSampleItem } from "@/lib/cms/binding";
 
 /* ---------- Cache & Script Loaders ---------- */
 const _loadedScripts = new Set();
@@ -117,24 +119,20 @@ class SdkErrorBoundary extends Component {
  */
 function interpolateHtml(html, props = {}, data = {}) {
   if (!html || typeof html !== "string") return "";
-  return html.replace(/\{\{\s*([a-zA-Z0-9_.-]+)\s*\}\}/g, (match, key) => {
-    // 1. Check in props
+  return html.replace(/\{\{\s*([a-zA-Z0-9_.-\[\]]+)\s*\}\}/g, (match, key) => {
+    // 1. Check in props directly
     if (props[key] !== undefined && props[key] !== null) {
       return String(props[key]);
     }
-    // 2. Check in data context (e.g. site.title or courses)
-    const parts = key.split(".");
-    let curr = data;
-    for (const part of parts) {
-      if (curr && typeof curr === "object" && part in curr) {
-        curr = curr[part];
-      } else {
-        curr = undefined;
-        break;
-      }
+    // 2. Check in data context via getPath
+    const val = getPath(data, key);
+    if (val !== undefined && val !== null) {
+      return typeof val === "object" ? JSON.stringify(val) : String(val);
     }
-    if (curr !== undefined && curr !== null) {
-      return typeof curr === "object" ? JSON.stringify(curr) : String(curr);
+    // 3. Check in props via getPath
+    const propVal = getPath(props, key);
+    if (propVal !== undefined && propVal !== null) {
+      return typeof propVal === "object" ? JSON.stringify(propVal) : String(propVal);
     }
     return match; // Leave unreplaced if not found
   });
@@ -238,6 +236,25 @@ export default function SdkCustomBlock({ p = {}, s = {}, block = null, data = nu
     }
   }, [options.enableGsap]);
 
+  // Provide sample fallback when collections are empty so SDK sections render dynamically
+  const effectiveData = useMemo(() => {
+    const d = data || {};
+    const hasCourses =
+      (Array.isArray(d.courses) && d.courses.length > 0) ||
+      (Array.isArray(d.courseRef) && d.courseRef.length > 0) ||
+      (Array.isArray(d.courseReferences) && d.courseReferences.length > 0);
+    if (!hasCourses) {
+      const sampleCourse = createSampleItem("courseRef", "course", d);
+      return {
+        ...d,
+        courseRef: Array.isArray(d.courseRef) && d.courseRef.length ? d.courseRef : [sampleCourse],
+        courses: Array.isArray(d.courses) && d.courses.length ? d.courses : [sampleCourse],
+        courseReferences: Array.isArray(d.courseReferences) && d.courseReferences.length ? d.courseReferences : [sampleCourse],
+      };
+    }
+    return d;
+  }, [data]);
+
   // Determine whether code is JSX/React Component or HTML
   const isJsxOrComponent = useMemo(() => {
     if (!code) return false;
@@ -336,7 +353,7 @@ export default function SdkCustomBlock({ p = {}, s = {}, block = null, data = nu
           axios,
           toast,
           actualProps,
-          data,
+          effectiveData,
           ...lucideValues,
         ];
 
@@ -372,7 +389,7 @@ export default function SdkCustomBlock({ p = {}, s = {}, block = null, data = nu
     return () => {
       active = false;
     };
-  }, [code, data, actualProps.mode]);
+  }, [code, effectiveData, actualProps.mode]);
 
   // Scoped CSS styles
   const scopedCss = useMemo(() => {
@@ -406,7 +423,7 @@ export default function SdkCustomBlock({ p = {}, s = {}, block = null, data = nu
           <CompiledComponent
             props={actualProps}
             {...actualProps}
-            data={data}
+            data={effectiveData}
             motion={FramerMotion.motion}
             icons={LucideIcons}
             toast={toast}

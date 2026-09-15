@@ -112,47 +112,123 @@ export default function BlockDataTab({ block, onChange, features = {} }) {
             </button>
           </div>
           {repeat.enabled ? (
-            <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="mt-3 space-y-3">
+              {/* Preset Collection Quick Pick */}
               <div>
-                <Label>Collection</Label>
-                <BoundInput
-                  value={repeat.source}
-                  onChange={(v) => setRepeat({ source: v.replace(/[{}]/g, "") })}
-                  fieldType="collection"
-                  placeholder="courses"
-                />
+                <Label>Quick Select Database Collection</Label>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {[
+                    { id: "courseRef", label: "Courses (courseRef)" },
+                    { id: "courses", label: "Courses (courses)" },
+                    { id: "candidates", label: "Candidates" },
+                    { id: "testimonials", label: "Testimonials" },
+                    { id: "teamMembers", label: "Team / Instructors" },
+                  ].map((col) => (
+                    <button
+                      key={col.id}
+                      type="button"
+                      onClick={() => setRepeat({ source: col.id })}
+                      className={`px-2 py-1 rounded text-xs font-mono border transition-all ${
+                        (repeat.source || "").toLowerCase() === col.id.toLowerCase()
+                          ? "bg-blue-600 text-white border-blue-600 font-semibold shadow-xs"
+                          : "bg-white text-gray-700 border-gray-200 hover:bg-blue-50 hover:border-blue-300"
+                      }`}
+                    >
+                      {col.label}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <div>
-                <Label>Item variable name</Label>
-                <input
-                  type="text"
-                  value={repeat.item ?? "item"}
-                  onChange={(e) => setRepeat({ item: e.target.value })}
-                  placeholder="course"
-                  className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs font-mono outline-none focus:ring-2 focus:ring-blue-500"
-                />
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <Label>Collection Source</Label>
+                  <BoundInput
+                    value={repeat.source}
+                    onChange={(v) => setRepeat({ source: v.replace(/[{}]/g, "") })}
+                    fieldType="collection"
+                    placeholder="courseRef"
+                  />
+                </div>
+                <div>
+                  <Label>Item variable name</Label>
+                  <input
+                    type="text"
+                    value={repeat.item ?? "item"}
+                    onChange={(e) => setRepeat({ item: e.target.value })}
+                    placeholder="item"
+                    className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs font-mono outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <Label>Max items</Label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={repeat.limit ?? ""}
+                    onChange={(e) => setRepeat({ limit: e.target.value })}
+                    placeholder="blank = all"
+                    className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <Label>Skip first</Label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={repeat.offset ?? ""}
+                    onChange={(e) => setRepeat({ offset: e.target.value })}
+                    placeholder="0"
+                    className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
               </div>
-              <div>
-                <Label>Max items</Label>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  value={repeat.limit ?? ""}
-                  onChange={(e) => setRepeat({ limit: e.target.value })}
-                  placeholder="blank = all"
-                  className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500"
-                />
+
+              {/* Guidance for card variables */}
+              <div className="rounded-lg bg-blue-50 border border-blue-200 p-2.5 text-xs text-blue-900">
+                <div className="flex items-center gap-1.5 font-semibold text-blue-800 mb-1">
+                  <span>How to use fields in each card:</span>
+                </div>
+                <p className="text-[11px] text-blue-700 leading-relaxed">
+                  Go to the <b>Content</b> tab of this block and bind any field using <code className="font-mono bg-blue-100 px-1 py-0.5 rounded font-bold">{repeat.item || "item"}.&lt;fieldName&gt;</code>:
+                </p>
+                <div className="mt-1.5 flex flex-wrap gap-1 text-[11px] font-mono">
+                  {["courseName", "coursePrice", "duration", "mode", "location", "referenceNumber", "thumbnail"].map((fn) => (
+                    <span key={fn} className="bg-white px-1.5 py-0.5 rounded border border-blue-200 text-blue-800">
+                      {`{{${repeat.item || "item"}.${fn}}}`}
+                    </span>
+                  ))}
+                </div>
               </div>
-              <div>
-                <Label>Skip first</Label>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  value={repeat.offset ?? ""}
-                  onChange={(e) => setRepeat({ offset: e.target.value })}
-                  placeholder="0"
-                  className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500"
-                />
+
+              {/* Empty state handling */}
+              <div className="pt-2 border-t border-gray-200">
+                <Label>When database collection is empty (0 records):</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
+                  <div>
+                    <select
+                      value={repeat.emptyMode || "showSample"}
+                      onChange={(e) => setRepeat({ emptyMode: e.target.value })}
+                      className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                    >
+                      <option value="showSample">Show Sample Card in Builder (Recommended)</option>
+                      <option value="showEmptyMessage">Show Custom Message on Live Page</option>
+                      <option value="hide">Hide Section Completely</option>
+                    </select>
+                  </div>
+                  <div>
+                    <input
+                      type="text"
+                      value={repeat.emptyText ?? ""}
+                      onChange={(e) => setRepeat({ emptyText: e.target.value })}
+                      placeholder="Empty message, e.g. No courses currently available."
+                      className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+                <p className="mt-1 text-[11px] text-gray-500">
+                  <b>Show Sample Card</b> keeps the section visible and editable in the builder even when your database currently has 0 courses.
+                </p>
               </div>
             </div>
           ) : (

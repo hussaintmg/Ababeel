@@ -19,6 +19,20 @@ describe("path access", () => {
     expect(getPath(ctx, "courses[1].title")).toBe("Two");
   });
 
+  test("reads array item properties without index and with [] syntax", () => {
+    // Array accessing item property directly (reads first element)
+    expect(getPath(ctx, "courses.title")).toBe("One");
+    expect(getPath(ctx, "courses[].title")).toBe("One");
+    expect(getPath(ctx, "courses[0].title")).toBe("One");
+    expect(getPath(ctx, "courses.length")).toBe(2);
+  });
+
+  test("resolves collection aliases seamlessly", () => {
+    // Context only has 'courses', but author asks for 'courseRef' or 'courseReference'
+    expect(getPath(ctx, "courseRef.title")).toBe("One");
+    expect(getPath(ctx, "courseReference.title")).toBe("One");
+  });
+
   test("returns undefined for a missing hop instead of throwing", () => {
     expect(getPath(ctx, "user.nothing.here")).toBeUndefined();
   });

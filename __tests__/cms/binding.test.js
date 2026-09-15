@@ -266,3 +266,48 @@ describe("published payload contains no authoring data", () => {
     expect(JSON.stringify(out)).not.toContain("_fallbacks");
   });
 });
+
+describe("empty collection and repeater preview handling", () => {
+  test("when collection is empty in builder mode, renders sample card preview instead of disappearing", () => {
+    const b = {
+      id: "course-card",
+      type: "heading",
+      props: { text: "{{item.courseName}} - {{item.coursePrice}}" },
+      _repeat: { enabled: true, source: "courseRef", item: "item" },
+    };
+    // Context with empty courseRef array
+    const emptyCtx = { courseRef: [] };
+    const out = expandBlocks([b], emptyCtx, { isBuilder: true });
+    expect(out).toHaveLength(1);
+    expect(out[0]._isRepeatPlaceholder).toBe(true);
+    expect(out[0].props.text).toContain("First Aid at Work");
+    expect(out[0].props.text).toContain("249");
+    expect(out[0]._repeatInfo.source).toBe("courseRef");
+  });
+
+  test("when collection is empty on live page with emptyMode 'hide', it hides cleanly", () => {
+    const b = {
+      id: "course-card",
+      type: "heading",
+      props: { text: "{{item.courseName}}" },
+      _repeat: { enabled: true, source: "courseRef", item: "item", emptyMode: "hide" },
+    };
+    const emptyCtx = { courseRef: [] };
+    const out = expandBlocks([b], emptyCtx, { isBuilder: false });
+    expect(out).toHaveLength(0);
+  });
+
+  test("when repeater container has 0 items in builder mode, renders sample child preview", () => {
+    const rep = {
+      id: "rep-container",
+      type: "repeater",
+      props: { source: "courseRef", item: "item" },
+      children: [{ id: "c1", type: "heading", props: { text: "{{item.courseName}}" } }],
+    };
+    const emptyCtx = { courseRef: [] };
+    const [out] = expandBlocks([rep], emptyCtx, { isBuilder: true });
+    expect(out.props._items).toHaveLength(1);
+    expect(out.props._items[0]._isRepeatPlaceholder).toBe(true);
+    expect(out.props._items[0].blocks[0].props.text).toContain("First Aid at Work");
+  });
+});

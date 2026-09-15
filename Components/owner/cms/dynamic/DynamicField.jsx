@@ -102,7 +102,7 @@ function TokenStrip({ template, onChange, lookup }) {
 
 /* ---------------- composer ---------------- */
 
-function Composer({ value, onChange, fieldType, multiline }) {
+function Composer({ value, onChange, fieldType, multiline, scopeHint = "", activeSource = "" }) {
   const { variables, lookup } = useCmsVariables();
   const ref = useRef(null);
   const [showPicker, setShowPicker] = useState(false);
@@ -238,6 +238,8 @@ function Composer({ value, onChange, fieldType, multiline }) {
       <PickerPopover anchorRef={fieldRef} open={showPicker} onClose={() => setShowPicker(false)}>
         <VariablePicker
           fieldType={fieldType}
+          scopeHint={scopeHint}
+          activeSource={activeSource}
           onClose={() => setShowPicker(false)}
           onPick={(name) => {
             insertAtCaret(`{{${name}}}`);
@@ -392,6 +394,8 @@ export default function DynamicField({
   fallback,
   onFallbackChange,
   enabled = true,
+  scopeHint = "",
+  activeSource = "",
 }) {
   const bindable = enabled && isBindableField(field);
   // The mode is derived from the stored value, with the author's explicit
@@ -460,11 +464,15 @@ export default function DynamicField({
             value={typeof value === "object" ? value?.label || "" : ""}
             onChange={(v) => onChange({ ...(value || {}), label: v })}
             fieldType="text"
+            scopeHint={scopeHint}
+            activeSource={activeSource}
           />
           <Composer
             value={typeof value === "object" ? value?.href || "" : ""}
             onChange={(v) => onChange({ ...(value || {}), href: v })}
             fieldType="link"
+            scopeHint={scopeHint}
+            activeSource={activeSource}
           />
         </div>
       ) : (
@@ -473,6 +481,8 @@ export default function DynamicField({
           onChange={onChange}
           fieldType={field.type}
           multiline={MULTILINE_TYPES.has(field.type)}
+          scopeHint={scopeHint}
+          activeSource={activeSource}
         />
       )}
 

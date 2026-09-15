@@ -56,6 +56,9 @@ export default function BlockEditor({ block, onChange, features = {}, scopeHint 
     onChange({ ...block, _fallbacks: next });
   };
 
+  const effectiveScope = block._repeat?.enabled ? (block._repeat?.item || "item") : scopeHint;
+  const effectiveSource = block._repeat?.enabled ? (block._repeat?.source || "") : "";
+
   // Every leaf property gets the Static/Dynamic/Formula control; list fields
   // recurse so items inside a Card Grid can be bound too.
   const renderLeaf = (field, value, onValue, pathKey) => {
@@ -73,6 +76,8 @@ export default function BlockEditor({ block, onChange, features = {}, scopeHint 
         enabled={dynamicEnabled}
         fallback={fallbacks[pathKey || field.key]}
         onFallbackChange={(v) => setFallback(pathKey || field.key, v)}
+        scopeHint={effectiveScope}
+        activeSource={effectiveSource}
       />
     );
   };
@@ -139,9 +144,9 @@ export default function BlockEditor({ block, onChange, features = {}, scopeHint 
               ) : null}
             </div>
           ) : null}
-          {scopeHint ? (
+          {effectiveScope && (block._repeat?.enabled || scopeHint) ? (
             <p className="rounded-lg bg-blue-50 border border-blue-100 px-3 py-2 text-[11px] text-blue-700">
-              Inside a Repeat — use <code className="font-mono">{scopeHint}</code> to reach the current record.
+              Inside a Repeat — use <code className="font-mono">{effectiveScope}</code> to reach each record&apos;s fields{effectiveSource ? ` (e.g. {{${effectiveScope}.courseName}}, {{${effectiveScope}.coursePrice}})` : ""}.
             </p>
           ) : null}
           {block.type === "scrollVideo" ? (

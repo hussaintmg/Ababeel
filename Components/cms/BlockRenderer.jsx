@@ -1918,6 +1918,23 @@ export function BlockView({ block, showWarnings = false }) {
   const content = (
     <>
       {showWarnings && block._missing?.length ? <MissingVariableWarning missing={block._missing} /> : null}
+      {showWarnings && block._isRepeatPlaceholder ? (
+        <div className="mx-4 my-2 rounded-xl border border-blue-200 bg-blue-50/95 px-3.5 py-2 text-xs text-blue-900 flex items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-2">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-600" />
+            </span>
+            <span className="font-semibold">Repeater Preview Mode</span>
+            <span className="text-blue-700 text-[11px]">
+              Collection <code className="font-mono bg-blue-100 px-1 py-0.5 rounded font-bold text-blue-800">{block._repeatInfo?.source}</code> has 0 records in database. Showing sample card for design &amp; editing.
+            </span>
+          </div>
+          <span className="text-[10px] font-semibold tracking-wide uppercase px-2 py-0.5 rounded-md bg-blue-200 text-blue-800 shrink-0">
+            Sample Preview
+          </span>
+        </div>
+      ) : null}
       <Cmp p={block.props || {}} s={block._style || {}} showWarnings={showWarnings} />
     </>
   );
@@ -1986,12 +2003,12 @@ export default function BlockRenderer({ blocks, data = null, showWarnings = fals
     if (!Array.isArray(blocks) || blocks.length === 0) return [];
     if (!data) return blocks;
     try {
-      return expandBlocks(blocks, data);
+      return expandBlocks(blocks, data, { isBuilder: showWarnings });
     } catch (err) {
       console.error("CMS binding failed, falling back to raw blocks:", err?.message);
       return blocks;
     }
-  }, [blocks, data]);
+  }, [blocks, data, showWarnings]);
 
   if (!rendered.length) return null;
   return (
