@@ -10,17 +10,11 @@ export const AuthProvider = ({ children }) => {
 
   const getUserData = async () => {
     try {
-      try {
-        const res = await axios.get("/api/auth/verify-user", {
-          withCredentials: true,
-        });
-        setUser(res.data.user);
-      } catch (err) {
-        console.error("Error fetching user:", err);
-        setUser(null);
-      }
+      const res = await axios.get("/api/auth/verify-user", {
+        withCredentials: true,
+      });
+      setUser(res.data?.user || null);
     } catch (err) {
-      console.error("Error fetching user:", err);
       setUser(null);
     } finally {
       setLoading(false);

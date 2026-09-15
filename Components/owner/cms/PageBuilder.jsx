@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo, useRef, useCallback } from "react";
+import React, { useEffect, useState, useMemo, useRef, useCallback, Component, Suspense } from "react";
 import axios from "axios";
 import Link from "next/link";
 import { toast } from "react-toastify";
@@ -15,8 +15,8 @@ import {
   Search, Layers, Grid, List, Monitor, Tablet, Smartphone,
 } from "lucide-react";
 import { BLOCK_TYPE_LIST, BLOCK_TYPES, createBlock, isContainer } from "@/Components/cms/blockSchemas";
-import { TEMPLATES, TEMPLATE_CATEGORIES, createBlocksFromTemplate } from "@/Components/cms/templates";
-import { loadCustomTemplates, saveCustomTemplate, deleteCustomTemplate } from "@/Components/cms/customTemplates";
+import { loadCustomTemplates, saveCustomTemplate, deleteCustomTemplate, fetchRemoteCustomSections } from "@/Components/cms/customTemplates";
+import SectionStudioModal from "@/Components/owner/cms/SectionStudioModal";
 import BlockEditor from "@/Components/owner/cms/BlockEditor";
 import BlockRenderer from "@/Components/cms/BlockRenderer";
 import { CmsVariablesProvider, useCmsVariables } from "@/context/CmsVariablesContext";
@@ -36,7 +36,7 @@ const ICONS = {
 };
 
 /* ---------------- nested children (Repeat containers) ---------------- */
-function ChildBlocks({ block, onChange, features, scopeHint, previewDoc }) {
+function ChildBlocks({ block, onChange, features, scopeHint, previewDoc, onOpenStudio }) {
   const children = Array.isArray(block.children) ? block.children : [];
   const [expandedId, setExpandedId] = useState(null);
   const [showPalette, setShowPalette] = useState(false);
@@ -93,7 +93,7 @@ function ChildBlocks({ block, onChange, features, scopeHint, previewDoc }) {
               </div>
               {open ? (
                 <div className="p-3">
-                  <BlockEditor block={child} onChange={(next) => update(child.id, next)} features={features} scopeHint={scopeHint} previewDoc={previewDoc} />
+                  <BlockEditor block={child} onChange={(next) => update(child.id, next)} features={features} scopeHint={scopeHint} previewDoc={previewDoc} onOpenStudio={onOpenStudio} />
                 </div>
               ) : null}
             </div>
@@ -131,7 +131,7 @@ function ChildBlocks({ block, onChange, features, scopeHint, previewDoc }) {
 }
 
 /* ---------------- single draggable block card ---------------- */
-function BlockCard({ block, index, total, expanded, onToggle, onChange, onMove, onDuplicate, onRemove, features, previewDoc }) {
+function BlockCard({ block, index, total, expanded, onToggle, onChange, onMove, onDuplicate, onRemove, features, previewDoc, onOpenStudio }) {
   const controls = useDragControls();
   const def = BLOCK_TYPES[block.type] || {};
   const Icon = ICONS[def.icon] || Type;
@@ -188,9 +188,9 @@ function BlockCard({ block, index, total, expanded, onToggle, onChange, onMove, 
         {expanded ? (
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} className="overflow-hidden">
             <div className="p-4 space-y-4">
-              <BlockEditor block={block} onChange={onChange} features={features} previewDoc={previewDoc} />
+              <BlockEditor block={block} onChange={onChange} features={features} previewDoc={previewDoc} onOpenStudio={onOpenStudio} />
               {container ? (
-                <ChildBlocks block={block} onChange={onChange} features={features} scopeHint={scopeHint} previewDoc={previewDoc} />
+                <ChildBlocks block={block} onChange={onChange} features={features} scopeHint={scopeHint} previewDoc={previewDoc} onOpenStudio={onOpenStudio} />
               ) : null}
             </div>
           </motion.div>
@@ -269,8 +269,36 @@ function PageBuilderInner({ pageKey, meta }) {
     setPageSources(dataSources, dynamicRoute);
   }, [dataSources, dynamicRoute, setPageSources]);
 
+  const [showStudio, setShowStudio] = useState(false);
+  const [studioInitialSection, setStudioInitialSection] = useState(null);
+
+  const openStudioForBlock = (block) => {
+    setStudioInitialSection({
+      sectionId: block.props?._sectionId || block.id,
+      blockId: block.id,
+      name: block.props?._name || "Custom Code Section",
+      category: block.props?._category || "Custom Sections",
+      code: block.props?._code || "",
+      css: block.props?._css || "",
+      fields: block.props?._fields || [],
+      options: block.props?._options || {},
+      props: block.props || {},
+    });
+    setShowStudio(true);
+  };
+
+  const openStudioNew = () => {
+    setStudioInitialSection(null);
+    setShowStudio(true);
+  };
+
   useEffect(() => {
     setCustomTemplates(loadCustomTemplates());
+    fetchRemoteCustomSections().then((remote) => {
+      if (Array.isArray(remote) && remote.length > 0) {
+        setCustomTemplates(remote);
+      }
+    });
   }, []);
 
   // Feature switches come from the same global CMS settings as the rest of the
@@ -546,6 +574,9 @@ function PageBuilderInner({ pageKey, meta }) {
         <button onClick={() => setShowTemplates(true)} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 text-white text-sm font-medium shadow-sm hover:shadow-md hover:scale-[1.02] transition-all">
           <LayoutTemplate size={17} /> Browse Sections
         </button>
+        <button onClick={openStudioNew} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 text-white text-sm font-medium shadow-sm hover:shadow-md hover:scale-[1.02] transition-all" title="Create a custom React SDK section with code, animations & variables">
+          <Code2 size={17} /> Section Studio (SDK)
+        </button>
         <button onClick={() => setShowPalette(true)} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-300 text-gray-700 text-sm font-medium hover:border-blue-400 hover:text-blue-600 transition-colors">
           <Plus size={17} /> Add Single Block
         </button>
@@ -577,6 +608,7 @@ function PageBuilderInner({ pageKey, meta }) {
                   onRemove={() => removeBlock(block.id)}
                   features={features}
                   previewDoc={previewDoc}
+                  onOpenStudio={openStudioForBlock}
                 />
               ))}
             </Reorder.Group>
@@ -770,6 +802,8 @@ function PageBuilderInner({ pageKey, meta }) {
             <PreviewFrame
               width={DEVICES.find((d) => d.id === device)?.width || 0}
               height={Math.round(vh * 0.7)}
+              selectedBlockId={expandedId}
+              onSelectBlock={(id) => setExpandedId(id)}
               onDocument={setPreviewDoc}
             >
               {customCss ? <style dangerouslySetInnerHTML={{ __html: customCss }} /> : null}
@@ -820,8 +854,69 @@ function PageBuilderInner({ pageKey, meta }) {
 
       {/* Templates gallery modal */}
       <AnimatePresence>
-        {showTemplates ? <TemplatesModal onClose={() => setShowTemplates(false)} onInsert={insertTemplate} customTemplates={customTemplates} onDeleteCustom={removeCustomTemplate} /> : null}
+        {showTemplates ? (
+          <TemplatesModal
+            onClose={() => setShowTemplates(false)}
+            onInsert={insertTemplate}
+            customTemplates={customTemplates}
+            onDeleteCustom={removeCustomTemplate}
+            onOpenStudio={() => {
+              setShowTemplates(false);
+              openStudioNew();
+            }}
+            onEditSdkSection={(block) => {
+              setShowTemplates(false);
+              openStudioForBlock(block);
+            }}
+          />
+        ) : null}
       </AnimatePresence>
+
+      {/* Section Code Studio (SDK) Modal */}
+      <SectionStudioModal
+        isOpen={showStudio}
+        onClose={() => {
+          setShowStudio(false);
+          setStudioInitialSection(null);
+        }}
+        initialSection={studioInitialSection}
+        onSave={async (savedData) => {
+          if (studioInitialSection?.blockId) {
+            updateBlock(studioInitialSection.blockId, {
+              props: {
+                ...studioInitialSection.props,
+                _name: savedData.name,
+                _code: savedData.code,
+                _css: savedData.css,
+                _fields: savedData.fields,
+                _options: savedData.options,
+                ...(savedData.defaultProps || {}),
+              },
+            });
+          }
+          const updated = await fetchRemoteCustomSections();
+          setCustomTemplates(updated);
+        }}
+        onInsert={(sectionData) => {
+          const block = {
+            id: `b_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
+            type: "sdkCustomSection",
+            props: {
+              _sectionId: sectionData.sectionId,
+              _name: sectionData.name,
+              _code: sectionData.code,
+              _css: sectionData.css,
+              _fields: sectionData.fields || [],
+              _options: sectionData.options || {},
+              ...(sectionData.defaultProps || {}),
+            },
+            _style: { ...defaultStyle() },
+          };
+          setBlocks((prev) => [...prev, block]);
+          setShowStudio(false);
+          toast.success(`Inserted "${sectionData.name}" into page`);
+        }}
+      />
     </div>
   );
 }
@@ -873,7 +968,7 @@ function Modal({ title, onClose, children, wide, extraWide, scrollable = true, h
 }
 
 /* ---------------- templates gallery ---------------- */
-function TemplatesModal({ onClose, onInsert, customTemplates = [], onDeleteCustom }) {
+function TemplatesModal({ onClose, onInsert, customTemplates = [], onDeleteCustom, onOpenStudio, onEditSdkSection }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState("grid"); // "grid" | "expanded"
   const [previewingTemplate, setPreviewingTemplate] = useState(null);
@@ -914,6 +1009,18 @@ function TemplatesModal({ onClose, onInsert, customTemplates = [], onDeleteCusto
     return list;
   }, [all, cat, searchQuery, customTemplates]);
 
+  const [visibleLimit, setVisibleLimit] = useState(24);
+
+  // Reset pagination when category or search changes
+  useEffect(() => {
+    setVisibleLimit(24);
+  }, [cat, searchQuery]);
+
+  const displayedList = useMemo(
+    () => filteredList.slice(0, visibleLimit),
+    [filteredList, visibleLimit]
+  );
+
   return (
     <>
       <Modal
@@ -947,8 +1054,20 @@ function TemplatesModal({ onClose, onInsert, customTemplates = [], onDeleteCusto
             ) : null}
           </div>
 
-          <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
-            <span className="text-xs text-gray-500 font-medium">
+          <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-3 shrink-0">
+            {onOpenStudio ? (
+              <button
+                type="button"
+                onClick={onOpenStudio}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white text-xs font-semibold shadow-sm hover:shadow transition-all"
+                title="Create a custom React section with code, animations & variables"
+              >
+                <Code2 size={13} />
+                <span>+ Code Section Studio</span>
+              </button>
+            ) : null}
+
+            <span className="text-xs text-gray-500 font-medium hidden md:inline-block">
               Showing <b className="text-gray-800">{filteredList.length}</b> {filteredList.length === 1 ? "section" : "sections"}
             </span>
 
@@ -1061,7 +1180,7 @@ function TemplatesModal({ onClose, onInsert, customTemplates = [], onDeleteCusto
                     : "grid-cols-1 max-w-5xl mx-auto"
                 }`}
               >
-                {filteredList.map((t) => {
+                {displayedList.map((t) => {
                   const blockCount = (t.blocks || []).length;
                   const blockTypes = Array.from(
                     new Set((t.blocks || []).map((b) => b.type))
@@ -1088,6 +1207,20 @@ function TemplatesModal({ onClose, onInsert, customTemplates = [], onDeleteCusto
                           </span>
                         </div>
                         <div className="flex items-center gap-1 shrink-0">
+                          {t.isSdkCustom && onEditSdkSection ? (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const b = t.blocks?.[0];
+                                if (b) onEditSdkSection(b);
+                              }}
+                              title="Edit in Section Code Studio (SDK)"
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-medium text-violet-700 bg-violet-50 hover:bg-violet-100 transition-colors"
+                            >
+                              <Code2 size={12} />
+                              <span className="hidden sm:inline">Edit Code</span>
+                            </button>
+                          ) : null}
                           <button
                             onClick={() => setPreviewingTemplate(t)}
                             title="Interactive full-screen preview"
@@ -1174,6 +1307,23 @@ function TemplatesModal({ onClose, onInsert, customTemplates = [], onDeleteCusto
                 })}
               </div>
             )}
+
+            {visibleLimit < filteredList.length ? (
+              <div className="py-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+                <button
+                  onClick={() => setVisibleLimit((prev) => prev + 24)}
+                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-white border border-gray-300 text-gray-800 text-xs sm:text-sm font-semibold shadow-sm hover:bg-blue-50 hover:border-blue-400 hover:text-blue-700 transition-all cursor-pointer"
+                >
+                  <Plus size={15} /> Load More Sections ({filteredList.length - visibleLimit} remaining)
+                </button>
+                <button
+                  onClick={() => setVisibleLimit(filteredList.length)}
+                  className="text-xs text-gray-500 hover:text-gray-800 underline transition-colors cursor-pointer"
+                >
+                  Show All ({filteredList.length})
+                </button>
+              </div>
+            ) : null}
           </div>
         </div>
       </Modal>
@@ -1296,35 +1446,100 @@ function SectionPreviewModal({ template, onClose, onInsert }) {
             minHeight: "400px",
           }}
         >
-          <BlockRenderer blocks={blocks} />
+          <TemplateErrorBoundary title={template.name}>
+            <Suspense fallback={<div className="h-64 flex items-center justify-center text-sm text-gray-400">Loading interactive preview...</div>}>
+              <BlockRenderer blocks={blocks} />
+            </Suspense>
+          </TemplateErrorBoundary>
         </div>
       </div>
     </motion.div>
   );
 }
 
+/* ---------------- Error Boundary for Safe Template Rendering ---------------- */
+class TemplateErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.warn("CMS template preview caught non-fatal error:", error);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="w-full h-full min-h-[160px] flex flex-col items-center justify-center p-6 bg-slate-50 text-center">
+          <div className="w-10 h-10 rounded-xl bg-blue-100/80 text-blue-600 flex items-center justify-center mb-2 shadow-xs">
+            <LayoutTemplate size={20} />
+          </div>
+          <span className="text-xs font-semibold text-gray-700 truncate max-w-[90%]">
+            {this.props.title || "Section Preview"}
+          </span>
+          <span className="text-[11px] text-gray-400 mt-0.5">Click Full Preview to view layout</span>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 // Live, scaled-down snapshot of a template's actual rendered blocks.
 const PREVIEW_WIDTH = 1200; // virtual render width
 
 function TemplatePreview({ template, minHeight = 200 }) {
-  // Build the blocks once, and freeze any auto-playing carousels to a static
-  // first slide so the thumbnail is a calm snapshot (no perpetual timers).
-  const blocks = useMemo(
-    () =>
-      createBlocksFromTemplate(template).map((b) =>
-        b.type === "carousel"
-          ? { ...b, props: { ...b.props, autoplay: false, kenBurns: false } }
-          : b
-      ),
-    [template]
-  );
-
   const containerRef = useRef(null);
   const contentRef = useRef(null);
+  const [isInView, setIsInView] = useState(false);
   const [scale, setScale] = useState(0.35);
-  const [contentHeight, setContentHeight] = useState(600);
+  const [contentHeight, setContentHeight] = useState(450);
+
+  // Lazy observer: only mount heavy BlockRenderer when card is scrolled into/near view
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    if (typeof IntersectionObserver === "undefined") {
+      setIsInView(true);
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            setIsInView(true);
+            io.disconnect();
+          }
+        });
+      },
+      { rootMargin: "300px" }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  // Build the blocks once, and freeze any auto-playing carousels to a static
+  // first slide so the thumbnail is a calm snapshot (no perpetual timers).
+  const blocks = useMemo(() => {
+    if (!isInView) return [];
+    try {
+      return createBlocksFromTemplate(template).map((b) =>
+        b.type === "carousel"
+          ? { ...b, props: { ...(b.props || {}), autoplay: false, kenBurns: false } }
+          : b
+      );
+    } catch {
+      return [];
+    }
+  }, [template, isInView]);
 
   useEffect(() => {
+    if (!isInView) return;
     const container = containerRef.current;
     const content = contentRef.current;
     if (!container) return;
@@ -1335,7 +1550,7 @@ function TemplatePreview({ template, minHeight = 200 }) {
         const nextScale = containerWidth / PREVIEW_WIDTH;
         setScale(nextScale);
         if (content) {
-          const rawHeight = content.offsetHeight || content.scrollHeight || 600;
+          const rawHeight = content.offsetHeight || content.scrollHeight || 450;
           setContentHeight(rawHeight);
         }
       }
@@ -1350,14 +1565,14 @@ function TemplatePreview({ template, minHeight = 200 }) {
     }
 
     const t1 = setTimeout(measure, 100);
-    const t2 = setTimeout(measure, 400);
+    const t2 = setTimeout(measure, 350);
 
     return () => {
       ro?.disconnect();
       clearTimeout(t1);
       clearTimeout(t2);
     };
-  }, [template, blocks]);
+  }, [template, blocks, isInView]);
 
   const scaledHeight = Math.max(Math.ceil(contentHeight * scale), minHeight);
 
@@ -1366,27 +1581,46 @@ function TemplatePreview({ template, minHeight = 200 }) {
       ref={containerRef}
       className="relative w-full h-full overflow-hidden pointer-events-none select-none bg-slate-50"
     >
-      {/* Spacer div in normal flow that gives the container its exact scaled height */}
-      <div
-        style={{
-          height: `${scaledHeight}px`,
-          width: "100%",
-          position: "relative",
-          minHeight: "100%",
-        }}
-      >
+      {!isInView ? (
         <div
-          ref={contentRef}
-          className="cms-preview pointer-events-none select-none absolute top-0 left-0 origin-top-left bg-white shadow-sm"
+          style={{ height: `${minHeight}px` }}
+          className="w-full h-full flex flex-col items-center justify-center p-4 bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100/70"
+        >
+          <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-1.5 shadow-xs">
+            <LayoutTemplate size={18} />
+          </div>
+          <span className="text-xs font-semibold text-gray-700 truncate max-w-[90%]">
+            {template.name}
+          </span>
+          <span className="text-[11px] text-gray-400 mt-0.5">{template.category}</span>
+        </div>
+      ) : (
+        /* Spacer div in normal flow that gives the container its exact scaled height */
+        <div
           style={{
-            width: `${PREVIEW_WIDTH}px`,
-            transform: `scale(${scale})`,
-            transformOrigin: "top left",
+            height: `${scaledHeight}px`,
+            width: "100%",
+            position: "relative",
+            minHeight: "100%",
           }}
         >
-          <BlockRenderer blocks={blocks} />
+          <div
+            ref={contentRef}
+            className="cms-preview pointer-events-none select-none absolute top-0 left-0 origin-top-left bg-white shadow-sm"
+            style={{
+              width: `${PREVIEW_WIDTH}px`,
+              transform: `scale(${scale})`,
+              transformOrigin: "top left",
+            }}
+          >
+            <TemplateErrorBoundary title={template.name}>
+              <Suspense fallback={<div className="h-48 flex items-center justify-center text-xs text-gray-400">Rendering preview...</div>}>
+                <BlockRenderer blocks={blocks} />
+              </Suspense>
+            </TemplateErrorBoundary>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

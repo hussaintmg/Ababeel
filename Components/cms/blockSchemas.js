@@ -1146,6 +1146,33 @@ export const BLOCK_TYPES = {
       { key: "tailwind", type: "boolean", label: "Enable Tailwind runtime for this block" },
     ],
   },
+
+  sdkCustomSection: {
+    label: "Custom Section (Code SDK)",
+    icon: "Code2",
+    description: "Production-grade custom section created with Code Studio SDK",
+    defaults: {
+      _code: "",
+      _css: "",
+      _fields: [],
+      _options: {
+        enableGsap: false,
+        enableFramer: true,
+        enableTailwind: true,
+        font: "",
+      },
+      headline: "Custom SDK Section",
+      description: "Edit this text directly from the left sidebar or bind dynamic variables.",
+      buttonText: "Learn More",
+      buttonUrl: "/courses",
+    },
+    fields: [
+      { key: "headline", type: "text", label: "Headline" },
+      { key: "description", type: "textarea", label: "Description" },
+      { key: "buttonText", type: "text", label: "Button Text" },
+      { key: "buttonUrl", type: "text", label: "Button URL" },
+    ],
+  },
 };
 
 // The catalogue blocks live in their own file — they read published courses,

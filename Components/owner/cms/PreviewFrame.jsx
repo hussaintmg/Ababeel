@@ -47,9 +47,11 @@ function useMirroredStyles(doc) {
       // resets, so give it the ones the blocks assume.
       const base = doc.createElement("style");
       base.textContent =
-        "html,body{margin:0;padding:0;background:#fff;} " +
+        "html,body{margin:0;padding:0;background:#fff;min-height:0 !important;height:auto !important;} " +
         "body{overflow-x:hidden;overflow-x:clip;} " +
-        "img,video,canvas{max-width:100%;}";
+        "img,video,canvas{max-width:100%;} " +
+        "[data-cms-selected='true']{outline:3px solid #2563eb !important;outline-offset:3px !important;border-radius:12px !important;position:relative !important;box-shadow:0 0 0 4px rgba(37,99,235,0.2) !important;transition:all 0.25s ease-in-out !important;} " +
+        "[data-cms-selected='true']::after{content:'Selected Section';position:absolute;top:10px;right:14px;background:#2563eb;color:#fff;font-size:11px;font-weight:700;letter-spacing:0.02em;padding:3px 9px;border-radius:6px;box-shadow:0 4px 10px rgba(0,0,0,0.2);z-index:99999;pointer-events:none;font-family:system-ui,-apple-system,sans-serif;} ";
       head.appendChild(base);
     };
 
@@ -61,12 +63,22 @@ function useMirroredStyles(doc) {
 }
 
 /**
- * @param width       device width in px, or 0 to fill the panel
- * @param height      visible height of the panel
- * @param zoom        scales an oversized device down to the panel width
- * @param onDocument  called with the frame's document once it exists
+ * @param width            device width in px, or 0 to fill the panel
+ * @param height           visible height of the panel
+ * @param zoom             scales an oversized device down to the panel width
+ * @param selectedBlockId  currently active block id to focus and highlight
+ * @param onSelectBlock    callback when clicking a section in preview
+ * @param onDocument       called with the frame's document once it exists
  */
-export default function PreviewFrame({ width = 0, height = 520, zoom = true, onDocument, children }) {
+export default function PreviewFrame({
+  width = 0,
+  height = 520,
+  zoom = true,
+  selectedBlockId = null,
+  onSelectBlock = null,
+  onDocument,
+  children,
+}) {
   const ref = useRef(null);
   const [doc, setDoc] = useState(null);
   const [panel, setPanel] = useState(0);
@@ -88,6 +100,34 @@ export default function PreviewFrame({ width = 0, height = 520, zoom = true, onD
 
   useMirroredStyles(doc);
 
+  // Focus and scroll active selected block into view
+  useEffect(() => {
+    if (!doc?.body) return;
+    doc.querySelectorAll("[data-cms-selected='true']").forEach((el) => {
+      el.removeAttribute("data-cms-selected");
+    });
+    if (!selectedBlockId) return;
+    const target = doc.querySelector(`[data-cms-id="${selectedBlockId}"]`);
+    if (target) {
+      target.setAttribute("data-cms-selected", "true");
+      target.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [doc, selectedBlockId]);
+
+  // Click any section in preview to select it in the builder
+  useEffect(() => {
+    if (!doc?.body || !onSelectBlock) return;
+    const handleClick = (e) => {
+      const blockEl = e.target.closest("[data-cms-id]");
+      if (blockEl) {
+        const id = blockEl.getAttribute("data-cms-id");
+        if (id) onSelectBlock(id);
+      }
+    };
+    doc.body.addEventListener("click", handleClick);
+    return () => doc.body.removeEventListener("click", handleClick);
+  }, [doc, onSelectBlock]);
+
   // Hand the document up: the HTML tab reads a section's markup out of it.
   useEffect(() => {
     onDocument?.(doc);
@@ -103,12 +143,34 @@ export default function PreviewFrame({ width = 0, height = 520, zoom = true, onD
     return () => ro.disconnect();
   }, []);
 
-  // Follow the content's own height, so the frame scrolls with the panel
-  // instead of trapping a second scrollbar inside it.
+  // Follow the content's own height, eliminating runaway bottom whitespace
   useEffect(() => {
     if (!doc?.body || typeof ResizeObserver === "undefined") return undefined;
-    const ro = new ResizeObserver(() => setInner(doc.body.scrollHeight || height));
+    const updateHeight = () => {
+      const root = doc.getElementById("cms-preview-content") || doc.body;
+      const elements = Array.from(root.children).filter(
+        (el) => el.tagName !== "STYLE" && el.tagName !== "SCRIPT"
+      );
+      if (!elements.length) {
+        setInner(height);
+        return;
+      }
+      let maxBottom = 0;
+      for (const el of elements) {
+        const compStyle = doc.defaultView?.getComputedStyle(el);
+        if (compStyle?.position === "fixed") continue;
+        const bottom = el.offsetTop + el.offsetHeight;
+        if (bottom > maxBottom) maxBottom = bottom;
+      }
+      const targetHeight = Math.max(maxBottom + 24, height);
+      setInner((prev) => (Math.abs(prev - targetHeight) > 6 ? targetHeight : prev));
+    };
+
+    const ro = new ResizeObserver(updateHeight);
     ro.observe(doc.body);
+    const content = doc.getElementById("cms-preview-content");
+    if (content) ro.observe(content);
+    updateHeight();
     return () => ro.disconnect();
   }, [doc, height]);
 
@@ -130,8 +192,6 @@ export default function PreviewFrame({ width = 0, height = 520, zoom = true, onD
         <iframe
           ref={ref}
           title="Page preview"
-          // about:blank keeps the frame same-origin, which is what lets React
-          // portal into it and the stylesheets be cloned across.
           src="about:blank"
           scrolling="no"
           style={{
@@ -145,7 +205,14 @@ export default function PreviewFrame({ width = 0, height = 520, zoom = true, onD
           }}
         />
       </div>
-      {doc?.body ? createPortal(children, doc.body) : null}
+      {doc?.body
+        ? createPortal(
+            <div id="cms-preview-content" style={{ minHeight: "100%", width: "100%", overflow: "visible" }}>
+              {children}
+            </div>,
+            doc.body
+          )
+        : null}
     </div>
   );
 }

@@ -19,12 +19,14 @@ import DecorationEditor from "@/Components/owner/cms/DecorationEditor";
 import ReducedMotionNotice from "@/Components/owner/cms/ReducedMotionNotice";
 import { scopeCss } from "@/lib/cms/scopeCss";
 
-export default function BlockEditor({ block, onChange, features = {}, scopeHint = "", previewDoc = null }) {
+export default function BlockEditor({ block, onChange, features = {}, scopeHint = "", previewDoc = null, onOpenStudio = null }) {
   const def = BLOCK_TYPES[block.type];
   const [tab, setTab] = useState("content");
   if (!def) return <p className="text-sm text-red-500">Unknown block type: {block.type}</p>;
 
   const props = block.props || {};
+  const customFields = block.type === "sdkCustomSection" && Array.isArray(props._fields) && props._fields.length > 0 ? props._fields : null;
+  const activeFields = customFields || def.fields || [];
   // Merge older _adv values into _style so nothing is lost on legacy blocks.
   const style = { ...defaultStyle(), ...(block._adv || {}), ...(block._style || {}) };
   const dynamicEnabled = features.dynamicCms !== false && features.variables !== false;
@@ -109,6 +111,33 @@ export default function BlockEditor({ block, onChange, features = {}, scopeHint 
 
       {tab === "content" ? (
         <div className="space-y-4">
+          {block.type === "sdkCustomSection" ? (
+            <div className="rounded-xl border border-violet-200 bg-gradient-to-r from-violet-50 to-indigo-50/40 p-3.5 flex items-center justify-between gap-3 shadow-xs">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded-md bg-violet-600 text-white text-[10px] font-bold uppercase tracking-wider">
+                    SDK Section
+                  </span>
+                  <h4 className="font-semibold text-xs sm:text-sm text-gray-900 truncate">
+                    {props._name || "Custom Code Template"}
+                  </h4>
+                </div>
+                <p className="text-[11px] text-gray-500 mt-0.5 truncate">
+                  {customFields ? `${customFields.length} variable(s) configurable below.` : "Configure section variables below or open Code Studio."}
+                </p>
+              </div>
+              {onOpenStudio ? (
+                <button
+                  type="button"
+                  onClick={() => onOpenStudio(block)}
+                  className="shrink-0 px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold shadow-xs transition-colors flex items-center gap-1.5"
+                >
+                  <Code2 size={13} />
+                  <span>Open Studio</span>
+                </button>
+              ) : null}
+            </div>
+          ) : null}
           {scopeHint ? (
             <p className="rounded-lg bg-blue-50 border border-blue-100 px-3 py-2 text-[11px] text-blue-700">
               Inside a Repeat — use <code className="font-mono">{scopeHint}</code> to reach the current record.
@@ -167,10 +196,49 @@ export default function BlockEditor({ block, onChange, features = {}, scopeHint 
               </details>
             </>
           ) : null}
-          <FieldList fields={def.fields} props={props} setProp={setProp} renderLeaf={renderLeaf} block={block} />
+          <FieldList fields={activeFields} props={props} setProp={setProp} renderLeaf={renderLeaf} block={block} />
         </div>
       ) : tab === "code" ? (
-        <CodeTab block={block} onChange={onChange} previewDoc={previewDoc} />
+        block.type === "sdkCustomSection" ? (
+          <div className="space-y-3">
+            <div className="rounded-xl border border-violet-200 bg-violet-50/60 p-3.5 flex items-center justify-between gap-3">
+              <div>
+                <h4 className="font-semibold text-xs sm:text-sm text-violet-900">Custom Code (SDK)</h4>
+                <p className="text-[11px] text-violet-700">This section is powered by custom JSX, scoped CSS, and SDK libraries.</p>
+              </div>
+              {onOpenStudio ? (
+                <button
+                  type="button"
+                  onClick={() => onOpenStudio(block)}
+                  className="px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold shadow-xs flex items-center gap-1.5"
+                >
+                  <Code2 size={13} /> Edit in Section Studio
+                </button>
+              ) : null}
+            </div>
+            <div className="rounded-xl bg-slate-900 border border-slate-800 p-3">
+              <div className="text-[10px] uppercase font-mono text-slate-400 mb-1 flex items-center justify-between">
+                <span>JSX / Template Code</span>
+                <span className="text-slate-500">Read-only preview</span>
+              </div>
+              <pre className="font-mono text-xs text-emerald-400 max-h-64 overflow-y-auto whitespace-pre-wrap break-all select-all">
+                {props._code || "// No custom code defined"}
+              </pre>
+            </div>
+            {props._css ? (
+              <div className="rounded-xl bg-slate-900 border border-slate-800 p-3">
+                <div className="text-[10px] uppercase font-mono text-slate-400 mb-1 flex items-center justify-between">
+                  <span>Custom Scoped CSS</span>
+                </div>
+                <pre className="font-mono text-xs text-indigo-300 max-h-40 overflow-y-auto whitespace-pre-wrap break-all select-all">
+                  {props._css}
+                </pre>
+              </div>
+            ) : null}
+          </div>
+        ) : (
+          <CodeTab block={block} onChange={onChange} previewDoc={previewDoc} />
+        )
       ) : tab === "data" ? (
         <BlockDataTab block={block} onChange={onChange} features={features} />
       ) : (
@@ -433,9 +501,25 @@ function FieldList({ fields, props, setProp, renderLeaf, block }) {
   // scenes would be the same thing twice — and the one that is harder to use.
   // Everything else still gets its fields.
   const usesTimeline = block?.type === "scrollVideo";
+function cleanFieldLabel(label, key = "") {
+  if (!label) return key || "Content Field";
+  if (label.startsWith("Text UK Regulated Qualifications")) return "Badge / Eyebrow Text";
+  if (label.startsWith("Heading Accredited Qualifications")) return "Main Heading";
+  if (label.startsWith("Text Real-World Competence")) return "Heading Accent Line";
+  if (label.startsWith("Description Earn Ofqual-regulated")) return "Section Subtitle / Description";
+  if (label.startsWith("Text ")) {
+    const text = label.replace(/^Text\s+/, "").trim();
+    return text ? `Label / Text (${text.slice(0, 30)})` : "Text Content";
+  }
+  if (label.startsWith("Href ")) {
+    return `Button Link URL (${label.replace(/^Href\s+/, "").trim()})`;
+  }
+  return label;
+}
+
   const one = (field) => (
     <div key={field.key}>
-      {field.type !== "boolean" && field.type !== "animation" ? <Label>{field.label}</Label> : null}
+      {field.type !== "boolean" && field.type !== "animation" ? <Label>{cleanFieldLabel(field.label, field.key)}</Label> : null}
       {renderLeaf(field, props[field.key], (v) => setProp(field.key, v), field.key)}
       {field.help ? <p className="mt-1 text-[11px] text-gray-400">{field.help}</p> : null}
     </div>

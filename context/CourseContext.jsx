@@ -16,14 +16,14 @@ export function CourseProvider({ children }) {
   const fetchCourses = async () => {
     setLoading(true);
     try {
-      const response = await api.get("/api/courses");
-      if (response.data.success) {
+      const response = await api.get("/api/courses", { silent: true }).catch(() => null);
+      if (response?.data?.success) {
         setCourses(response.data.courses || []);
         return response.data.courses || [];
       }
-    } catch (error) {
-      console.error("Failed to fetch courses:", error);
-      setCourses([defaultCourses]);
+      setCourses([]);
+    } catch {
+      setCourses([]);
     } finally {
       setLoading(false);
     }

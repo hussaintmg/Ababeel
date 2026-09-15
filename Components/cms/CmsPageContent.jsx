@@ -26,8 +26,9 @@ export default function CmsPageContent({ pageKey, children }) {
     // than useSearchParams so this component needs no Suspense boundary and
     // pages keep their current rendering mode.
     const query = typeof window !== "undefined" ? window.location.search.replace(/^\?/, "") : "";
-    const url = query ? `/api/cms/${pageKey}?${query}` : `/api/cms/${pageKey}`;
-    fetch(url, { cache: "no-store" })
+    const sep = query ? `${query}&` : "";
+    const url = `/api/cms/${pageKey}?${sep}_t=${Date.now()}`;
+    fetch(url, { cache: "no-store", headers: { Pragma: "no-cache" } })
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (!alive) return;

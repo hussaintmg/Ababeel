@@ -551,12 +551,25 @@ export const TEMPLATES = [
   ...STUDIO_TEMPLATES,
 ].map(template => (template.id.startsWith('aba-') || template.id.startsWith('public') || template.id.startsWith('pub-') || template.id.startsWith('studio-')) ? template : refreshLegacyTemplate(template));
 
+function safeClone(data) {
+  if (!data) return {};
+  try {
+    return structuredClone(data);
+  } catch {
+    try {
+      return JSON.parse(JSON.stringify(data));
+    } catch {
+      return { ...data };
+    }
+  }
+}
+
 // Turn a template's block specs into real, editable blocks.
 export function createBlocksFromTemplate(template) {
-  return (template.blocks || []).map((spec) => ({
+  return (template?.blocks || []).map((spec) => ({
     id: newId(),
     type: spec.type,
-    props: structuredClone(spec.props || {}),
+    props: safeClone(spec.props),
     _style: { ...defaultStyle(), ...(spec.style || {}) },
   }));
 }

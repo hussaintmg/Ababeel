@@ -6,7 +6,6 @@ import connectDB from "@/utils/db";
 
 export async function GET(request) {
   try {
-    await connectDB();
     const token = request.cookies.get("token")?.value;
 
     if (!token) {
@@ -15,6 +14,8 @@ export async function GET(request) {
         loggedIn: false,
       });
     }
+
+    await connectDB();
 
     const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -31,15 +32,12 @@ export async function GET(request) {
 
     return NextResponse.json({
       user,
-      loggedIn: true,
+      loggedIn: !!user,
     });
   } catch (error) {
-    return NextResponse.json(
-      {
-        user: null,
-        loggedIn: false,
-      },
-      { status: 500 },
-    );
+    return NextResponse.json({
+      user: null,
+      loggedIn: false,
+    });
   }
 }

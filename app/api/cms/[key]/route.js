@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { getCmsDoc, getGlobalBundle } from "@/lib/cms";
 import { hasDynamicContent, hasTrainingBlocks, resolvePublicBlocks } from "@/lib/cms/publicData";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 // Public read endpoint used by the site to hydrate CMS content (global chrome
 // + per-page blocks). No auth: this returns published, public content only.
 export async function GET(request, { params }) {
@@ -59,16 +62,19 @@ export async function GET(request, { params }) {
       const { blocks } = await resolvePublicBlocks(doc, { request });
       return NextResponse.json(
         { ...base, blocks, dynamic: false },
-        { headers: { "Cache-Control": "public, max-age=0, s-maxage=30, stale-while-revalidate=60" } }
+        { headers: { "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0" } }
       );
     }
 
     return NextResponse.json(
       { ...base, dynamic: false },
-      { headers: { "Cache-Control": "public, max-age=0, s-maxage=30, stale-while-revalidate=60" } }
+      { headers: { "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0" } }
     );
   } catch (error) {
     console.error("CMS public read error:", error);
-    return NextResponse.json({ success: false, error: "Failed to load content" }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: "Failed to load content" },
+      { status: 500, headers: { "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0" } }
+    );
   }
 }

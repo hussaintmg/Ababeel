@@ -11,6 +11,7 @@ import { decorationCss } from "@/lib/cms/decorations";
 import { TRAINING_RENDERERS } from "@/Components/cms/TrainingBlocks";
 import { PUBLIC_RENDERERS } from "@/Components/cms/publicPages/renderers";
 import StudioSection from "@/Components/cms/StudioSection";
+import SdkCustomBlock from "@/Components/cms/SdkCustomBlock";
 
 /* ---------- Tailwind runtime (for Custom HTML blocks) ---------- */
 // Loads the Tailwind browser build once so arbitrary Tailwind utility classes
@@ -1707,6 +1708,7 @@ const RENDERERS = {
   ...TRAINING_RENDERERS,
   ...PUBLIC_RENDERERS,
   studioSection: StudioSection,
+  sdkCustomSection: SdkCustomBlock,
 };
 
 // Blocks that pin themselves with position: sticky. Their wrapper must not

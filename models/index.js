@@ -13,6 +13,7 @@ import ActivationToken from "@/models/ActivationToken";
 import AuditLog from "@/models/AuditLog";
 import AwardingBody from "@/models/AwardingBody";
 import Candidate from "@/models/Candidate";
+import CmsCustomSection from "@/models/CmsCustomSection";
 import CmsDataSource from "@/models/CmsDataSource";
 import CmsFrameSequence from "@/models/CmsFrameSequence";
 import CmsRegistryState from "@/models/CmsRegistryState";
@@ -43,6 +44,7 @@ export {
   AuditLog,
   AwardingBody,
   Candidate,
+  CmsCustomSection,
   CmsDataSource,
   CmsFrameSequence,
   CmsRegistryState,
@@ -74,6 +76,7 @@ export const ALL_MODELS = {
   AuditLog,
   AwardingBody,
   Candidate,
+  CmsCustomSection,
   CmsDataSource,
   CmsFrameSequence,
   CmsRegistryState,

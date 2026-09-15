@@ -33,12 +33,27 @@ afterAll(async () => {
 
 describe("video extraction on a host with no system ffmpeg", () => {
   const realPath = process.env.PATH;
-  beforeAll(() => { process.env.PATH = "/nonexistent"; });
-  afterAll(() => { process.env.PATH = realPath; });
+  const realFfmpegPath = process.env.FFMPEG_PATH;
+  const realFfprobePath = process.env.FFPROBE_PATH;
+
+  beforeAll(async () => {
+    process.env.PATH = "/nonexistent";
+    delete process.env.FFMPEG_PATH;
+    delete process.env.FFPROBE_PATH;
+    const { resetFfmpegCache } = await import("@/lib/cms/frameSources");
+    resetFfmpegCache?.();
+  });
+  afterAll(async () => {
+    process.env.PATH = realPath;
+    if (realFfmpegPath !== undefined) process.env.FFMPEG_PATH = realFfmpegPath;
+    if (realFfprobePath !== undefined) process.env.FFPROBE_PATH = realFfprobePath;
+    const { resetFfmpegCache } = await import("@/lib/cms/frameSources");
+    resetFfmpegCache?.();
+  });
 
   test("ffmpeg is found through the npm package instead", async () => {
     const { checkFfmpeg } = await import("@/lib/cms/frameSources");
-    const caps = await checkFfmpeg();
+    const caps = await checkFfmpeg(true);
     expect(caps.available).toBe(true);
     expect(caps.version).toContain("ffmpeg-static");
     expect(caps.reason).toBe("");

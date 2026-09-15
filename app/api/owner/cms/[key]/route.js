@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import connectDB from "@/utils/db";
 import SiteContent from "@/models/SiteContent";
 import { requireOwner } from "@/lib/auth";
@@ -177,6 +178,16 @@ export async function PUT(request, { params }) {
       { $set: update, $setOnInsert: { key } },
       { new: true, upsert: !!page, setDefaultsOnInsert: true }
     ).lean();
+
+    // Invalidate Next.js cache so the public website shows changes immediately without delay
+    try {
+      const pageRoute = page?.route || (key === "home" ? "/" : `/${key}`);
+      revalidatePath(pageRoute, "page");
+      revalidatePath("/", "layout");
+      revalidatePath(`/api/cms/${key}`);
+    } catch (e) {
+      console.warn("CMS revalidatePath warning:", e?.message);
+    }
 
     return successResponse({
       data: {
