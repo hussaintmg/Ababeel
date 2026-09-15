@@ -310,6 +310,7 @@ export default function SdkCustomBlock({ p = {}, s = {}, block = null, data = nu
         if (Babel) {
           const transformed = Babel.transform(codeToCompile, {
             presets: [["react", { runtime: "classic" }]],
+            parserOpts: { allowReturnOutsideFunction: true },
           });
           jsCode = transformed.code;
         }

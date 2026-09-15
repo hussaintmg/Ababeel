@@ -1,4 +1,9 @@
 import mongoose from "mongoose";
+import dns from "node:dns";
+
+try {
+  dns.setServers(["8.8.8.8", "1.1.1.1"]);
+} catch {}
 
 let isConnected = false;
 let connecting = null;

@@ -13,7 +13,12 @@
  */
 import fs from "node:fs";
 import path from "node:path";
+import dns from "node:dns";
 import { MongoClient } from "mongodb";
+
+try {
+  dns.setServers(["8.8.8.8", "1.1.1.1"]);
+} catch {}
 
 const ROOT = path.resolve(import.meta.dirname, "..", "..");
 

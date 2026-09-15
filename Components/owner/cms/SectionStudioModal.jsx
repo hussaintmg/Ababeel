@@ -391,6 +391,870 @@ return (
   </section>
 );`,
   },
+  {
+    id: "bento_showcase",
+    name: "Modern Bento Grid Feature Showcase",
+    category: "Features",
+    description: "Asymmetrical 4-card bento grid with glowing borders, stats pills, and micro-hover animations.",
+    options: {
+      enableFramerMotion: true,
+      enableGsap: false,
+      googleFont: "Outfit",
+    },
+    fields: [
+      { key: "eyebrowBadge", label: "Eyebrow Badge", type: "text", default: "Why Professionals Choose Us" },
+      { key: "mainHeading", label: "Main Headline", type: "text", default: "Industry-Leading Safety Standards" },
+      { key: "subHeading", label: "Section Subtitle", type: "textarea", default: "Accredited credentials, flexible study modes, and guaranteed career advancement across the UK and worldwide." },
+      { key: "card1Title", label: "Hero Card Title", type: "text", default: "Ofqual Regulated Qualifications" },
+      { key: "card1Desc", label: "Hero Card Description", type: "textarea", default: "Gain Level 2 to Level 7 NVQ qualifications recognized by top tier construction and engineering employers." },
+      { key: "card2Stat", label: "Card 2 Stat Number", type: "text", default: "98.7%" },
+      { key: "card2Label", label: "Card 2 Stat Label", type: "text", default: "First-time pass rate across all accredited modules" },
+      { key: "card3Title", label: "Card 3 Title", type: "text", default: "Flexible Remote & On-Site Study" },
+      { key: "card3Desc", label: "Card 3 Description", type: "textarea", default: "Study at your own pace with dedicated 1-on-1 tutor feedback." },
+      { key: "card4Title", label: "Card 4 Title", type: "text", default: "Verified Digital Credentials" },
+      { key: "card4Desc", label: "Card 4 Description", type: "textarea", default: "Instant QR certificate verification for contractors and employers." },
+    ],
+    css: `
+.bento-card {
+  position: relative;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+.bento-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 35px -10px rgba(2, 132, 199, 0.18);
+}
+.bento-gradient-border {
+  background: linear-gradient(135deg, rgba(2, 132, 199, 0.15), rgba(99, 102, 241, 0.05));
+}
+`,
+    code: `// Bento Grid Showcase with Framer Motion and Lucide icons
+return (
+  <section className="py-20 px-4 sm:px-6 lg:px-8 bg-slate-950 text-white relative overflow-hidden">
+    {/* Subtle backdrop glow */}
+    <div className="absolute top-1/3 -left-32 w-96 h-96 bg-sky-600/15 rounded-full blur-3xl pointer-events-none" />
+    <div className="absolute bottom-10 right-0 w-80 h-80 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none" />
+
+    <div className="max-w-6xl mx-auto relative z-10">
+      {/* Header */}
+      <div className="text-center max-w-3xl mx-auto mb-16">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-sky-500/10 border border-sky-400/25 text-sky-400 text-xs font-semibold mb-4 shadow-sm">
+          <Sparkles size={14} />
+          <span>{props.eyebrowBadge || "Excellence in Training"}</span>
+        </div>
+        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white mb-4">
+          {props.mainHeading || "Built for Real-World Competence"}
+        </h2>
+        <p className="text-slate-400 text-base sm:text-lg leading-relaxed">
+          {props.subHeading}
+        </p>
+      </div>
+
+      {/* Asymmetric 4-Card Bento Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Large Card (Spans 2 cols) */}
+        <div className="md:col-span-2 bento-card bento-gradient-border rounded-3xl p-8 border border-white/10 bg-slate-900/60 backdrop-blur-xl flex flex-col justify-between">
+          <div>
+            <div className="w-12 h-12 rounded-2xl bg-sky-500/20 border border-sky-400/30 flex items-center justify-center text-sky-400 mb-6">
+              <Award size={26} />
+            </div>
+            <span className="text-xs font-bold uppercase tracking-wider text-sky-400">Accredited Pathway</span>
+            <h3 className="text-2xl sm:text-3xl font-bold text-white mt-2 mb-3">
+              {props.card1Title}
+            </h3>
+            <p className="text-slate-300 text-sm sm:text-base leading-relaxed max-w-xl">
+              {props.card1Desc}
+            </p>
+          </div>
+          <div className="mt-8 flex items-center gap-3 pt-6 border-t border-white/10">
+            <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-400 animate-ping" />
+            <span className="text-xs text-slate-400 font-medium">Ofqual Regulated • ProQual • Highfield Approved</span>
+          </div>
+        </div>
+
+        {/* Stats Card (1 col) */}
+        <div className="bento-card rounded-3xl p-8 border border-white/10 bg-gradient-to-br from-sky-600/20 to-slate-900/80 backdrop-blur-xl flex flex-col justify-between">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-emerald-400 mb-4">
+            <TrendingUp size={26} />
+          </div>
+          <div>
+            <div className="text-5xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-emerald-300 tracking-tight">
+              {props.card2Stat || "98.7%"}
+            </div>
+            <p className="text-sm font-medium text-slate-300 mt-3 leading-snug">
+              {props.card2Label}
+            </p>
+          </div>
+          <div className="mt-6 flex items-center text-xs text-sky-400 font-semibold gap-1">
+            <CheckCircle size={14} />
+            <span>Verified Candidate Success</span>
+          </div>
+        </div>
+
+        {/* Card 3 (1 col) */}
+        <div className="bento-card rounded-3xl p-8 border border-white/10 bg-slate-900/60 backdrop-blur-xl flex flex-col justify-between">
+          <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-400 mb-4">
+            <Clock size={24} />
+          </div>
+          <div>
+            <h3 className="text-xl font-bold text-white mb-2">{props.card3Title}</h3>
+            <p className="text-slate-300 text-sm leading-relaxed">{props.card3Desc}</p>
+          </div>
+          <div className="mt-6 pt-4 border-t border-white/10 flex items-center gap-1 text-xs text-indigo-300 font-medium">
+            <span>Learn online or in-person</span>
+          </div>
+        </div>
+
+        {/* Card 4 (Spans 2 cols) */}
+        <div className="md:col-span-2 bento-card rounded-3xl p-8 border border-white/10 bg-slate-900/60 backdrop-blur-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+          <div className="max-w-md">
+            <div className="w-12 h-12 rounded-2xl bg-purple-500/20 border border-purple-400/30 flex items-center justify-center text-purple-400 mb-4">
+              <Shield size={24} />
+            </div>
+            <h3 className="text-xl font-bold text-white mb-2">{props.card4Title}</h3>
+            <p className="text-slate-300 text-sm leading-relaxed">{props.card4Desc}</p>
+          </div>
+          <a
+            href="/verify-certificate"
+            className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold text-sm transition-all whitespace-nowrap shadow-sm hover:scale-105"
+          >
+            <span>Verify Certificate</span>
+            <ArrowRight size={16} />
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+);`,
+  },
+  {
+    id: "course_explorer",
+    name: "Interactive Dynamic Course Explorer",
+    category: "Courses & Cards",
+    description: "Filterable course catalog with category tabs, live database bindings, price badges, and enroll buttons.",
+    options: {
+      enableFramerMotion: true,
+      enableGsap: false,
+      googleFont: "Outfit",
+    },
+    fields: [
+      { key: "catalogBadge", label: "Catalog Badge", type: "text", default: "Available Programs" },
+      { key: "catalogTitle", label: "Catalog Headline", type: "text", default: "Explore Regulated Qualifications" },
+      { key: "catalogDesc", label: "Catalog Subtitle", type: "textarea", default: "Choose from our high-demand accredited safety and construction NVQ pathways." },
+      { key: "primaryCtaText", label: "Card CTA Text", type: "text", default: "View Course & Syllabus" },
+    ],
+    css: `
+.course-filter-btn.active {
+  background: #0284c7;
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
+}
+.course-card-hover {
+  transition: all 0.25s ease;
+}
+.course-card-hover:hover {
+  transform: translateY(-5px);
+  border-color: #0284c7;
+  box-shadow: 0 16px 30px -10px rgba(2, 132, 199, 0.12);
+}
+`,
+    code: `// Dynamic data bindings + interactive category filtering
+const [selectedCategory, setSelectedCategory] = useState("All");
+
+// Read courses from live CMS data, or use realistic sample fallback
+const courseList = (data?.courses && data.courses.length > 0)
+  ? data.courses
+  : (data?.courseRef && data.courseRef.length > 0)
+    ? data.courseRef
+    : [
+        {
+          _id: "c1",
+          courseName: "NVQ Level 6 Diploma in Occupational Health & Safety Practice",
+          coursePrice: "£1,450",
+          duration: "6-8 Weeks",
+          mode: "Online / Distance Learning",
+          referenceNumber: "PRO-L6-OHS",
+          category: "Health & Safety",
+          seats: "Open",
+        },
+        {
+          _id: "c2",
+          courseName: "NVQ Level 7 Diploma in Strategic Health & Safety Leadership",
+          coursePrice: "£1,850",
+          duration: "10-12 Weeks",
+          mode: "Online Portfolio Assessment",
+          referenceNumber: "PRO-L7-LEAD",
+          category: "Management",
+          seats: "Open",
+        },
+        {
+          _id: "c3",
+          courseName: "Emergency First Aid at Work (EFAW) Accredited",
+          coursePrice: "£175",
+          duration: "1 Day Intensive",
+          mode: "On-Site Classroom Training",
+          referenceNumber: "HFD-EFAW-1D",
+          category: "First Aid",
+          seats: "Limited",
+        },
+      ];
+
+const categories = ["All", "Health & Safety", "Management", "First Aid"];
+
+const filteredCourses = selectedCategory === "All"
+  ? courseList
+  : courseList.filter(c => (c.category || "").toLowerCase() === selectedCategory.toLowerCase());
+
+return (
+  <section className="py-20 px-4 sm:px-6 lg:px-8 bg-slate-50 text-slate-900">
+    <div className="max-w-6xl mx-auto">
+      {/* Header */}
+      <div className="text-center max-w-3xl mx-auto mb-10">
+        <span className="inline-block px-3 py-1 rounded-full bg-sky-100 text-sky-700 text-xs font-bold uppercase tracking-wider mb-3">
+          {props.catalogBadge || "Accredited Catalogue"}
+        </span>
+        <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 mb-3">
+          {props.catalogTitle || "Featured Qualifications"}
+        </h2>
+        <p className="text-slate-600 text-base">
+          {props.catalogDesc}
+        </p>
+      </div>
+
+      {/* Category Pills */}
+      <div className="flex flex-wrap items-center justify-center gap-2 mb-12">
+        {categories.map((cat) => (
+          <button
+            key={cat}
+            onClick={() => setSelectedCategory(cat)}
+            className={\`px-4 py-2 rounded-full text-xs font-semibold transition-all border \${
+              selectedCategory === cat
+                ? "course-filter-btn active border-sky-600"
+                : "bg-white text-slate-700 border-slate-200 hover:border-slate-300"
+            }\`}
+          >
+            {cat}
+          </button>
+        ))}
+      </div>
+
+      {/* Courses Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {filteredCourses.map((c, i) => (
+          <div
+            key={c._id || i}
+            className="course-card-hover rounded-2xl bg-white border border-slate-200 p-6 shadow-sm flex flex-col justify-between"
+          >
+            <div>
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <span className="text-[11px] font-mono font-medium px-2 py-0.5 rounded bg-slate-100 text-slate-600">
+                  {c.referenceNumber || \`REF-00\${i+1}\`}
+                </span>
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  {c.mode || "Online"}
+                </span>
+              </div>
+              <h3 className="font-bold text-lg text-slate-900 mb-3 leading-snug line-clamp-2">
+                {c.courseName || c.title || "Course Qualification"}
+              </h3>
+              <div className="flex items-center gap-4 text-xs text-slate-500 mb-6">
+                <span className="flex items-center gap-1">
+                  <Clock size={14} className="text-sky-500" />
+                  {c.duration || "Self-paced"}
+                </span>
+                <span className="flex items-center gap-1">
+                  <Award size={14} className="text-amber-500" />
+                  Regulated
+                </span>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+              <div>
+                <span className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold block">Price</span>
+                <span className="text-xl font-extrabold text-slate-900">{c.coursePrice || c.price || "£1,450"}</span>
+              </div>
+              <a
+                href={c.slug ? \`/courses/\${c.slug}\` : "/courses"}
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs transition-all shadow-sm"
+              >
+                <span>{props.primaryCtaText || "Enroll"}</span>
+                <ArrowRight size={13} />
+              </a>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+);`,
+  },
+  {
+    id: "glass_accordion_faq",
+    name: "Interactive Animated FAQ Accordion",
+    category: "FAQ & Content",
+    description: "Sleek interactive FAQ with expandable question cards, Framer Motion smooth height animations, and support CTA.",
+    options: {
+      enableFramerMotion: true,
+      enableGsap: false,
+      googleFont: "Plus Jakarta Sans",
+    },
+    fields: [
+      { key: "faqEyebrow", label: "Eyebrow Badge", type: "text", default: "Common Inquiries" },
+      { key: "faqTitle", label: "FAQ Headline", type: "text", default: "Frequently Asked Questions" },
+      { key: "faqSubtitle", label: "FAQ Subtitle", type: "textarea", default: "Everything you need to know about accredited certification and exam procedures." },
+      { key: "q1", label: "Question 1", type: "text", default: "Are these qualifications recognized worldwide?" },
+      { key: "a1", label: "Answer 1", type: "textarea", default: "Yes, all qualifications are regulated by Ofqual (UK) and accredited by bodies like ProQual and Highfield, recognized by multinational employers globally." },
+      { key: "q2", label: "Question 2", type: "text", default: "How does the remote portfolio assessment work?" },
+      { key: "a2", label: "Answer 2", type: "textarea", default: "You submit evidence of workplace competency via our digital portal, reviewed by accredited assessors who guide you 1-on-1 until completion." },
+      { key: "q3", label: "Question 3", type: "text", default: "What payment options and installment plans are available?" },
+      { key: "a3", label: "Answer 3", type: "textarea", default: "We provide flexible installment plans with 0% interest, corporate invoicing, and secure card payment via Stripe." },
+    ],
+    css: `
+.faq-item-card {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.faq-item-card.open {
+  border-color: #0284c7;
+  box-shadow: 0 4px 20px rgba(2, 132, 199, 0.08);
+}
+`,
+    code: `// Animated Accordion with state and Framer Motion AnimatePresence
+const [openIdx, setOpenIdx] = useState(0);
+
+const faqs = [
+  { q: props.q1, a: props.a1 },
+  { q: props.q2, a: props.a2 },
+  { q: props.q3, a: props.a3 },
+];
+
+return (
+  <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white text-slate-900">
+    <div className="max-w-4xl mx-auto">
+      {/* Header */}
+      <div className="text-center mb-12">
+        <span className="inline-block px-3 py-1 rounded-full bg-sky-100 text-sky-700 text-xs font-bold uppercase tracking-wider mb-3">
+          {props.faqEyebrow || "Help Center"}
+        </span>
+        <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mb-3">
+          {props.faqTitle || "Questions & Answers"}
+        </h2>
+        <p className="text-slate-600 text-base max-w-xl mx-auto">
+          {props.faqSubtitle}
+        </p>
+      </div>
+
+      {/* Accordion List */}
+      <div className="space-y-4">
+        {faqs.map((faq, idx) => {
+          const isOpen = openIdx === idx;
+          return (
+            <div
+              key={idx}
+              className={\`faq-item-card rounded-2xl border bg-slate-50/50 p-6 transition-all \${
+                isOpen ? "open bg-white border-sky-500/40" : "border-slate-200 hover:border-slate-300"
+              }\`}
+            >
+              <button
+                onClick={() => setOpenIdx(isOpen ? -1 : idx)}
+                className="w-full flex items-center justify-between text-left gap-4 font-semibold text-base sm:text-lg text-slate-900"
+              >
+                <span>{faq.q || "Question"}</span>
+                <span className={\`w-8 h-8 rounded-full flex items-center justify-center bg-slate-100 text-slate-600 transition-transform duration-300 \${
+                  isOpen ? "rotate-180 bg-sky-100 text-sky-600" : ""
+                }\`}>
+                  <ChevronDown size={18} />
+                </span>
+              </button>
+
+              <AnimatePresence>
+                {isOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.25 }}
+                    className="overflow-hidden"
+                  >
+                    <p className="pt-4 text-slate-600 text-sm sm:text-base leading-relaxed border-t border-slate-100 mt-4">
+                      {faq.a || "Answer details..."}
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  </section>
+);`,
+  },
+  {
+    id: "trust_accreditation_vault",
+    name: "Executive Accreditation & Trust Vault",
+    category: "Trust & Proof",
+    description: "Interactive 3D holographic accreditation showcase with live certificate authenticity lookup simulation, Ofqual/Highfield badge tilt effects, and real-time verification status.",
+    options: {
+      enableFramerMotion: true,
+      enableGsap: false,
+      googleFont: "Outfit",
+    },
+    fields: [
+      { key: "vaultBadge", label: "Eyebrow Badge", type: "text", default: "UK Regulated Awarding Bodies" },
+      { key: "vaultHeading", label: "Main Headline", type: "text", default: "Nationally Accredited & Globally Recognized" },
+      { key: "vaultDesc", label: "Subtitle", type: "textarea", default: "Every certificate awarded by Ababeel is backed by UK Ofqual regulated frameworks, verifying your competency to Tier-1 employers." },
+      { key: "certPlaceholder", label: "Search Placeholder", type: "text", default: "Enter Certificate ID (e.g. ABA-2026-9941)" },
+      { key: "verifiedCount", label: "Total Certificates Issued", type: "text", default: "14,850+" },
+      { key: "passRate", label: "First-Time Pass Rate", type: "text", default: "99.4%" },
+    ],
+    css: `
+.vault-badge-card {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 10px 30px -10px rgba(14, 165, 233, 0.1);
+}
+.vault-badge-card:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 20px 40px -10px rgba(14, 165, 233, 0.25);
+  border-color: rgba(56, 189, 248, 0.5);
+}
+.shield-glow {
+  filter: drop-shadow(0 0 16px rgba(56, 189, 248, 0.4));
+}
+`,
+    code: `// Live Certificate Lookup & Accreditation Vault
+const [certQuery, setCertQuery] = useState("");
+const [lookupState, setLookupState] = useState(null);
+
+const handleVerify = (e) => {
+  e.preventDefault();
+  if (!certQuery.trim()) return;
+  setLookupState("loading");
+  setTimeout(() => {
+    setLookupState("found");
+  }, 600);
+};
+
+const accreditationBodies = [
+  { name: "Ofqual Regulated", label: "UK Office of Qualifications", level: "RQF Level 1-7", icon: ShieldCheck, color: "text-sky-400" },
+  { name: "Highfield Qualifications", label: "International Awarding Body", level: "HABC Approved", icon: Award, color: "text-amber-400" },
+  { name: "ProQual AB", label: "NVQ Competence Standards", level: "Construction & EHS", icon: CheckCircle2, color: "text-emerald-400" },
+  { name: "IOSH Accredited", label: "Institution of Occ. Safety", level: "Managing Safely", icon: Sparkles, color: "text-indigo-400" },
+];
+
+return (
+  <section className="relative overflow-hidden py-24 px-4 sm:px-6 lg:px-8 bg-slate-950 text-white">
+    <div className="relative max-w-6xl mx-auto">
+      <div className="text-center max-w-3xl mx-auto mb-16">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-sky-500/10 border border-sky-400/30 text-sky-400 text-xs font-semibold uppercase tracking-wider mb-4 shadow-sm">
+          <Shield size={14} className="shield-glow" />
+          <span>{props.vaultBadge || "Accreditation Guarantee"}</span>
+        </div>
+        <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight mb-4">
+          {props.vaultHeading || "Nationally Accredited & Globally Recognized"}
+        </h2>
+        <p className="text-slate-300 text-base sm:text-lg leading-relaxed">
+          {props.vaultDesc}
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+        {accreditationBodies.map((b, i) => {
+          const IconComp = b.icon;
+          return (
+            <div
+              key={i}
+              className="vault-badge-card rounded-2xl p-6 bg-slate-900/70 border border-slate-800 backdrop-blur-md flex flex-col justify-between"
+            >
+              <div>
+                <div className="w-12 h-12 rounded-xl bg-slate-800/80 border border-slate-700/60 flex items-center justify-center mb-4">
+                  <IconComp size={24} className={b.color} />
+                </div>
+                <h3 className="font-bold text-lg text-white mb-1">{b.name}</h3>
+                <p className="text-xs text-slate-400 mb-3">{b.label}</p>
+              </div>
+              <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between text-xs">
+                <span className="font-mono text-sky-400 font-semibold">{b.level}</span>
+                <span className="inline-flex items-center gap-1 text-emerald-400 font-medium">
+                  <Check size={13} /> Active
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="rounded-3xl p-8 sm:p-10 bg-gradient-to-r from-sky-950/60 via-slate-900 to-indigo-950/60 border border-sky-500/30 backdrop-blur-xl shadow-2xl">
+        <div className="max-w-2xl mx-auto text-center">
+          <h3 className="text-2xl font-bold text-white mb-2">Instant Certificate Authenticity Check</h3>
+          <p className="text-sm text-slate-300 mb-6">
+            Employers & compliance officers can instantly verify any candidate credential in real time.
+          </p>
+
+          <form onSubmit={handleVerify} className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+              <input
+                type="text"
+                value={certQuery}
+                onChange={(e) => setCertQuery(e.target.value)}
+                placeholder={props.certPlaceholder || "Enter Certificate ID (e.g. ABA-2026-9941)"}
+                className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-slate-900/90 border border-slate-700 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-400/20"
+              />
+            </div>
+            <button
+              type="submit"
+              className="px-6 py-3.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-white font-semibold text-sm transition-all shadow-lg hover:shadow-sky-500/30 flex items-center justify-center gap-2"
+            >
+              {lookupState === "loading" ? (
+                <span>Checking...</span>
+              ) : (
+                <>
+                  <ShieldCheck size={16} />
+                  <span>Verify Now</span>
+                </>
+              )}
+            </button>
+          </form>
+
+          {lookupState === "found" && (
+            <div className="mt-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-sm flex items-center justify-between">
+              <div className="flex items-center gap-2 text-left">
+                <CheckCircle2 size={18} className="text-emerald-400 shrink-0" />
+                <div>
+                  <span className="font-bold text-white block">Credential Verified: {certQuery || "ABA-2026-9941"}</span>
+                  <span className="text-xs text-slate-300">Ofqual Regulated NVQ Level 6 Diploma in Occupational Health and Safety</span>
+                </div>
+              </div>
+              <span className="px-2.5 py-1 rounded bg-emerald-400/20 text-emerald-300 font-mono text-xs font-bold">100% Genuine</span>
+            </div>
+          )}
+
+          <div className="mt-8 pt-6 border-t border-slate-800 flex flex-wrap items-center justify-around gap-4 text-xs text-slate-400">
+            <div className="text-center">
+              <span className="block text-xl font-bold text-white">{props.verifiedCount || "14,850+"}</span>
+              <span>Credentials Verified</span>
+            </div>
+            <div className="text-center">
+              <span className="block text-xl font-bold text-white">{props.passRate || "99.4%"}</span>
+              <span>Pass Rate Standard</span>
+            </div>
+            <div className="text-center">
+              <span className="block text-xl font-bold text-white">24 / 7</span>
+              <span>Employer Verification</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+);`,
+  },
+  {
+    id: "career_roi_calculator",
+    name: "Interactive Career & Salary Pathway Calculator",
+    category: "Calculators & Pathways",
+    description: "Dynamic career progression and salary projection calculator for Safety & EHS professionals with interactive role selectors, salary growth charts, and instant enrollment triggers.",
+    options: {
+      enableFramerMotion: true,
+      enableGsap: false,
+      googleFont: "Plus Jakarta Sans",
+    },
+    fields: [
+      { key: "calcBadge", label: "Eyebrow Badge", type: "text", default: "EHS Career Progression" },
+      { key: "calcHeading", label: "Main Headline", type: "text", default: "Calculate Your Career & Salary Potential" },
+      { key: "calcDesc", label: "Subtitle", type: "textarea", default: "Select your career stage to see the recognized qualification pathway, expected UK salary uplift, and study timeline." },
+      { key: "ctaButtonText", label: "CTA Button Text", type: "text", default: "Fast-Track My Qualification" },
+      { key: "ctaButtonUrl", label: "CTA Button URL", type: "text", default: "/contact-us" },
+    ],
+    css: `
+.role-pill {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.role-pill.active {
+  background: linear-gradient(135deg, #0284c7, #2563eb);
+  color: #ffffff;
+  box-shadow: 0 6px 20px rgba(2, 132, 199, 0.3);
+}
+`,
+    code: `// Career ROI Calculator Component
+const [activeRoleIndex, setActiveRoleIndex] = useState(1);
+
+const pathways = [
+  {
+    role: "Entry / Safety Officer",
+    salary: "£32,000",
+    uplift: "+25%",
+    duration: "4 - 8 Weeks",
+    qualification: "NVQ Level 3 Certificate in Occupational Safety",
+    suitableFor: "Graduates, Site Marshals, Junior Supervisors",
+    badge: "Level 3 RQF",
+  },
+  {
+    role: "Site Safety Manager",
+    salary: "£55,000",
+    uplift: "+45%",
+    duration: "10 - 16 Weeks",
+    qualification: "NVQ Level 6 Diploma in Occupational Health & Safety",
+    suitableFor: "Senior Managers, HSE Advisors, Engineers",
+    badge: "GradIOSH / Level 6",
+  },
+  {
+    role: "Director of EHS / Head of Safety",
+    salary: "£85,000+",
+    uplift: "+75%",
+    duration: "16 - 24 Weeks",
+    qualification: "NVQ Level 7 Strategic Health & Safety Leadership",
+    suitableFor: "Executives, Operations Directors, Global HSE Leads",
+    badge: "CMIOSH / Level 7",
+  },
+];
+
+const selected = pathways[activeRoleIndex] || pathways[0];
+
+return (
+  <section className="py-24 px-4 sm:px-6 lg:px-8 bg-slate-900 text-white">
+    <div className="max-w-5xl mx-auto">
+      <div className="text-center max-w-3xl mx-auto mb-14">
+        <span className="inline-block px-3.5 py-1.5 rounded-full bg-blue-500/10 border border-blue-400/30 text-blue-400 text-xs font-bold uppercase tracking-wider mb-4">
+          {props.calcBadge || "Career Projection"}
+        </span>
+        <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight mb-4">
+          {props.calcHeading || "Calculate Your Career & Salary Potential"}
+        </h2>
+        <p className="text-slate-300 text-base sm:text-lg">
+          {props.calcDesc}
+        </p>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-center gap-3 mb-10">
+        {pathways.map((p, idx) => (
+          <button
+            key={idx}
+            onClick={() => setActiveRoleIndex(idx)}
+            className={\`role-pill px-5 py-3 rounded-2xl font-semibold text-sm border flex items-center gap-2 \${
+              activeRoleIndex === idx
+                ? "active border-sky-400/60"
+                : "bg-slate-800/80 hover:bg-slate-800 text-slate-300 border-slate-700"
+            }\`}
+          >
+            <TrendingUp size={16} />
+            <span>{p.role}</span>
+          </button>
+        ))}
+      </div>
+
+      <div className="rounded-3xl p-8 sm:p-12 bg-slate-950/80 border border-slate-800 shadow-2xl backdrop-blur-xl">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          <div className="lg:col-span-7 space-y-6">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold border border-emerald-500/20">
+              <Award size={14} />
+              <span>{selected.badge}</span>
+            </div>
+
+            <div>
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Target Career Milestone</span>
+              <h3 className="text-2xl sm:text-3xl font-extrabold text-white mt-1">{selected.role}</h3>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-slate-400">Recommended Qualification:</span>
+                <span className="font-semibold text-sky-400 text-right">{selected.qualification}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-slate-400">Typical Completion:</span>
+                <span className="font-semibold text-white">{selected.duration}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-slate-400">Target Audience:</span>
+                <span className="font-semibold text-slate-300 text-right">{selected.suitableFor}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="lg:col-span-5 rounded-2xl p-6 bg-gradient-to-br from-blue-900/30 to-sky-900/20 border border-sky-500/30 text-center flex flex-col justify-between">
+            <div>
+              <span className="text-xs uppercase tracking-wider text-slate-400 font-bold block mb-1">Average UK Salary</span>
+              <div className="text-4xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-emerald-300 tracking-tight">
+                {selected.salary}
+              </div>
+              <span className="inline-block mt-2 px-2.5 py-0.5 rounded-full bg-emerald-400/10 text-emerald-400 text-xs font-bold">
+                {selected.uplift} Estimated Career Uplift
+              </span>
+            </div>
+
+            <div className="mt-8">
+              <a
+                href={props.ctaButtonUrl || "/contact-us"}
+                className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-semibold text-sm shadow-lg shadow-sky-500/25 transition-all"
+              >
+                <span>{props.ctaButtonText || "Get Qualification Plan"}</span>
+                <ArrowRight size={16} />
+              </a>
+              <span className="block text-[11px] text-slate-400 mt-2">Zero commitment • Free 1-on-1 advisor consultation</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+);`,
+  },
+  {
+    id: "course_comparison_matrix",
+    name: "Dynamic Course Qualification Matrix",
+    category: "Courses",
+    description: "Side-by-side interactive comparison matrix pulling dynamic course data with study mode toggles (Online vs Classroom vs Blended), syllabus highlights, and direct enrollment buttons.",
+    options: {
+      enableFramerMotion: true,
+      enableGsap: false,
+      googleFont: "Outfit",
+    },
+    fields: [
+      { key: "matrixEyebrow", label: "Eyebrow Badge", type: "text", default: "Direct Course Comparison" },
+      { key: "matrixHeading", label: "Main Headline", type: "text", default: "Compare Leading NVQ & Safety Qualifications" },
+      { key: "matrixSubtitle", label: "Subtitle", type: "textarea", default: "Find the exact credential matching your job role, experience level, and timeline." },
+      { key: "enrollBtnText", label: "Button Label", type: "text", default: "View Course Details" },
+    ],
+    css: `
+.matrix-row {
+  transition: background-color 0.15s ease;
+}
+.matrix-row:hover {
+  background-color: rgba(241, 245, 249, 0.6);
+}
+`,
+    code: `// Dynamic Course Qualification Matrix
+const [selectedMode, setSelectedMode] = useState("All");
+
+const rawList = Array.isArray(data?.courses) && data.courses.length
+  ? data.courses
+  : Array.isArray(data?.courseRef) && data.courseRef.length
+  ? data.courseRef
+  : [
+      {
+        courseName: "NVQ Level 6 Diploma in Occupational Health and Safety Practice",
+        coursePrice: "£1,450",
+        duration: "6 - 12 Months",
+        mode: "Online / Portfolio",
+        level: "Level 6 RQF",
+        passRate: "99.2%",
+        slug: "nvq-level-6-occupational-health-safety",
+      },
+      {
+        courseName: "NVQ Level 3 Certificate in Occupational Health and Safety",
+        coursePrice: "£850",
+        duration: "3 - 6 Months",
+        mode: "Online",
+        level: "Level 3 RQF",
+        passRate: "98.9%",
+        slug: "nvq-level-3-occupational-health-safety",
+      },
+      {
+        courseName: "Site Safety Plus (CITB SMSTS)",
+        coursePrice: "£495",
+        duration: "5 Days",
+        mode: "Classroom / Virtual",
+        level: "Site Safety",
+        passRate: "97.5%",
+        slug: "smsts-site-management-safety-training-scheme",
+      },
+    ];
+
+const filtered = selectedMode === "All"
+  ? rawList
+  : rawList.filter(c => (c.mode || "").toLowerCase().includes(selectedMode.toLowerCase()));
+
+return (
+  <section className="py-24 px-4 sm:px-6 lg:px-8 bg-white text-slate-900">
+    <div className="max-w-6xl mx-auto">
+      <div className="text-center max-w-3xl mx-auto mb-12">
+        <span className="inline-block px-3 py-1 rounded-full bg-sky-100 text-sky-700 text-xs font-bold uppercase tracking-wider mb-3">
+          {props.matrixEyebrow || "Comparison Guide"}
+        </span>
+        <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mb-3">
+          {props.matrixHeading || "Compare Leading Safety Qualifications"}
+        </h2>
+        <p className="text-slate-600 text-base max-w-xl mx-auto">
+          {props.matrixSubtitle}
+        </p>
+
+        <div className="mt-8 flex items-center justify-center gap-2">
+          {["All", "Online", "Classroom"].map((m) => (
+            <button
+              key={m}
+              onClick={() => setSelectedMode(m)}
+              className={\`px-4 py-2 rounded-xl text-xs font-semibold transition-all \${
+                selectedMode === m
+                  ? "bg-slate-900 text-white shadow-sm"
+                  : "bg-slate-100 hover:bg-slate-200 text-slate-600"
+              }\`}
+            >
+              {m === "All" ? "All Formats" : m}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-slate-200 overflow-hidden shadow-sm bg-white">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm border-collapse">
+            <thead>
+              <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold text-xs uppercase tracking-wider">
+                <th className="py-4 px-6">Qualification Title</th>
+                <th className="py-4 px-4">Level / Framework</th>
+                <th className="py-4 px-4">Study Mode</th>
+                <th className="py-4 px-4">Duration</th>
+                <th className="py-4 px-4">Pass Rate</th>
+                <th className="py-4 px-4">Price</th>
+                <th className="py-4 px-6 text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {filtered.map((item, idx) => (
+                <tr key={idx} className="matrix-row">
+                  <td className="py-4 px-6 font-semibold text-slate-900">
+                    <div className="font-bold text-slate-900">{item.courseName || item.title || "Course"}</div>
+                    <div className="text-xs text-slate-400 font-normal mt-0.5">UK Ofqual Regulated</div>
+                  </td>
+                  <td className="py-4 px-4">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-sky-50 text-sky-700 text-xs font-semibold border border-sky-200">
+                      <Award size={12} />
+                      {item.level || "RQF Standard"}
+                    </span>
+                  </td>
+                  <td className="py-4 px-4 text-slate-600 font-medium">
+                    {item.mode || "Online"}
+                  </td>
+                  <td className="py-4 px-4 text-slate-600 font-medium">
+                    {item.duration || "Self-Paced"}
+                  </td>
+                  <td className="py-4 px-4 text-emerald-600 font-bold">
+                    {item.passRate || "99%"}
+                  </td>
+                  <td className="py-4 px-4">
+                    <span className="text-base font-extrabold text-slate-900">{item.coursePrice || item.price || "£950"}</span>
+                  </td>
+                  <td className="py-4 px-6 text-right">
+                    <a
+                      href={item.slug ? \`/courses/\${item.slug}\` : "/courses"}
+                      className="inline-flex items-center gap-1 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs transition-all shadow-sm"
+                    >
+                      <span>Enroll</span>
+                      <ArrowRight size={13} />
+                    </a>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+);`,
+  },
 ];
 
 /* ---------------- Lightweight Code Beautifier / Formatter ---------------- */
