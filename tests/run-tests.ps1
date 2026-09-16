@@ -111,6 +111,13 @@ Assert-Check -Name "binding.js expands single template item N times without dupl
 
 $blockEditorContent = Get-Content "Components/owner/cms/BlockEditor.jsx" -Raw
 Assert-Check -Name "BlockEditor passes repeatConfig and onSwitchToDataTab to list field renderer" -Condition ($blockEditorContent.Contains("repeatConfig={block._repeat}"))
+Assert-Check -Name "FieldRenderer declares repeatConfig and onSwitchToDataTab props" -Condition ($fieldsContent.Contains("repeatConfig = null") -and $fieldsContent.Contains("onSwitchToDataTab = null"))
+
+$blockDataTabContent = Get-Content "Components/owner/cms/dynamic/BlockDataTab.jsx" -Raw
+Assert-Check -Name "BlockDataTab imports Database icon from lucide-react" -Condition ($blockDataTabContent.Contains("Database") -and $blockDataTabContent.Contains("from `"lucide-react`""))
+
+$pageBuilderContent = Get-Content "Components/owner/cms/PageBuilder.jsx" -Raw
+Assert-Check -Name "PageBuilder imports defaultStyle from blockSchemas" -Condition ($pageBuilderContent.Contains("defaultStyle") -and $pageBuilderContent.Contains("from `"@/Components/cms/blockSchemas`""))
 
 # --- 8. Universal Relation Registry & Batched Resolver Verification ---
 Write-Host "`n>> 8. Verifying Universal Relation Registry & Resolution..." -ForegroundColor Yellow

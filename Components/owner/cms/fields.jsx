@@ -397,7 +397,14 @@ export function RichTextArea({ value, onChange, rows = 8 }) {
  * Static/Dynamic/Formula control without this module importing it — which
  * keeps the dependency one-directional and avoids an import cycle.
  */
-export function FieldRenderer({ field, value, onChange, renderField }) {
+export function FieldRenderer({
+  field,
+  value,
+  onChange,
+  renderField,
+  repeatConfig = null,
+  onSwitchToDataTab = null,
+}) {
   const set = (v) => onChange(v);
   switch (field.type) {
     case "textarea":
@@ -542,7 +549,13 @@ export function ListEditor({
                       `${field?.key || "item"}.0.${f.key}`
                     )
                   ) : (
-                    <FieldRenderer field={f} value={val} onChange={(v) => updateTemplate(f.key, v)} />
+                    <FieldRenderer
+                      field={f}
+                      value={val}
+                      onChange={(v) => updateTemplate(f.key, v)}
+                      repeatConfig={repeatConfig}
+                      onSwitchToDataTab={onSwitchToDataTab}
+                    />
                   )}
                 </div>
               );
@@ -660,7 +673,13 @@ export function ListEditor({
                   {renderField ? (
                     renderField(f, val, (v) => update(i, f.key, v), `${field?.key || "item"}.${i}.${f.key}`)
                   ) : (
-                    <FieldRenderer field={f} value={val} onChange={(v) => update(i, f.key, v)} />
+                    <FieldRenderer
+                      field={f}
+                      value={val}
+                      onChange={(v) => update(i, f.key, v)}
+                      repeatConfig={repeatConfig}
+                      onSwitchToDataTab={onSwitchToDataTab}
+                    />
                   )}
                 </div>
               );

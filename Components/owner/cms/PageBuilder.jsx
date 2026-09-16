@@ -14,7 +14,7 @@ import {
   Bookmark, Star, Database, Repeat, Film, Bug, Play, RefreshCw, SlidersHorizontal, Globe,
   Search, Layers, Grid, List, Monitor, Tablet, Smartphone,
 } from "lucide-react";
-import { BLOCK_TYPE_LIST, BLOCK_TYPES, createBlock, isContainer } from "@/Components/cms/blockSchemas";
+import { BLOCK_TYPE_LIST, BLOCK_TYPES, createBlock, isContainer, defaultStyle } from "@/Components/cms/blockSchemas";
 import { loadCustomTemplates, saveCustomTemplate, deleteCustomTemplate, fetchRemoteCustomSections } from "@/Components/cms/customTemplates";
 import { TEMPLATES, TEMPLATE_CATEGORIES, createBlocksFromTemplate } from "@/Components/cms/templates";
 import SectionStudioModal from "@/Components/owner/cms/SectionStudioModal";
@@ -487,8 +487,8 @@ function PageBuilderInner({ pageKey, meta }) {
   const duplicateBlock = (id) =>
     setBlocks((prev) => {
       const idx = prev.findIndex((b) => b.id === id);
-      if (idx === -1) return prev;
-      const copy = { ...structuredClone(prev[idx]), id: `b_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}` };
+      const cloneFn = typeof structuredClone === "function" ? structuredClone : (v) => JSON.parse(JSON.stringify(v));
+      const copy = { ...cloneFn(prev[idx]), id: `b_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}` };
       const next = [...prev];
       next.splice(idx + 1, 0, copy);
       return next;

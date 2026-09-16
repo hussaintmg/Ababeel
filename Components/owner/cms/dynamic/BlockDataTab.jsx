@@ -6,7 +6,7 @@
  * (for ordinary blocks) a direct repeat over a collection.
  */
 import { useRef, useState } from "react";
-import { Plus, Trash2, Repeat, Palette, Braces } from "lucide-react";
+import { Plus, Trash2, Repeat, Palette, Braces, Database } from "lucide-react";
 import ConditionBuilder from "@/Components/owner/cms/dynamic/ConditionBuilder";
 import VariablePicker from "@/Components/owner/cms/dynamic/VariablePicker";
 import PickerPopover from "@/Components/owner/cms/dynamic/PickerPopover";
