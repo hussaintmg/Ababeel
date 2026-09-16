@@ -7,6 +7,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { getPath } from "@/lib/cms/expression";
 import { createSampleItem } from "@/lib/cms/binding";
+import * as CmsSdk from "@/lib/cms/sdk";
 
 /* ---------- Cache & Script Loaders ---------- */
 const _loadedScripts = new Set();
@@ -148,6 +149,9 @@ export function prepareExecutableCode(rawCode) {
   let clean = (rawCode || "").trim();
   if (!clean) return "return function EmptySection() { return null; };";
 
+  // Strip ES module imports e.g. import { defineSection } from "@platform/cms-sdk"
+  clean = clean.replace(/import\s+[\s\S]*?from\s+['"][^'"]+['"];?/g, "").trim();
+
   // 1. If author uses "export default"
   if (clean.includes("export default")) {
     return clean.replace(/export\s+default\s+/, "return ");
@@ -155,7 +159,7 @@ export function prepareExecutableCode(rawCode) {
 
   // 2. If author already wrote an explicit return of a function component:
   // e.g. "return function...", "return (props) =>", "return (function..."
-  if (/^return\s+(function|\(?props\)?\s*=>|\(\s*function)/.test(clean)) {
+  if (/^return\s+(function|\(?props\)?\s*=>|\(\s*function|defineSection)/.test(clean)) {
     return clean;
   }
 
@@ -322,6 +326,11 @@ export default function SdkCustomBlock({ p = {}, s = {}, block = null, data = nu
         const lucideNames = lucideEntries.map(([name]) => name);
         const lucideValues = lucideEntries.map(([, comp]) => comp);
 
+        // CMS SDK exports
+        const sdkEntries = Object.entries(CmsSdk);
+        const sdkNames = sdkEntries.map(([name]) => name);
+        const sdkValues = sdkEntries.map(([, val]) => val);
+
         const scopeNames = [
           "React",
           "useState",
@@ -337,6 +346,7 @@ export default function SdkCustomBlock({ p = {}, s = {}, block = null, data = nu
           "toast",
           "props",
           "data",
+          ...sdkNames,
           ...lucideNames,
         ];
 
@@ -355,6 +365,7 @@ export default function SdkCustomBlock({ p = {}, s = {}, block = null, data = nu
           toast,
           actualProps,
           effectiveData,
+          ...sdkValues,
           ...lucideValues,
         ];
 
@@ -405,38 +416,48 @@ export default function SdkCustomBlock({ p = {}, s = {}, block = null, data = nu
 
   return (
     <SdkErrorBoundary sectionName={sectionName}>
-      <div className={`cms-sdk-section ${uniqueId}`} style={font ? { fontFamily: `'${font}', sans-serif` } : undefined}>
-        {scopedCss ? <style dangerouslySetInnerHTML={{ __html: scopedCss }} /> : null}
+      <CmsSdk.CMSDataContext.Provider
+        value={{
+          data: effectiveData,
+          route: { params: effectiveData.params || {}, query: {} },
+          site: effectiveData.site || {},
+          user: effectiveData.user,
+          theme: CmsSdk.cms.theme,
+        }}
+      >
+        <div className={`cms-sdk-section ${uniqueId}`} style={font ? { fontFamily: `'${font}', sans-serif` } : undefined}>
+          {scopedCss ? <style dangerouslySetInnerHTML={{ __html: scopedCss }} /> : null}
 
-        {compilationError ? (
-          <div className="mx-auto my-4 p-4 rounded-xl border border-amber-300 bg-amber-50 text-amber-900 text-xs">
-            <div className="font-semibold flex items-center gap-1.5 mb-1">
-              <LucideIcons.AlertCircle size={14} /> Compilation Notice
+          {compilationError ? (
+            <div className="mx-auto my-4 p-4 rounded-xl border border-amber-300 bg-amber-50 text-amber-900 text-xs">
+              <div className="font-semibold flex items-center gap-1.5 mb-1">
+                <LucideIcons.AlertCircle size={14} /> Compilation Notice
+              </div>
+              <p className="font-mono">{compilationError}</p>
             </div>
-            <p className="font-mono">{compilationError}</p>
-          </div>
-        ) : isCompiling ? (
-          <div className="p-8 text-center text-gray-400 text-xs flex items-center justify-center gap-2">
-            <LucideIcons.Loader2 size={16} className="animate-spin text-blue-500" />
-            Loading section...
-          </div>
-        ) : CompiledComponent ? (
-          <CompiledComponent
-            props={actualProps}
-            {...actualProps}
-            data={effectiveData}
-            motion={FramerMotion.motion}
-            icons={LucideIcons}
-            toast={toast}
-          />
-        ) : !code ? (
-          <div className="p-10 border-2 border-dashed border-gray-200 rounded-2xl text-center text-gray-400 text-sm">
-            <LucideIcons.Code2 size={24} className="mx-auto mb-2 text-gray-300" />
-            <p className="font-medium text-gray-600">{sectionName}</p>
-            <p className="text-xs text-gray-400 mt-0.5">Empty code block. Open Code Studio to write markup &amp; logic.</p>
-          </div>
-        ) : null}
-      </div>
+          ) : isCompiling ? (
+            <div className="p-8 text-center text-gray-400 text-xs flex items-center justify-center gap-2">
+              <LucideIcons.Loader2 size={16} className="animate-spin text-blue-500" />
+              <span>Compiling live JSX template…</span>
+            </div>
+          ) : CompiledComponent ? (
+            <CompiledComponent
+              props={actualProps}
+              {...actualProps}
+              data={effectiveData}
+              motion={FramerMotion.motion}
+              icons={LucideIcons}
+              toast={toast}
+            />
+          ) : !code ? (
+            <div className="p-10 border-2 border-dashed border-gray-200 rounded-2xl text-center text-gray-400 text-sm">
+              <LucideIcons.Code2 size={24} className="mx-auto mb-2 text-gray-300" />
+              <p className="font-medium text-gray-600">{sectionName}</p>
+              <p className="text-xs text-gray-400 mt-0.5">Empty code block. Open Code Studio to write markup &amp; logic.</p>
+            </div>
+          ) : null}
+        </div>
+      </CmsSdk.CMSDataContext.Provider>
     </SdkErrorBoundary>
   );
 }

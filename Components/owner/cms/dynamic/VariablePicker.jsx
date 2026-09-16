@@ -15,21 +15,32 @@ import { useCmsVariables } from "@/context/CmsVariablesContext";
 import { searchVariables } from "@/lib/cms/search";
 import { typeIcon, typeColor, isCompatible, isArrayType } from "@/lib/cms/types";
 
+import { getCompatibility, COMPATIBILITY_STATES } from "@/lib/cms/types";
+
 /* ---------------- tree node ---------------- */
 
-function FieldNode({ field, basePath, fieldType, onPick, depth = 0, query, scopeHint = "" }) {
+function FieldNode({ field, basePath, fieldType, onPick, depth = 0, query, scopeHint = "", onAction }) {
   const [manuallyOpen, setManuallyOpen] = useState(false);
-  // A live search expands the tree; otherwise the author's own toggle decides.
   const open = manuallyOpen || !!query;
   const setOpen = setManuallyOpen;
   const path = `${basePath}.${field.name}`;
   const hasChildren = !!field.children?.length;
-  const compatible = isCompatible(fieldType, field.type);
+  const compat = getCompatibility(fieldType, field.type);
+  const isRecommended = compat.state === COMPATIBILITY_STATES.RECOMMENDED;
+  const isConvertible = compat.state === COMPATIBILITY_STATES.CONVERTIBLE;
+  const isIncompatible = compat.state === COMPATIBILITY_STATES.INCOMPATIBLE;
+  const isArr = isArrayType(field.type);
 
   return (
     <div>
       <div
-        className={`group flex items-center gap-1 rounded-md pr-1 ${compatible ? "hover:bg-blue-50" : "opacity-40"}`}
+        className={`group flex items-center gap-1 rounded-md pr-1 transition-colors ${
+          isRecommended
+            ? "hover:bg-blue-50/80"
+            : isConvertible
+            ? "hover:bg-amber-50/80"
+            : "opacity-45 hover:opacity-75"
+        }`}
         style={{ paddingLeft: depth * 12 }}
       >
         {hasChildren ? (
@@ -46,19 +57,38 @@ function FieldNode({ field, basePath, fieldType, onPick, depth = 0, query, scope
         )}
         <button
           type="button"
-          disabled={!compatible}
-          draggable={compatible}
+          disabled={isIncompatible && !isArr}
+          draggable={!isIncompatible}
           onDragStart={(e) => {
             e.dataTransfer.setData("application/x-cms-variable", path);
             e.dataTransfer.setData("text/plain", `{{${path}}}`);
             e.dataTransfer.effectAllowed = "copy";
           }}
-          onClick={() => compatible && onPick(path, field)}
-          className="flex-1 flex items-center gap-2 py-1 text-left min-w-0 disabled:cursor-not-allowed"
-          title={compatible ? `Insert {{${path}}}` : `${field.type} cannot be used here`}
+          onClick={() => {
+            if (isArr && fieldType !== "collection" && onAction) {
+              onAction("array_picked", { path, field });
+              return;
+            }
+            if (!isIncompatible) onPick(path, field);
+          }}
+          className={`flex-1 flex items-center gap-2 py-1 text-left min-w-0 ${
+            isIncompatible && !isArr ? "cursor-not-allowed" : "cursor-pointer"
+          }`}
+          title={
+            isRecommended
+              ? `Recommended: Insert {{${path}}}`
+              : isConvertible
+              ? `Convertible (${compat.reason}): Insert {{${path}}}`
+              : `Incompatible: ${compat.reason}`
+          }
         >
           <span className="text-[13px]" aria-hidden>{typeIcon(field.type)}</span>
           <span className="text-xs font-mono text-gray-700 truncate">{field.name}</span>
+          {isConvertible ? (
+            <span className="text-[9px] px-1 py-0.2 rounded bg-amber-100 text-amber-800 font-medium shrink-0">
+              Convertible
+            </span>
+          ) : null}
           <span className={`ml-auto shrink-0 rounded border px-1 text-[10px] ${typeColor(field.type)}`}>
             {field.type}
           </span>
@@ -76,6 +106,7 @@ function FieldNode({ field, basePath, fieldType, onPick, depth = 0, query, scope
               depth={depth + 1}
               query={query}
               scopeHint={scopeHint}
+              onAction={onAction}
             />
           ))}
         </div>
@@ -157,12 +188,14 @@ export default function VariablePicker({
     ];
   }, [activeModel]);
 
+  const [arrayAction, setArrayAction] = useState(null);
+
   return (
-    <div className={`${fullWidth ? "w-full" : "w-[360px] max-w-[94vw]"} rounded-xl border border-gray-200 bg-white shadow-2xl overflow-hidden flex flex-col ${anchorClassName}`}>
+    <div className={`${fullWidth ? "w-full" : "w-[380px] max-w-[94vw]"} rounded-xl border border-gray-200 bg-white shadow-2xl overflow-hidden flex flex-col ${anchorClassName}`}>
       {hideHeader ? null : (
         <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-100 bg-gray-50">
           <Database size={14} className="text-blue-600" />
-          <span className="text-xs font-semibold text-gray-700">Insert a variable</span>
+          <span className="text-xs font-semibold text-gray-700">Context-Aware Variable Picker</span>
           {onClose ? (
             <button type="button" onClick={onClose} className="ml-auto p-1 rounded hover:bg-gray-200 text-gray-500">
               <X size={14} />
@@ -171,53 +204,118 @@ export default function VariablePicker({
         </div>
       )}
 
+      {/* Array Action Dialog / Helper */}
+      {arrayAction ? (
+        <div className="p-3 bg-amber-50 border-b border-amber-200 text-xs">
+          <p className="font-semibold text-amber-900 mb-1">
+            <code>{arrayAction.path}</code> contains multiple items
+          </p>
+          <p className="text-[11px] text-amber-700 mb-2">
+            Cannot bind an entire list directly to a {fieldType} property. Choose a helper:
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            <button
+              type="button"
+              onClick={() => {
+                onPick(`${arrayAction.path} | count`, { ...arrayAction.field, type: "Number" });
+                setArrayAction(null);
+              }}
+              className="px-2 py-1 rounded bg-white border border-amber-300 text-amber-900 text-xs font-medium hover:bg-amber-100"
+            >
+              Use Count (<code>| count</code>)
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                onPick(`${arrayAction.path}.0`, { ...arrayAction.field, type: "String" });
+                setArrayAction(null);
+              }}
+              className="px-2 py-1 rounded bg-white border border-amber-300 text-amber-900 text-xs font-medium hover:bg-amber-100"
+            >
+              Use First Item (<code>.0</code>)
+            </button>
+            <button
+              type="button"
+              onClick={() => setArrayAction(null)}
+              className="px-2 py-1 rounded bg-gray-100 text-gray-600 text-xs hover:bg-gray-200 ml-auto"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : null}
+
       {/* Repeater Scope Quick-Pick banner */}
       {scopeHint ? (
         <div className="p-2.5 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-200/80">
           <div className="flex items-center gap-1.5 text-xs font-semibold text-blue-900 mb-1">
             <Sparkles size={13} className="text-blue-600 shrink-0" />
-            <span>Card Record Variables (<code>{scopeHint}</code>)</span>
+            <span>Current Loop Scope (<code>{scopeHint}</code>)</span>
             {activeSource ? (
               <span className="ml-auto text-[10px] bg-blue-200/70 text-blue-900 px-1.5 py-0.5 rounded font-mono font-medium">
-                {activeSource}
+                source: {activeSource}
               </span>
             ) : null}
           </div>
           <p className="text-[11px] text-blue-700 leading-tight mb-2">
-            Click any field to bind each repeated card dynamically:
+            Click any field to bind dynamically to the current loop item:
           </p>
           <div className="flex flex-wrap gap-1 max-h-36 overflow-y-auto pr-1">
             {quickFields.map((f) => {
               const itemPath = `${scopeHint}.${f.name}`;
-              const compatible = isCompatible(fieldType, f.type);
+              const compat = getCompatibility(fieldType, f.type);
+              const isRec = compat.state === COMPATIBILITY_STATES.RECOMMENDED;
+              const isConv = compat.state === COMPATIBILITY_STATES.CONVERTIBLE;
+              const isArr = isArrayType(f.type);
               return (
                 <button
                   key={f.name}
                   type="button"
-                  disabled={!compatible}
-                  onClick={() => compatible && onPick(itemPath, f)}
+                  disabled={compat.state === COMPATIBILITY_STATES.INCOMPATIBLE && !isArr}
+                  onClick={() => {
+                    if (isArr && fieldType !== "collection") {
+                      setArrayAction({ path: itemPath, field: f });
+                      return;
+                    }
+                    onPick(itemPath, f);
+                  }}
                   className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono border transition-all ${
-                    compatible
+                    isRec
                       ? "bg-white hover:bg-blue-600 hover:text-white border-blue-200 text-blue-900 shadow-xs cursor-pointer"
+                      : isConv
+                      ? "bg-amber-50 hover:bg-amber-600 hover:text-white border-amber-200 text-amber-900 shadow-xs cursor-pointer"
                       : "opacity-40 border-gray-200 text-gray-400 cursor-not-allowed"
                   }`}
-                  title={compatible ? `Insert {{${itemPath}}}` : `${f.type} cannot be used here`}
+                  title={
+                    isRec
+                      ? `Recommended: Insert {{${itemPath}}}`
+                      : isConv
+                      ? `Convertible (${compat.reason}): Insert {{${itemPath}}}`
+                      : `Incompatible: ${compat.reason}`
+                  }
                 >
                   <span className="font-medium">{f.name}</span>
                   <span className="text-[9px] opacity-60">({f.type})</span>
                 </button>
               );
             })}
-            {/* Built-in index helpers */}
-            {["index", "number", "isFirst", "isLast"].map((idxKey) => (
+            {/* Built-in loop helpers: loop.index, loop.first, loop.last, loop.count */}
+            {[
+              { key: "loop.index", label: "loop.index", type: "Number" },
+              { key: "loop.number", label: "loop.number", type: "Number" },
+              { key: "loop.first", label: "loop.first", type: "Boolean" },
+              { key: "loop.last", label: "loop.last", type: "Boolean" },
+              { key: "loop.count", label: "loop.count", type: "Number" },
+              { key: "index", label: "index", type: "Number" },
+            ].map((idxItem) => (
               <button
-                key={idxKey}
+                key={idxItem.key}
                 type="button"
-                onClick={() => onPick(idxKey, { name: idxKey, type: "Number" })}
+                onClick={() => onPick(idxItem.key, { name: idxItem.key, type: idxItem.type })}
                 className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono border border-indigo-200 bg-indigo-50/70 text-indigo-800 hover:bg-indigo-600 hover:text-white transition-all shadow-xs cursor-pointer"
-                title={`Insert {{${idxKey}}}`}
+                title={`Insert {{${idxItem.key}}}`}
               >
-                <span>{idxKey}</span>
+                <span>{idxItem.label}</span>
               </button>
             ))}
           </div>
@@ -232,7 +330,7 @@ export default function VariablePicker({
             autoFocus
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search email, price, thumbnail…"
+            placeholder="Search email, price, thumbnail, loop…"
             className="w-full pl-8 pr-2 py-1.5 rounded-lg border border-gray-300 text-xs outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
@@ -264,22 +362,46 @@ export default function VariablePicker({
         ) : query ? (
           results.length ? (
             results.map((v) => {
-              const compatible = isCompatible(fieldType, v.type);
+              const compat = getCompatibility(fieldType, v.type);
+              const isRec = compat.state === COMPATIBILITY_STATES.RECOMMENDED;
+              const isConv = compat.state === COMPATIBILITY_STATES.CONVERTIBLE;
+              const isIncompat = compat.state === COMPATIBILITY_STATES.INCOMPATIBLE;
+              const isArr = isArrayType(v.type);
               return (
                 <button
                   key={v.name}
                   type="button"
-                  disabled={!compatible}
-                  draggable={compatible}
+                  disabled={isIncompat && !isArr}
+                  draggable={!isIncompat}
                   onDragStart={(e) => {
                     e.dataTransfer.setData("application/x-cms-variable", v.name);
                     e.dataTransfer.setData("text/plain", `{{${v.name}}}`);
                   }}
-                  onClick={() => compatible && onPick(v.name, v)}
-                  className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left ${compatible ? "hover:bg-blue-50" : "opacity-40 cursor-not-allowed"}`}
+                  onClick={() => {
+                    if (isArr && fieldType !== "collection") {
+                      setArrayAction({ path: v.name, field: v });
+                      return;
+                    }
+                    if (!isIncompat) onPick(v.name, v);
+                  }}
+                  className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left ${
+                    isRec ? "hover:bg-blue-50" : isConv ? "hover:bg-amber-50" : "opacity-40 cursor-not-allowed"
+                  }`}
+                  title={
+                    isRec
+                      ? `Recommended: Insert {{${v.name}}}`
+                      : isConv
+                      ? `Convertible (${compat.reason}): Insert {{${v.name}}}`
+                      : `Incompatible: ${compat.reason}`
+                  }
                 >
                   <span aria-hidden>{typeIcon(v.type)}</span>
                   <span className="text-xs font-mono text-gray-700 truncate">{v.name}</span>
+                  {isConv ? (
+                    <span className="text-[9px] px-1 py-0.2 rounded bg-amber-100 text-amber-800 font-medium shrink-0">
+                      Convertible
+                    </span>
+                  ) : null}
                   <span className={`ml-auto shrink-0 rounded border px-1 text-[10px] ${typeColor(v.type)}`}>{v.type}</span>
                 </button>
               );
@@ -290,14 +412,17 @@ export default function VariablePicker({
         ) : tab === "custom" ? (
           custom.length ? (
             custom.map((v) => {
-              const compatible = isCompatible(fieldType, v.type);
+              const compat = getCompatibility(fieldType, v.type);
+              const isIncompat = compat.state === COMPATIBILITY_STATES.INCOMPATIBLE;
               return (
                 <button
                   key={v.name}
                   type="button"
-                  disabled={!compatible}
-                  onClick={() => compatible && onPick(v.name, v)}
-                  className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left ${compatible ? "hover:bg-blue-50" : "opacity-40 cursor-not-allowed"}`}
+                  disabled={isIncompat}
+                  onClick={() => !isIncompat && onPick(v.name, v)}
+                  className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left ${
+                    !isIncompat ? "hover:bg-blue-50" : "opacity-40 cursor-not-allowed"
+                  }`}
                 >
                   <span aria-hidden>{typeIcon(v.type)}</span>
                   <span className="text-xs font-mono text-gray-700 truncate">{v.name}</span>
@@ -319,6 +444,9 @@ export default function VariablePicker({
               onPick={onPick}
               scopeHint={scopeHint}
               activeSource={activeSource}
+              onAction={(type, payload) => {
+                if (type === "array_picked") setArrayAction(payload);
+              }}
             />
           ))
         )}
@@ -327,7 +455,7 @@ export default function VariablePicker({
   );
 }
 
-function ModelGroup({ model, fieldType, onPick, scopeHint = "", activeSource = "" }) {
+function ModelGroup({ model, fieldType, onPick, scopeHint = "", activeSource = "", onAction }) {
   const [open, setOpen] = useState(false);
   const listType = "Array<Reference>";
   const listCompatible = isCompatible(fieldType, listType);
@@ -349,7 +477,7 @@ function ModelGroup({ model, fieldType, onPick, scopeHint = "", activeSource = "
         <ChevronRight size={13} className={`text-gray-400 transition-transform ${open ? "rotate-90" : ""}`} />
         <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-600">{model.label}</span>
         {isCurrentRepeaterSource ? (
-          <span className="px-1 py-0.2 rounded text-[9px] bg-blue-200 text-blue-800 font-bold uppercase">Active</span>
+          <span className="px-1 py-0.2 rounded text-[9px] bg-blue-200 text-blue-800 font-bold uppercase">Active Loop</span>
         ) : null}
         <span className="ml-auto text-[10px] text-gray-400 font-mono">{model.key}</span>
       </button>
@@ -379,6 +507,7 @@ function ModelGroup({ model, fieldType, onPick, scopeHint = "", activeSource = "
               fieldType={fieldType}
               onPick={onPick}
               scopeHint={scopeHint}
+              onAction={onAction}
             />
           ))}
         </div>

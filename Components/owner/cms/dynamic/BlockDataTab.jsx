@@ -118,16 +118,16 @@ export default function BlockDataTab({ block, onChange, features = {} }) {
                 <Label>Quick Select Database Collection</Label>
                 <div className="flex flex-wrap gap-1 mt-1">
                   {[
-                    { id: "courseRef", label: "Courses (courseRef)" },
-                    { id: "courses", label: "Courses (courses)" },
-                    { id: "candidates", label: "Candidates" },
-                    { id: "testimonials", label: "Testimonials" },
-                    { id: "teamMembers", label: "Team / Instructors" },
+                    { id: "courses", label: "Courses (courses)", alias: "course" },
+                    { id: "courseRef", label: "Courses (courseRef)", alias: "course" },
+                    { id: "candidates", label: "Candidates", alias: "candidate" },
+                    { id: "testimonials", label: "Testimonials", alias: "testimonial" },
+                    { id: "teamMembers", label: "Team / Instructors", alias: "member" },
                   ].map((col) => (
                     <button
                       key={col.id}
                       type="button"
-                      onClick={() => setRepeat({ source: col.id })}
+                      onClick={() => setRepeat({ source: col.id, alias: col.alias, item: col.alias })}
                       className={`px-2 py-1 rounded text-xs font-mono border transition-all ${
                         (repeat.source || "").toLowerCase() === col.id.toLowerCase()
                           ? "bg-blue-600 text-white border-blue-600 font-semibold shadow-xs"
@@ -145,18 +145,25 @@ export default function BlockDataTab({ block, onChange, features = {} }) {
                   <Label>Collection Source</Label>
                   <BoundInput
                     value={repeat.source}
-                    onChange={(v) => setRepeat({ source: v.replace(/[{}]/g, "") })}
+                    onChange={(v) => {
+                      const clean = v.replace(/[{}]/g, "");
+                      setRepeat({
+                        source: clean,
+                        alias: repeat.alias && repeat.alias !== "item" ? repeat.alias : (clean.replace(/s$/, "") || "item"),
+                        item: repeat.item && repeat.item !== "item" ? repeat.item : (clean.replace(/s$/, "") || "item"),
+                      });
+                    }}
                     fieldType="collection"
-                    placeholder="courseRef"
+                    placeholder="courses"
                   />
                 </div>
                 <div>
-                  <Label>Item variable name</Label>
+                  <Label>Loop Alias (Variable Name)</Label>
                   <input
                     type="text"
-                    value={repeat.item ?? "item"}
-                    onChange={(e) => setRepeat({ item: e.target.value })}
-                    placeholder="item"
+                    value={repeat.alias || repeat.item || "item"}
+                    onChange={(e) => setRepeat({ alias: e.target.value, item: e.target.value })}
+                    placeholder="course"
                     className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs font-mono outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>

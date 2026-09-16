@@ -387,7 +387,14 @@ function PageBuilderInner({ pageKey, meta }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pageKey]);
 
-  // ----- preview data -----
+  // ----- preview data (optimized: only fetches on data source/structure change, not keystrokes) -----
+  const dataSourcesKey = useMemo(() => JSON.stringify(dataSources || []), [dataSources]);
+  const dynamicRouteKey = useMemo(() => JSON.stringify(dynamicRoute || {}), [dynamicRoute]);
+  const catalogueTypesKey = useMemo(
+    () => (blocks || []).map((b) => b.type).filter((t) => t && (t.includes("course") || t.includes("training") || t.includes("catalog"))).join(","),
+    [blocks]
+  );
+
   const loadPreviewData = useCallback(async () => {
     if (previewMode === "static") {
       setPreviewData(null);
@@ -403,7 +410,7 @@ function PageBuilderInner({ pageKey, meta }) {
     try {
       const res = await axios.post(
         "/api/owner/cms/preview/data",
-        { dataSources, dynamicRoute, blocks, params: {}, mode: "mixed" },
+        { dataSources, dynamicRoute, blocks: (blocks || []).slice(0, 50), params: {}, mode: "mixed" },
         { withCredentials: true }
       );
       setPreviewData(res.data?.data?.context || {});
@@ -415,7 +422,8 @@ function PageBuilderInner({ pageKey, meta }) {
     } finally {
       setPreviewLoading(false);
     }
-  }, [previewMode, dataSources, dynamicRoute, tree, blocks]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [previewMode, dataSourcesKey, dynamicRouteKey, tree, catalogueTypesKey]);
 
   useEffect(() => {
     const timer = setTimeout(loadPreviewData, 400);

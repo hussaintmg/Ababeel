@@ -28,6 +28,8 @@ import {
 import SdkCustomBlock from "@/Components/cms/SdkCustomBlock";
 import { saveSdkCustomTemplate } from "@/Components/cms/customTemplates";
 import { toast } from "react-toastify";
+import { generateTemplatePrompt } from "@/lib/cms/promptGenerator";
+import { validateTemplate } from "@/lib/cms/templateValidator";
 
 /* ---------------- Master Prompt for AI Code Agents ---------------- */
 export const AI_CUSTOM_SECTION_PROMPT = `You are an expert React / Tailwind CSS / Web Component developer creating custom section templates for the Ababeel CMS Section Code Studio (SDK).
@@ -1394,13 +1396,21 @@ export default function SectionStudioModal({
 
   // Copy structured prompt for AI agents (ChatGPT, Claude, Gemini, Antigravity)
   const handleCopyAiPrompt = () => {
+    const dynamicPrompt = generateTemplatePrompt({
+      sectionType: name || "Custom Section",
+      category: category || "Hero Sections",
+      purpose: description || "Modern responsive section with customizable fields",
+      selectedModel: "Course",
+      expectedProps: fields,
+    });
+
     if (typeof navigator !== "undefined" && navigator.clipboard) {
       navigator.clipboard
-        .writeText(AI_CUSTOM_SECTION_PROMPT)
+        .writeText(dynamicPrompt)
         .then(() => {
           setCopiedPrompt(true);
           setTimeout(() => setCopiedPrompt(false), 2500);
-          toast.success("AI Prompt copied! Paste it in ChatGPT, Claude, or Gemini to generate custom section templates.");
+          toast.success("AI Prompt copied! Includes active fields, loop rules & SDK contracts.");
         })
         .catch(() => {
           toast.error("Failed to copy to clipboard automatically.");
@@ -1427,6 +1437,18 @@ export default function SectionStudioModal({
         toast.error("Invalid format: expected 'name', 'code', or 'fields'.");
         return;
       }
+
+      // Validate with CMS Template Validator
+      const val = validateTemplate(parsed);
+      if (!val.valid) {
+        toast.error(`Validation failed: ${val.errors[0]}`);
+        if (val.warnings?.length) toast.warn(val.warnings[0]);
+        return;
+      }
+      if (val.warnings?.length) {
+        toast.warn(`Import warning: ${val.warnings[0]}`);
+      }
+
       if (parsed.name) setName(parsed.name);
       if (parsed.category) setCategory(parsed.category);
       if (parsed.description) setDescription(parsed.description);

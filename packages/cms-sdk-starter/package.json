@@ -1,0 +1,25 @@
+{
+  "name": "@platform/cms-sdk-starter",
+  "version": "2.0.0",
+  "description": "Official CMS Template SDK Starter with 7 Working Examples",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "validate": "node ./scripts/validate.js",
+    "test": "node ./scripts/validate.js",
+    "build": "node ./scripts/validate.js"
+  },
+  "keywords": [
+    "cms",
+    "template-sdk",
+    "react",
+    "dynamic-data"
+  ],
+  "author": "Ababeel CMS Architecture Team",
+  "license": "MIT",
+  "dependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {}
+}
