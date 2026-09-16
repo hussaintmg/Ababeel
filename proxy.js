@@ -5,7 +5,7 @@ const SECURITY_HEADERS = {
   "X-Frame-Options": "SAMEORIGIN",
   "X-XSS-Protection": "1; mode=block",
   "Referrer-Policy": "strict-origin-when-cross-origin",
-  "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()",
+  "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=(), unload=(self)",
   "X-DNS-Prefetch-Control": "on",
   "Strict-Transport-Security": "max-age=63072000; includeSubDomains; preload",
 };
@@ -89,12 +89,22 @@ function handleApiMiddleware(request, pathname) {
     if (source) {
       try {
         const url = new URL(source);
-        const allowedHosts = [
-          host,
-          process.env.NEXT_PUBLIC_BASE_URL?.replace(/^https?:\/\//, ""),
-        ].filter(Boolean);
+        const cleanHost = (h) => (h ? String(h).toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, "").replace(/^www\./, "").trim() : "");
+        const sourceHost = cleanHost(url.host);
+        const currentHost = cleanHost(host);
+        const configuredBase = cleanHost(process.env.NEXT_PUBLIC_BASE_URL);
+        const configuredSite = cleanHost(process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL);
 
-        if (!allowedHosts.includes(url.host)) {
+        const isAllowed =
+          !sourceHost ||
+          sourceHost === currentHost ||
+          sourceHost === configuredBase ||
+          sourceHost === configuredSite ||
+          sourceHost === "ababeelsafety.com" ||
+          sourceHost === "localhost" ||
+          sourceHost.startsWith("127.0.0.1");
+
+        if (!isAllowed) {
           return NextResponse.json(
             { success: false, error: "Request origin not allowed" },
             { status: 403 }
