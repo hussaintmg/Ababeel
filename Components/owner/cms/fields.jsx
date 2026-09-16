@@ -440,7 +440,16 @@ export function FieldRenderer({ field, value, onChange, renderField }) {
     case "link":
       return <LinkInput value={value} onChange={set} />;
     case "list":
-      return <ListEditor field={field} value={value} onChange={set} renderField={renderField} />;
+      return (
+        <ListEditor
+          field={field}
+          value={value}
+          onChange={set}
+          renderField={renderField}
+          repeatConfig={repeatConfig}
+          onSwitchToDataTab={onSwitchToDataTab}
+        />
+      );
     case "text":
     default:
       return <TextInput value={value} onChange={set} placeholder={field.placeholder} />;
@@ -449,9 +458,16 @@ export function FieldRenderer({ field, value, onChange, renderField }) {
 
 /* ---------------- repeatable list editor ---------------- */
 
-import { Plus, Trash2, ChevronUp, ChevronDown } from "lucide-react";
+import { Plus, Trash2, ChevronUp, ChevronDown, Sparkles, Repeat, Database, ArrowRight } from "lucide-react";
 
-export function ListEditor({ field, value, onChange, renderField }) {
+export function ListEditor({
+  field,
+  value,
+  onChange,
+  renderField,
+  repeatConfig,
+  onSwitchToDataTab,
+}) {
   const items = Array.isArray(value) ? value : [];
   const itemFields = Array.isArray(field?.itemFields)
     ? field.itemFields
@@ -459,6 +475,104 @@ export function ListEditor({ field, value, onChange, renderField }) {
     ? field.fields
     : [{ key: "value", label: field?.itemLabel || "Value", type: "text" }];
 
+  const isDynamicRepeat = Boolean(repeatConfig?.enabled && repeatConfig?.source);
+  const repeatSource = repeatConfig?.source || "";
+  const repeatAlias = repeatConfig?.alias || repeatConfig?.item || "item";
+
+  // Dynamic Repeater: Exactly ONE template item is stored and edited
+  if (isDynamicRepeat) {
+    const templateItem = items[0] || (typeof field?.itemDefaults === "object" ? field.itemDefaults : {}) || {};
+
+    const updateTemplate = (key, v) => {
+      const updated =
+        typeof templateItem === "object" && templateItem !== null
+          ? { ...templateItem, [key]: v }
+          : v;
+      // Stored schema holds exactly one template item
+      onChange([updated]);
+    };
+
+    return (
+      <div className="space-y-3">
+        {/* Dynamic Repeater Context Banner */}
+        <div className="rounded-xl border border-blue-200 bg-gradient-to-r from-blue-50/90 to-indigo-50/80 p-3 text-xs text-blue-900 shadow-xs">
+          <div className="flex items-center gap-1.5 font-semibold text-blue-800 mb-1">
+            <Sparkles size={14} className="text-blue-600 shrink-0" />
+            <span>Dynamic Repeater Active</span>
+            <span className="ml-auto font-mono text-[10px] bg-blue-100/90 border border-blue-200 text-blue-900 px-1.5 py-0.5 rounded font-bold">
+              {repeatSource} → {repeatAlias}
+            </span>
+          </div>
+          <p className="text-[11px] text-blue-700 leading-relaxed">
+            This block repeats over <b>{repeatSource}</b>. Configure the <b>single template {field?.itemLabel?.toLowerCase() || "item"}</b> below. At runtime, the CMS will dynamically render this template for all matching records.
+          </p>
+        </div>
+
+        {/* The One Template Card */}
+        <div className="rounded-xl border-2 border-blue-200 bg-white p-3.5 shadow-xs">
+          <div className="flex items-center justify-between mb-3 pb-2 border-b border-gray-100">
+            <div>
+              <span className="text-xs font-bold text-gray-900 flex items-center gap-1.5">
+                <Repeat size={13} className="text-blue-600" />
+                {field?.itemLabel || "Card"} Template
+              </span>
+              <p className="text-[10px] text-gray-500">
+                Single template item repeating for every database record
+              </p>
+            </div>
+            <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-blue-600 text-white shadow-xs">
+              1 Template Item
+            </span>
+          </div>
+
+          <div className="space-y-2.5">
+            {itemFields.map((f) => {
+              const val =
+                typeof templateItem === "object" && templateItem !== null
+                  ? templateItem[f.key]
+                  : templateItem;
+              return (
+                <div key={f.key}>
+                  {f.type !== "boolean" ? <Label>{f.label}</Label> : null}
+                  {renderField ? (
+                    renderField(
+                      f,
+                      val,
+                      (v) => updateTemplate(f.key, v),
+                      `${field?.key || "item"}.0.${f.key}`
+                    )
+                  ) : (
+                    <FieldRenderer field={f} value={val} onChange={(v) => updateTemplate(f.key, v)} />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Guidance notice explaining why manual item addition is disabled */}
+        <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50/90 p-3 text-center text-xs text-gray-500">
+          <p className="font-medium text-gray-700">
+            Items are generated automatically from dynamic data.
+          </p>
+          <p className="text-[11px] text-gray-400 mt-0.5">
+            Individual {field?.itemLabel?.toLowerCase() || "card"}s repeat dynamically based on <b>{repeatSource}</b> in the Data tab.
+          </p>
+          {onSwitchToDataTab ? (
+            <button
+              type="button"
+              onClick={onSwitchToDataTab}
+              className="mt-2 inline-flex items-center gap-1 text-[11px] font-medium text-blue-600 hover:text-blue-800"
+            >
+              <Database size={12} /> Configure collection query in Data tab <ArrowRight size={11} />
+            </button>
+          ) : null}
+        </div>
+      </div>
+    );
+  }
+
+  // Static Mode: Full manual item management (Add, Move, Delete)
   const update = (i, key, v) => {
     const next = items.map((it, idx) => {
       if (idx !== i) return it;
@@ -469,18 +583,17 @@ export function ListEditor({ field, value, onChange, renderField }) {
     });
     onChange(next);
   };
+
   const addItem = () => {
     const blank = {};
     itemFields.forEach((f) => {
       blank[f.key] = f.type === "boolean" ? false : f.type === "link" ? { label: "", href: "" } : "";
     });
-    // A list whose items only work once several numbers are filled in — a
-    // scroll scene needs a range, an easing and a position — added a row that
-    // was invisible until the author guessed all of them. `itemDefaults` lets
-    // the schema say what a usable new row looks like.
-    const defaultVal = field?.itemDefaults || (itemFields.length === 1 && itemFields[0].key === "value" ? "" : blank);
+    const defaultVal =
+      field?.itemDefaults || (itemFields.length === 1 && itemFields[0].key === "value" ? "" : blank);
     onChange([...items, typeof defaultVal === "object" ? { ...blank, ...defaultVal } : defaultVal]);
   };
+
   const remove = (i) => onChange(items.filter((_, idx) => idx !== i));
   const move = (i, dir) => {
     const j = i + dir;
@@ -492,6 +605,19 @@ export function ListEditor({ field, value, onChange, renderField }) {
 
   return (
     <div className="space-y-3">
+      {onSwitchToDataTab ? (
+        <div className="flex items-center justify-between pb-1">
+          <span className="text-[11px] font-medium text-gray-500">Static Mode ({items.length} items)</span>
+          <button
+            type="button"
+            onClick={onSwitchToDataTab}
+            className="inline-flex items-center gap-1 text-[11px] font-medium text-blue-600 hover:text-blue-800"
+          >
+            <Database size={11} /> Switch to Dynamic Repeater →
+          </button>
+        </div>
+      ) : null}
+
       {items.map((item, i) => (
         <div key={i} className="rounded-lg border border-gray-200 bg-gray-50 p-3">
           <div className="flex items-center justify-between mb-2">
@@ -499,13 +625,28 @@ export function ListEditor({ field, value, onChange, renderField }) {
               {field?.itemLabel || "Item"} {i + 1}
             </span>
             <div className="flex items-center gap-1">
-              <button type="button" onClick={() => move(i, -1)} className="p-1 rounded hover:bg-gray-200 text-gray-500" title="Move up">
+              <button
+                type="button"
+                onClick={() => move(i, -1)}
+                className="p-1 rounded hover:bg-gray-200 text-gray-500"
+                title="Move up"
+              >
                 <ChevronUp size={14} />
               </button>
-              <button type="button" onClick={() => move(i, 1)} className="p-1 rounded hover:bg-gray-200 text-gray-500" title="Move down">
+              <button
+                type="button"
+                onClick={() => move(i, 1)}
+                className="p-1 rounded hover:bg-gray-200 text-gray-500"
+                title="Move down"
+              >
                 <ChevronDown size={14} />
               </button>
-              <button type="button" onClick={() => remove(i)} className="p-1 rounded hover:bg-red-100 text-red-500" title="Remove">
+              <button
+                type="button"
+                onClick={() => remove(i)}
+                className="p-1 rounded hover:bg-red-100 text-red-500"
+                title="Remove"
+              >
                 <Trash2 size={14} />
               </button>
             </div>

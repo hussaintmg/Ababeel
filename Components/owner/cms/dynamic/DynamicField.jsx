@@ -100,6 +100,103 @@ function TokenStrip({ template, onChange, lookup }) {
   );
 }
 
+/* ---------------- diagnostics ---------------- */
+
+function FieldDiagnostics({ text, scopeHint = "", lookup, onChange }) {
+  const tokens = useMemo(() => {
+    return (tokenizeTemplate(text) || [])
+      .filter((s) => s.kind === "token")
+      .map((s) => s.value.replace(/^=/, "").split("|")[0].trim());
+  }, [text]);
+
+  if (!tokens.length) return null;
+
+  const diagnostics = [];
+
+  for (const tok of tokens) {
+    const root = tok.split(".")[0];
+    const leaf = tok.split(".").slice(1).join(".");
+
+    // 1. Wrong Alias Diagnostic (Req 51):
+    // If loop alias is e.g. "course" but template contains "item.title"
+    if (root === "item" && scopeHint && scopeHint !== "item") {
+      diagnostics.push({
+        id: `alias_${tok}`,
+        severity: "warning",
+        title: `Alias mismatch: "item" is not available in this scope`,
+        message: `Current repeater alias is "${scopeHint}".`,
+        actionLabel: leaf ? `Change to {{${scopeHint}.${leaf}}}` : `Change to {{${scopeHint}}}`,
+        onAction: () => {
+          const replacement = leaf ? `${scopeHint}.${leaf}` : scopeHint;
+          onChange(text.replace(new RegExp(`\\{\\{\\s*${tok}\\s*\\}\\}`, "g"), `{{${replacement}}}`));
+        },
+      });
+      continue;
+    }
+
+    // 2. Wrong List Usage Diagnostic (Req 50):
+    // e.g. `courses.title`
+    const rootVar = lookup(root);
+    if (rootVar && rootVar.type && rootVar.type.toLowerCase().includes("array") && leaf && !/^\d+/.test(leaf)) {
+      const singular = root.replace(/s$/, "") || "item";
+      diagnostics.push({
+        id: `list_${tok}`,
+        severity: "error",
+        title: `"${root}" returns an Array of records`,
+        message: `"${root}" contains multiple records. Use it as a repeater source (${root} → alias ${singular}), then bind "${singular}.${leaf}".`,
+      });
+      continue;
+    }
+
+    // 3. Single Document Diagnostic (Req 4 & 52):
+    // If user accesses `course.title` or `post.title` without a single document source configured
+    if (!scopeHint && !lookup(tok) && !lookup(root)) {
+      const isKnownModel = ["course", "candidate", "post", "user", "order", "product", "testimonial", "teamMember"].includes(root.toLowerCase());
+      if (isKnownModel) {
+        const modelName = root.charAt(0).toUpperCase() + root.slice(1);
+        diagnostics.push({
+          id: `missing_doc_${tok}`,
+          severity: "warning",
+          title: `No single ${modelName} document has been configured`,
+          message: `To use ${tok} here, first configure a single ${modelName} data source in the Data tab.`,
+        });
+      }
+    }
+  }
+
+  if (!diagnostics.length) return null;
+
+  return (
+    <div className="mt-2 space-y-1.5">
+      {diagnostics.map((d) => (
+        <div
+          key={d.id}
+          className={`rounded-lg border p-2 text-xs ${
+            d.severity === "error"
+              ? "border-red-200 bg-red-50 text-red-900"
+              : "border-amber-200 bg-amber-50 text-amber-900"
+          }`}
+        >
+          <div className="flex items-start gap-1.5 font-semibold">
+            <AlertTriangle size={13} className={`mt-0.5 shrink-0 ${d.severity === "error" ? "text-red-600" : "text-amber-600"}`} />
+            <span>{d.title}</span>
+          </div>
+          <p className="mt-0.5 text-[11px] leading-relaxed opacity-90">{d.message}</p>
+          {d.actionLabel ? (
+            <button
+              type="button"
+              onClick={d.onAction}
+              className="mt-1.5 inline-flex items-center gap-1 rounded bg-white px-2 py-0.5 font-mono text-[11px] font-medium shadow-xs border border-amber-300 hover:bg-amber-100 cursor-pointer"
+            >
+              {d.actionLabel}
+            </button>
+          ) : null}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /* ---------------- composer ---------------- */
 
 function Composer({ value, onChange, fieldType, multiline, scopeHint = "", activeSource = "" }) {
@@ -249,6 +346,12 @@ function Composer({ value, onChange, fieldType, multiline, scopeHint = "", activ
       </PickerPopover>
 
       <TokenStrip template={text} onChange={onChange} lookup={lookup} />
+      <FieldDiagnostics
+        text={text}
+        scopeHint={scopeHint}
+        lookup={lookup}
+        onChange={onChange}
+      />
     </div>
   );
 }

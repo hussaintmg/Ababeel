@@ -66,7 +66,16 @@ export default function BlockEditor({ block, onChange, features = {}, scopeHint 
     // author sees rather than the seventh.
     if (field.type === "animation") return null;
     if (field.type === "list") {
-      return <FieldRenderer field={field} value={value} onChange={onValue} renderField={renderLeaf} />;
+      return (
+        <FieldRenderer
+          field={field}
+          value={value}
+          onChange={onValue}
+          renderField={renderLeaf}
+          repeatConfig={block._repeat}
+          onSwitchToDataTab={() => setTab("data")}
+        />
+      );
     }
     return (
       <DynamicField

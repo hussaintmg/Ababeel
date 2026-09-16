@@ -10,7 +10,7 @@
  * (e.g. {{item.courseName}}) are displayed right at the top for instant 1-click binding.
  */
 import { useMemo, useState, useRef } from "react";
-import { Search, ChevronRight, X, Database, Sparkles, Loader2, ListOrdered, Check } from "lucide-react";
+import { Search, ChevronRight, X, Database, Sparkles, Loader2, ListOrdered, Check, AlertTriangle } from "lucide-react";
 import { useCmsVariables } from "@/context/CmsVariablesContext";
 import { searchVariables } from "@/lib/cms/search";
 import { typeIcon, typeColor, isCompatible, isArrayType } from "@/lib/cms/types";
@@ -208,10 +208,10 @@ export default function VariablePicker({
       {arrayAction ? (
         <div className="p-3 bg-amber-50 border-b border-amber-200 text-xs">
           <p className="font-semibold text-amber-900 mb-1">
-            <code>{arrayAction.path}</code> contains multiple items
+            <code>{arrayAction.path}</code> contains multiple records
           </p>
-          <p className="text-[11px] text-amber-700 mb-2">
-            Cannot bind an entire list directly to a {fieldType} property. Choose a helper:
+          <p className="text-[11px] text-amber-700 mb-2 leading-relaxed">
+            Cannot bind a list directly to a <b>{fieldType}</b> property. To display multiple cards, use a <b>repeater</b> in the Data tab. Or choose a transform:
           </p>
           <div className="flex flex-wrap gap-1.5">
             <button
@@ -483,6 +483,17 @@ function ModelGroup({ model, fieldType, onPick, scopeHint = "", activeSource = "
       </button>
       {open ? (
         <div className="pb-1 pl-1">
+          {!scopeHint && !isCurrentRepeaterSource ? (
+            <div className="mx-1 my-1.5 p-2 rounded-lg bg-amber-50 border border-amber-200 text-[11px] text-amber-900 leading-tight">
+              <div className="font-semibold text-amber-800 flex items-center gap-1 mb-0.5">
+                <AlertTriangle size={11} className="text-amber-600 shrink-0" />
+                <span>Single {model.label} source required</span>
+              </div>
+              <p className="text-amber-700">
+                To bind individual fields here, configure a single {model.label} source in the <b>Data tab</b> (e.g. Find by Slug), or repeat the component.
+              </p>
+            </div>
+          ) : null}
           <button
             type="button"
             disabled={!listCompatible}

@@ -83,6 +83,8 @@ export default function BlockDataTab({ block, onChange, features = {} }) {
     .filter((f) => ["text", "textarea", "richtext", "image", "video", "color", "select", "code"].includes(f.type))
     .map((f) => ({ key: f.key, label: f.label, fieldType: f.type }));
 
+  const hasListField = (def.fields || []).some((f) => f.type === "list");
+
   const setRepeat = (patch) => onChange({ ...block, _repeat: { ...repeat, ...patch } });
   const setCondProps = (next) => onChange({ ...block, _condProps: next });
 
@@ -189,6 +191,23 @@ export default function BlockDataTab({ block, onChange, features = {} }) {
                     className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
+
+                {hasListField ? (
+                  <div className="sm:col-span-2">
+                    <Label>Repeater Target</Label>
+                    <select
+                      value={repeat.target || "items"}
+                      onChange={(e) => setRepeat({ target: e.target.value })}
+                      className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                    >
+                      <option value="items">Repeat inner cards/items (1 component, multiple cards)</option>
+                      <option value="block">Repeat entire section/block (multiple sections)</option>
+                    </select>
+                    <p className="mt-1 text-[11px] text-gray-500">
+                      <b>Repeat inner cards</b> keeps one section header and repeats the cards from dynamic data.
+                    </p>
+                  </div>
+                ) : null}
               </div>
 
               {/* Guidance for card variables */}
@@ -241,6 +260,133 @@ export default function BlockDataTab({ block, onChange, features = {} }) {
           ) : (
             <p className="mt-2 text-[11px] text-gray-400">
               For a full card layout use the <b>Repeat (Collection)</b> block instead — it can hold several blocks per record.
+            </p>
+          )}
+        </div>
+      ) : null}
+
+      {/* ---------- single document source ---------- */}
+      {!repeat.enabled ? (
+        <div className="rounded-xl border border-gray-200 bg-gray-50/60 p-3">
+          <div className="flex items-center gap-2">
+            <Database size={14} className="text-gray-400" />
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+              Single Document Data Source
+            </span>
+            <button
+              type="button"
+              onClick={() =>
+                onChange({
+                  ...block,
+                  _dataSource: block._dataSource?.enabled
+                    ? { ...block._dataSource, enabled: false }
+                    : {
+                        enabled: true,
+                        model: "Course",
+                        mode: "single",
+                        strategy: "slug",
+                        lookupField: "slug",
+                        paramValue: "route.params.slug",
+                        alias: "course",
+                      },
+                })
+              }
+              className={`ml-auto relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                block._dataSource?.enabled ? "bg-blue-600" : "bg-gray-300"
+              }`}
+            >
+              <span
+                className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
+                  block._dataSource?.enabled ? "translate-x-5" : "translate-x-1"
+                }`}
+              />
+            </button>
+          </div>
+          {block._dataSource?.enabled ? (
+            <div className="mt-3 space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <Label>Model</Label>
+                  <select
+                    value={block._dataSource.model || "Course"}
+                    onChange={(e) => {
+                      const m = e.target.value;
+                      const alias = m.charAt(0).toLowerCase() + m.slice(1);
+                      onChange({
+                        ...block,
+                        _dataSource: { ...block._dataSource, model: m, alias },
+                      });
+                    }}
+                    className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                  >
+                    <option value="Course">Course</option>
+                    <option value="Candidate">Candidate</option>
+                    <option value="Post">Post</option>
+                    <option value="User">User</option>
+                    <option value="Order">Order</option>
+                    <option value="SiteSettings">SiteSettings</option>
+                  </select>
+                </div>
+                <div>
+                  <Label>Context Variable Name</Label>
+                  <input
+                    type="text"
+                    value={block._dataSource.alias || "course"}
+                    onChange={(e) =>
+                      onChange({
+                        ...block,
+                        _dataSource: { ...block._dataSource, alias: e.target.value },
+                      })
+                    }
+                    className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs font-mono outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <Label>Document Strategy</Label>
+                  <select
+                    value={block._dataSource.strategy || "slug"}
+                    onChange={(e) =>
+                      onChange({
+                        ...block,
+                        _dataSource: { ...block._dataSource, strategy: e.target.value },
+                      })
+                    }
+                    className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                  >
+                    <option value="slug">Find by Slug</option>
+                    <option value="id">Find by ID</option>
+                    <option value="currentUser">Current Authenticated User</option>
+                    <option value="first">First Published Record</option>
+                  </select>
+                </div>
+                <div>
+                  <Label>Lookup Path / Value</Label>
+                  <input
+                    type="text"
+                    value={block._dataSource.paramValue ?? "route.params.slug"}
+                    onChange={(e) =>
+                      onChange({
+                        ...block,
+                        _dataSource: { ...block._dataSource, paramValue: e.target.value },
+                      })
+                    }
+                    placeholder="route.params.slug"
+                    className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs font-mono outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+              <div className="rounded-lg bg-blue-50 border border-blue-200 p-2.5 text-xs text-blue-900">
+                <p className="font-semibold text-blue-800">
+                  Resolved single record: <code>{block._dataSource.alias || "course"}</code>
+                </p>
+                <p className="text-[11px] text-blue-700 mt-0.5 leading-relaxed">
+                  Go to the <b>Content</b> tab to bind fields: <code>{`{{${block._dataSource.alias || "course"}.title}}`}</code>, <code>{`{{${block._dataSource.alias || "course"}.level.name}}`}</code>, etc.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <p className="mt-2 text-[11px] text-gray-400">
+              Resolve a single document (e.g. for a detail page or hero) so Content can bind its fields.
             </p>
           )}
         </div>

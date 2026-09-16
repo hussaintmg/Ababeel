@@ -96,6 +96,49 @@ Assert-Check -Name "Prompt generator includes exact SDK Version 2.0.0" -Conditio
 Assert-Check -Name "Prompt generator includes official imports without hallucinations" -Condition ($promptGenContent.Contains("@platform/cms-sdk"))
 Assert-Check -Name "Prompt generator scopes fields to selected model" -Condition ($promptGenContent.Contains("fieldsToInclude"))
 Assert-Check -Name "Prompt generator provides explicit loop instructions and warns against item" -Condition ($promptGenContent.Contains("item"))
+Assert-Check -Name "Prompt generator instructs AI on registered relations without manual ID queries" -Condition ($promptGenContent.Contains("Registered relations"))
+
+# --- 7. One-Template Dynamic Repeater Architecture Verification ---
+Write-Host "`n>> 7. Verifying One-Template Dynamic Repeater Architecture..." -ForegroundColor Yellow
+$fieldsContent = Get-Content "Components/owner/cms/fields.jsx" -Raw
+Assert-Check -Name "fields.jsx implements isDynamicRepeat detection" -Condition ($fieldsContent.Contains("isDynamicRepeat"))
+Assert-Check -Name "fields.jsx renders exactly 1 Template Item in dynamic repeater mode" -Condition ($fieldsContent.Contains("1 Template Item"))
+Assert-Check -Name "fields.jsx hides manual item addition in dynamic repeater mode" -Condition ($fieldsContent.Contains("Items are generated automatically from dynamic data"))
+
+$bindingContent = Get-Content "lib/cms/binding.js" -Raw
+Assert-Check -Name "binding.js supports inner list repeater expansion (repeatInnerList)" -Condition ($bindingContent.Contains("repeatInnerList"))
+Assert-Check -Name "binding.js expands single template item N times without duplicating section" -Condition ($bindingContent.Contains("expandedList = items.map"))
+
+$blockEditorContent = Get-Content "Components/owner/cms/BlockEditor.jsx" -Raw
+Assert-Check -Name "BlockEditor passes repeatConfig and onSwitchToDataTab to list field renderer" -Condition ($blockEditorContent.Contains("repeatConfig={block._repeat}"))
+
+# --- 8. Universal Relation Registry & Batched Resolver Verification ---
+Write-Host "`n>> 8. Verifying Universal Relation Registry & Resolution..." -ForegroundColor Yellow
+Assert-Check -Name "lib/cms/relations.js exists" -Condition (Test-Path "lib/cms/relations.js")
+$relationsContent = Get-Content "lib/cms/relations.js" -Raw
+Assert-Check -Name "relations.js exports defineRelation" -Condition ($relationsContent.Contains("export function defineRelation"))
+Assert-Check -Name "relations.js exports getRelationsForModel" -Condition ($relationsContent.Contains("export function getRelationsForModel"))
+Assert-Check -Name "relations.js exports resolveRelationsForDocs" -Condition ($relationsContent.Contains("export async function resolveRelationsForDocs"))
+Assert-Check -Name "dataQuery.js imports and calls resolveRelationsForDocs" -Condition ($dataQueryContent.Contains("resolveRelationsForDocs"))
+$schemaRegistryContent = Get-Content "lib/cms/schemaRegistry.js" -Raw
+Assert-Check -Name "schemaRegistry.js incorporates explicit relations into describeModel" -Condition ($schemaRegistryContent.Contains("getRelationsForModel"))
+
+# --- 9. Real-Time Diagnostics & Educational Guidance Verification ---
+Write-Host "`n>> 9. Verifying Real-Time Diagnostics & Guidance..." -ForegroundColor Yellow
+$dynamicFieldContent = Get-Content "Components/owner/cms/dynamic/DynamicField.jsx" -Raw
+Assert-Check -Name "DynamicField implements FieldDiagnostics" -Condition ($dynamicFieldContent.Contains("FieldDiagnostics"))
+Assert-Check -Name "DynamicField detects item.* alias mismatch with 1-click fix" -Condition ($dynamicFieldContent.Contains("Alias mismatch: `"item`" is not available"))
+Assert-Check -Name "DynamicField detects wrong list direct access (e.g. courses.title)" -Condition ($dynamicFieldContent.Contains("returns an Array of records"))
+Assert-Check -Name "DynamicField warns when single document source is unconfigured" -Condition ($dynamicFieldContent.Contains("No single") -and $dynamicFieldContent.Contains("document has been configured"))
+Assert-Check -Name "VariablePicker provides single-document guidance banner" -Condition ($variablePickerContent.Contains("Single") -and $variablePickerContent.Contains("source required"))
+
+# --- 10. Required End-to-End Tests & Generic Model Support Verification ---
+Write-Host "`n>> 10. Verifying Required End-to-End Tests (E2E 1, 2, 3, 4)..." -ForegroundColor Yellow
+$e2eContent = Get-Content "tests/e2e-pages.test.js" -Raw
+Assert-Check -Name "E2E Test 1: Course Grid with courses: Course[] and repeater loop verified" -Condition ($e2eContent.Contains("E2E Page 1: /courses"))
+Assert-Check -Name "E2E Test 2: Single Course Detail with course: Course and slug query verified" -Condition ($e2eContent.Contains("E2E Page 2: /courses/[slug]"))
+Assert-Check -Name "E2E Test 3: Nested curriculum loop (course -> modules -> lessons) verified" -Condition ($e2eContent.Contains("Multi-level Nested Loop"))
+Assert-Check -Name "E2E Test 4: Generic non-Course models (Post, User, Candidate, Order) registered" -Condition ($relationsContent.Contains('sourceModel: "Post"') -and $relationsContent.Contains('sourceModel: "Order"'))
 
 Write-Host "`n================================================================================" -ForegroundColor Cyan
 Write-Host " VERIFICATION SUMMARY: $script:passed Passed, $script:failed Failed" -ForegroundColor Cyan
