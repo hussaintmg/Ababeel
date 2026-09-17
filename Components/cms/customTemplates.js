@@ -79,7 +79,7 @@ export async function fetchRemoteCustomSections() {
   if (!Array.isArray(sections)) throw new Error("Invalid section library response");
   const remote = sections.map(formatSdkSectionAsTemplate).filter(Boolean);
   const ids = new Set(remote.map(t => t.id));
-  const drafts = local.filter(t => t.persistence === "local" || (!t.persistence && !t.isSdkCustom)).filter(t => !ids.has(t.id)).map(t => ({...t,persistence:"local",desc:"Local draft — not saved to server"}));
+  const drafts = local.filter(t => t.persistence === "local" || (!t.persistence && !t.isSdkCustom)).filter(t => !ids.has(t.id)).map(t => ({...t,persistence:"local",desc:"Local draft â€” not saved to server"}));
   const merged = [...remote,...drafts]; persist(merged); return merged;
 }
 
