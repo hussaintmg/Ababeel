@@ -311,3 +311,74 @@ describe("empty collection and repeater preview handling", () => {
     expect(out.props._items[0].blocks[0].props.text).toContain("First Aid at Work");
   });
 });
+
+describe("safe object-to-string extraction preventing React Error #31", () => {
+  test("resolves a 27-key session object into a safe string instead of a raw object", () => {
+    const sessionObj = {
+      _id: "60d0fe4f5311236168a109ca",
+      id: "60d0fe4f5311236168a109ca",
+      sourceType: "courseReference",
+      course: "60d0fe4f5311236168a109cb",
+      courseId: "60d0fe4f5311236168a109cb",
+      courseName: "Emergency First Aid at Work",
+      courseSlug: "emergency-first-aid-at-work",
+      referenceName: "Weekend Batch A",
+      referenceCode: "REF-101",
+      referenceNumber: "101",
+      startDate: "2026-10-01",
+      endDate: "2026-10-03",
+      examDate: "2026-10-04",
+      registrationDeadline: "2026-09-25",
+      mode: "in-person",
+      modeLabel: "In-Person",
+      location: "London",
+      duration: "3 Days",
+      seats: 12,
+      status: "open",
+      showInSchedule: true,
+      price: 250,
+      coursePrice: 250,
+      currency: "GBP",
+      currencySymbol: "£",
+      registrationAvailable: true,
+      registrationUrl: "/register/101",
+    };
+
+    const out = resolveProps(
+      { title: "{{session}}" },
+      { session: sessionObj }
+    );
+    expect(typeof out.title).toBe("string");
+    expect(out.title).toBe("Emergency First Aid at Work");
+  });
+
+  test("resolves a CourseLevel object {_id, name, slug, color} into its name", () => {
+    const levelObj = {
+      _id: "60d0fe4f5311236168a109cd",
+      name: "Level 3",
+      slug: "level-3",
+      color: "#3b82f6",
+    };
+
+    const out = resolveProps(
+      { title: "{{course.level}}" },
+      { course: { level: levelObj } }
+    );
+    expect(typeof out.title).toBe("string");
+    expect(out.title).toBe("Level 3");
+  });
+
+  test("resolves a media object into its url or src string", () => {
+    const mediaObj = {
+      url: "https://example.com/image.png",
+      alt: "Test Image",
+    };
+
+    const out = resolveProps(
+      { imageSrc: "{{media}}" },
+      { media: mediaObj }
+    );
+    expect(typeof out.imageSrc).toBe("string");
+    expect(out.imageSrc).toBe("https://example.com/image.png");
+  });
+});

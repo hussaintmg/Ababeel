@@ -16,6 +16,12 @@ const CourseReferenceSchema = new mongoose.Schema({
     index: true,
   },
   courseId: { type: String, required: true },
+  level: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "CourseLevel",
+    default: null,
+    index: true,
+  },
   courseCode: { type: String, default: "", trim: true },
   courseName: { type: String, required: true },
   coursePrice: { type: Number, default: 0 },
@@ -62,10 +68,9 @@ const CourseReferenceSchema = new mongoose.Schema({
   atcAddress: { type: String, default: "" },
   country: { type: String, default: "United Kingdom" },
 
-  // Candidates and payment
+  // Candidates
   candidates: [{ type: mongoose.Schema.Types.ObjectId, ref: "Candidate" }],
   candidatesCount: { type: Number, default: 0 },
-  invoiceId: { type: mongoose.Schema.Types.ObjectId },
 
   // Public Visibility & CMS Presentation
   title: { type: String, default: "", trim: true },
@@ -76,7 +81,12 @@ const CourseReferenceSchema = new mongoose.Schema({
   isFeatured: { type: Boolean, default: false, index: true },
   featured: { type: Boolean, default: false, index: true },
   isPublished: { type: Boolean, default: true, index: true },
-  awardingBody: { type: mongoose.Schema.Types.Mixed, default: "" },
+  awardingBody: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "AwardingBody",
+    default: null,
+    index: true,
+  },
   awardingBodyName: { type: String, default: "", trim: true },
   levelName: { type: String, default: "", trim: true },
   instructor: { type: mongoose.Schema.Types.Mixed, default: () => ({}) },

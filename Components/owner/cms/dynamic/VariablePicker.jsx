@@ -27,8 +27,8 @@ function FieldNode({ field, basePath, fieldType, onPick, depth = 0, query, scope
   const hasChildren = !!field.children?.length;
   const compat = getCompatibility(fieldType, field.type);
   const isRecommended = compat.state === COMPATIBILITY_STATES.RECOMMENDED;
-  const isConvertible = compat.state === COMPATIBILITY_STATES.CONVERTIBLE;
-  const isIncompatible = compat.state === COMPATIBILITY_STATES.INCOMPATIBLE;
+  const isConvertible = compat.state === COMPATIBILITY_STATES.CONVERTIBLE || (hasChildren && (field.type === "Reference" || field.type === "Object"));
+  const isIncompatible = !isRecommended && !isConvertible;
   const isArr = isArrayType(field.type);
 
   return (
@@ -57,8 +57,8 @@ function FieldNode({ field, basePath, fieldType, onPick, depth = 0, query, scope
         )}
         <button
           type="button"
-          disabled={isIncompatible && !isArr}
-          draggable={!isIncompatible}
+          disabled={isIncompatible && !isArr && !hasChildren}
+          draggable={!isIncompatible || hasChildren}
           onDragStart={(e) => {
             e.dataTransfer.setData("application/x-cms-variable", path);
             e.dataTransfer.setData("text/plain", `{{${path}}}`);
@@ -69,16 +69,20 @@ function FieldNode({ field, basePath, fieldType, onPick, depth = 0, query, scope
               onAction("array_picked", { path, field });
               return;
             }
-            if (!isIncompatible) onPick(path, field);
+            if (hasChildren && isIncompatible) {
+              setOpen((o) => !o);
+              return;
+            }
+            onPick(path, field);
           }}
           className={`flex-1 flex items-center gap-2 py-1 text-left min-w-0 ${
-            isIncompatible && !isArr ? "cursor-not-allowed" : "cursor-pointer"
+            isIncompatible && !isArr && !hasChildren ? "cursor-not-allowed" : "cursor-pointer"
           }`}
           title={
             isRecommended
               ? `Recommended: Insert {{${path}}}`
               : isConvertible
-              ? `Convertible (${compat.reason}): Insert {{${path}}}`
+              ? `Convertible (${compat.reason || "Object/Reference"}): Insert {{${path}}}`
               : `Incompatible: ${compat.reason}`
           }
         >
