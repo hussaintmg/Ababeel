@@ -94,11 +94,9 @@ export async function POST(request) {
     let session = null;
     let sessionModel = "CourseReference";
     if (sessionId) {
-      session = await CourseReference.findById(sessionId).lean().catch(() => null);
-      if (!session) {
-        session = await CourseReferenceSession.findById(sessionId).lean().catch(() => null);
-        sessionModel = "CourseReferenceSession";
-      }
+      session = await getPublicSessionById(sessionId);
+      if(!session || session.courseId!==String(course._id) || !registrationCta(session).available) return badRequestResponse('That session is not available for this course');
+      sessionModel=session.sourceType;
     }
 
     const fields = await getFormFields();

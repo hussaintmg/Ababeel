@@ -4,9 +4,11 @@ import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit";
 import { resolvePageContext } from "@/lib/cms/pageData";
 import { getGlobalSettings } from "@/lib/cms";
 import { schemaTree } from "@/lib/cms/variableRegistry";
-import { buildSampleContext, fillMissing } from "@/lib/cms/sampleData";
+import { buildSampleContext } from "@/lib/cms/sampleData";
 import { injectPublicSectionData } from "@/lib/cms/publicSectionData";
-import { injectTrainingData } from "@/lib/cms/trainingBlocks";
+import { resolvePublicBlocks } from "@/lib/cms/publicData";
+import { flattenBlockTree } from "@/lib/cms/blockTree";
+import { getFeatures } from "@/lib/cms/features";
 
 export const dynamic = "force-dynamic";
 
@@ -34,7 +36,7 @@ export async function POST(request) {
       return badRequestResponse("Invalid JSON body");
     }
 
-    const mode = ["live", "sample", "mixed"].includes(body?.mode) ? body.mode : "live";
+    const mode = body?.mode === "sample" ? "sample" : "live";
 
     if (mode === "sample") {
       return successResponse({
@@ -43,17 +45,15 @@ export async function POST(request) {
     }
 
     const settings = await getGlobalSettings();
-    const { context, meta } = await resolvePageContext(
-      { dataSources: body?.dataSources, dynamicRoute: body?.dynamicRoute },
-      { params: body?.params || {}, user, globalSettings: settings }
-    );
-
-    const finalContext =
-      mode === "mixed" ? fillMissing(context, buildSampleContext(schemaTree())) : context;
-
-    const filled = await injectPublicSectionData(await injectTrainingData(Array.isArray(body.blocks) ? body.blocks.slice(0, 200) : []), body.params || {});
-    const catalogue = Object.fromEntries(filled.filter(block => block.props?._data || block.props?._items).map(block => [block.id, { _data: block.props._data, _items: block.props._items }]));
-    return successResponse({ data: { mode, context: finalContext, meta, catalogue } });
+    const features=getFeatures(settings);
+    const doc={blocks:Array.isArray(body.blocks)?body.blocks.slice(0,200):[],dataSources:features.dynamicCms && features.liveData ? body?.dataSources : [],dynamicRoute:features.dynamicCms && features.liveData ? body?.dynamicRoute : null};
+    const {context,meta}=await resolvePageContext(doc,{params:body?.params||{},user,globalSettings:settings});
+    const diagnostics=Object.entries(meta).filter(([,value])=>value.error).map(([source,value])=>({source,code:'query_failed',message:value.error}));
+    let filled=[];
+    try { filled=(await resolvePublicBlocks(doc,{params:body.params||{},resolved:{context,meta,features},strict:true})).blocks; }
+    catch(error) {diagnostics.push({code:'catalogue_failed',message:error.message||'Catalogue query failed'});}
+    const catalogue=Object.fromEntries(flattenBlockTree(filled).filter(block=>block.props?._data||block.props?._items).map(block=>[block.id,{_data:block.props._data,_items:block.props._items}]));
+    return successResponse({data:{mode,context,meta,catalogue,diagnostics,blocks:filled}});
   } catch (error) {
     console.error("CMS preview data error:", error);
     return safeErrorResponse(error, 500);

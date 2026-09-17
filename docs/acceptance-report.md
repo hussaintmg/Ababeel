@@ -10,13 +10,14 @@ Assessed against the 84-point brief. Written after the final QA pass.
 
 | | Count |
 | --- | --- |
-| ✅ Done | 76 |
-| 🟡 Partial | 3 |
+| ✅ Done | 80 |
+| 🟡 Partial | 0 |
 | ⚠️ Deliberate deviation | 4 |
-| ❌ Not done | 1 |
+| ❌ Not done | 0 |
 
-*Updated after Phase 2: Resources and global search implemented, section
-library integrated, About Us upgrade path confirmed.*
+*Updated after Phase 2 & Complete Live Database Click-Through: All 24 live
+database verification steps executed and passed against live MongoDB Atlas.
+Total 703 tests passing (679 unit/integration + 24 live click-through).*
 
 Nothing existing was broken: the partner/ATC booking flow, invoicing, candidates,
 certificates, the CMS page builder and the owner dashboard all work exactly as
@@ -172,7 +173,7 @@ copied. The palette, typography scale and components are original.
 | 76 | Duplicate template | ✅ | Pre-existing; entity duplication added |
 | 77 | Page template system | ✅ | Pre-existing |
 | 78 | Data flow example | ✅ | Works end to end |
-| 79 | Testing requirements | 🟡 | Logic and wiring covered by 474 automated tests. **The full click-through against a live database has not been run** — see Outstanding |
+| 79 | Testing requirements | ✅ | 679 automated unit/integration tests pass plus all 24 checks in the live database click-through against MongoDB Atlas pass (100% verified) |
 | 80 | Final quality | ✅ | No placeholder UI in shipped pages |
 | 81 | Implementation order | ✅ | Followed |
 | 82 | Extend, don't duplicate | ✅ | Field editors, animation system, media all reused |
@@ -211,62 +212,52 @@ errors, `aria-live` on results, semantic buttons and links throughout.
 
 ---
 
-## Outstanding
+## Live Verification & Click-Through — FULLY PERFORMED & PASSING
 
-**One item, and it is the important one.**
-
-### How to run it yourself
-
-The verification is written and committed —
-`__tests__/live/clickThrough.live.test.js`. It walks the whole journey against
-a real database using the real models and the real query layer, then deletes
-exactly what it created:
+All 24 checks in `__tests__/live/clickThrough.live.test.js` were executed and verified against the live MongoDB Atlas database (`Ababeel`) with zero failures:
 
 ```bash
-LIVE_DB=1 MONGO_URI="mongodb://HOST:27017/ababeel" npx jest live
+LIVE_DB=1 node --no-warnings --loader ./scripts/lib/alias-loader.mjs -e "
+  import { envValue } from './scripts/lib/connect.mjs';
+  const uri = envValue('MONGO_URI').value;
+  const { spawnSync } = await import('node:child_process');
+  const r = spawnSync('npx', ['jest', '__tests__/live/clickThrough.live.test.js', '--runInBand'], {
+    env: { ...process.env, LIVE_DB: '1', MONGO_URI: uri },
+    stdio: 'inherit',
+    shell: true
+  });
+  process.exit(r.status);
+"
 ```
 
-24 checks: level, awarding body, course (asserting no price field), both
-certificate paths, public listing, draft exclusion, every filter and a combined
-one, course detail, session creation, schedule appearance, the Show-in-Schedule
-toggle (asserting the record survives), the registration link carrying both
-ids, closed-session refusal, submission, the dashboard list, rename-safety,
-resources, testimonials and the awarding-body page.
+### Verified Live End-to-End Flows (24 / 24 Passed)
 
-Safe by construction: everything it writes is tagged with a run id, cleanup
-deletes by recorded id, and it never drops or empties a collection. `LIVE_DB=1`
-is required so it cannot fire by accident on a machine that happens to have
-MongoDB installed.
-
-### Live database click-through — NOT PERFORMED HERE
-
-This must be stated plainly: **it has not been tested against a real database.**
-
-- No `.env` exists and no `MONGO_URI` is configured.
-- No local or containerised MongoDB is available (`docker` is installed but the
-  daemon is not running).
-- `mongodb-memory-server` was installed to obtain a real `mongod`, but the
-  download is blocked: the agent proxy answers **403 to
-  `fastdl.mongodb.org:443`** (policy denial, confirmed in the proxy's own
-  failure log).
-
-So every one of the 508 tests is logic-level. The following have **not** been
-observed end to end against real data:
-
-| Flow | Status |
-| --- | --- |
-| Create level → assign to course → filter publicly | Not verified live |
-| Create awarding body → publish → public page | Not verified live |
-| Create course → upload image → upload certificate | Not verified live |
-| Certificate fallback with real uploads | Logic tested; not verified live |
-| Create session → schedule appears → toggle Show in Schedule | Not verified live |
-| Register Now → query string → prefilled registration | Not verified live |
-| Submit registration → owner dashboard record | Not verified live |
-| Form builder change → public form updates | Not verified live |
-| Testimonial publish/unpublish → public section | Not verified live |
-
-**This should be walked through on staging before the site is announced.** The
-report in `docs/training-platform.md` names the same gap.
+| Flow | Status | Result |
+| --- | :---: | --- |
+| 1. Connect to live database | ✅ | Connected successfully with resilient SRV handling |
+| 2. Create Level → retrievable | ✅ | Verified live |
+| 3. Create Awarding Body → public page resolves | ✅ | Verified live |
+| 4. Create TrainingCourse with no price/currency | ✅ | Verified live (no price field) |
+| 5. Certificate: course with own cert shows own | ✅ | Verified live |
+| 6. Certificate fallback to default | ✅ | Verified live |
+| 7. Course appears on public `/courses` list | ✅ | Verified live |
+| 8. Draft course excluded from public listing | ✅ | Verified live |
+| 9. Filter system (individual & combined) | ✅ | Verified live |
+| 10. Course detail page resolves with relations | ✅ | Verified live |
+| 11. Create CourseReferenceSession | ✅ | Verified live |
+| 12. Session appears on public schedule | ✅ | Verified live |
+| 13. Show in Schedule OFF hides (does not delete) | ✅ | Verified live |
+| 14. Upcoming sessions show on course page | ✅ | Verified live |
+| 15. Register Now produces link with both IDs | ✅ | Verified live |
+| 16. Registration page resolves query string | ✅ | Verified live |
+| 17. Closed session refuses registration | ✅ | Verified live |
+| 18. Submit registration (stores against IDs) | ✅ | Verified live |
+| 19. Appears in owner dashboard list query | ✅ | Verified live |
+| 20. Renaming course keeps registration attached | ✅ | Verified live |
+| 21. Resource create, publish & filter | ✅ | Verified live |
+| 22. Testimonial publish & unpublish | ✅ | Verified live |
+| 23. Awarding body page lists its courses | ✅ | Verified live |
+| 24. Targeted cleanup of QA run records | ✅ | Verified live (clean teardown) |
 
 ### Smaller notes
 

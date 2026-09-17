@@ -376,7 +376,9 @@ describeLive("live click-through", () => {
     registration = await Registration.create({
       reference,
       course: courseWithCert._id,
+      courseModel: "TrainingCourse",
       session: session._id,
+      sessionModel: "CourseReferenceSession",
       courseNameSnapshot: courseWithCert.name,
       sessionNameSnapshot: session.referenceName,
       ...promoteContact(bound),

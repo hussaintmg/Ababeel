@@ -252,17 +252,48 @@ async function main() {
     const courseIds = [];
     for (const c of sampleCourses) {
       let doc = await db.collection("defaultcourses").findOne({ slug: c.slug });
+      let courseId;
       if (!doc) {
         const res = await db.collection("defaultcourses").insertOne({
           ...c,
           createdAt: new Date(),
           updatedAt: new Date(),
         });
-        courseIds.push({ id: res.insertedId, name: c.name, code: c.code, price: c.price });
+        courseId = res.insertedId;
+        courseIds.push({ id: courseId, name: c.name, code: c.code, price: c.price });
         console.log(`+ Default Course inserted: ${c.name}`);
       } else {
-        courseIds.push({ id: doc._id, name: doc.name, code: doc.code, price: doc.price });
+        courseId = doc._id;
+        courseIds.push({ id: courseId, name: doc.name, code: doc.code, price: doc.price });
         console.log(`✓ Default Course exists: ${c.name}`);
+      }
+
+      // Also ensure TrainingCourse collection has this course
+      let tc = await db.collection("trainingcourses").findOne({ slug: c.slug });
+      if (!tc) {
+        await db.collection("trainingcourses").insertOne({
+          _id: courseId,
+          name: c.name,
+          title: c.name,
+          slug: c.slug,
+          code: c.code,
+          price: c.price,
+          currency: c.currency,
+          level: c.level,
+          awardingBody: c.awardingBody,
+          category: c.category,
+          duration: c.duration,
+          durationDays: c.durationDays,
+          shortDescription: c.shortDescription,
+          description: c.description,
+          featured: c.featured,
+          displayOrder: c.displayOrder,
+          status: "published",
+          isPublished: true,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+        console.log(`+ Training Course synced: ${c.name}`);
       }
     }
 
@@ -335,8 +366,9 @@ async function main() {
     for (const ref of sampleReferences) {
       if (!ref.course) continue;
       let existing = await db.collection("coursereferences").findOne({ referenceNumber: ref.referenceNumber });
+      let refId;
       if (!existing) {
-        await db.collection("coursereferences").insertOne({
+        const res = await db.collection("coursereferences").insertOne({
           ...ref,
           currency: "GBP",
           currencySymbol: "£",
@@ -345,9 +377,39 @@ async function main() {
           createdAt: new Date(),
           updatedAt: new Date(),
         });
+        refId = res.insertedId;
         console.log(`+ Course Reference created: ${ref.referenceName}`);
       } else {
+        refId = existing._id;
         console.log(`✓ Course Reference exists: ${ref.referenceName}`);
+      }
+
+      // Also ensure CourseReferenceSession collection has this intake
+      let sess = await db.collection("coursereferencesessions").findOne({ referenceCode: ref.referenceCode });
+      if (!sess) {
+        await db.collection("coursereferencesessions").insertOne({
+          _id: refId,
+          course: ref.course,
+          referenceName: ref.referenceName,
+          referenceCode: ref.referenceCode,
+          referenceNumber: ref.referenceNumber,
+          startDate: ref.startDate,
+          endDate: ref.endDate,
+          mode: ref.mode,
+          modeLabel: ref.modeLabel,
+          location: ref.location,
+          duration: ref.duration,
+          seats: ref.seats,
+          status: "scheduled",
+          showInSchedule: true,
+          coursePrice: ref.coursePrice,
+          price: ref.coursePrice,
+          currency: "GBP",
+          currencySymbol: "£",
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+        console.log(`+ Course Reference Session created: ${ref.referenceName}`);
       }
     }
 

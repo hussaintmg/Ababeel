@@ -9,6 +9,8 @@ import mongoose from "mongoose";
  */
 const cmsCustomSectionSchema = new mongoose.Schema(
   {
+    kind: { type: String, enum: ["sdk", "template"], default: "sdk" },
+    template: { type: mongoose.Schema.Types.Mixed, default: null },
     sectionId: {
       type: String,
       required: true,

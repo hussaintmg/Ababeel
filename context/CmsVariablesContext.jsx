@@ -12,7 +12,7 @@
  */
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import axios from "axios";
-import { sourceVariables, sourceTreeNode, PAGE_CATEGORY } from "@/lib/cms/sourceVariables";
+import { sourceVariables, sourceTreeNode, loopVariables, PAGE_CATEGORY } from "@/lib/cms/sourceVariables";
 
 const CmsVariablesContext = createContext(null);
 
@@ -98,10 +98,26 @@ export function CmsVariablesProvider({ children }) {
   );
 
   const value = useMemo(
-    () => ({ ...merged, reload: load, sync, setPageSources, byName, lookup: (name) => byName.get(name) || null }),
-    [merged, load, sync, setPageSources, byName]
+    () => ({ ...merged, pageSources: page.sources, reload: load, sync, setPageSources, byName, lookup: (name) => byName.get(name) || null }),
+    [merged, page.sources, load, sync, setPageSources, byName]
   );
 
+  return <CmsVariablesContext.Provider value={value}>{children}</CmsVariablesContext.Provider>;
+}
+
+export function CmsLoopScope({ source, alias = "item", children }) {
+  const parent = useCmsVariables();
+  const value = useMemo(() => {
+    if (!source) return parent;
+    const local = loopVariables(parent.variables, source, alias);
+    const names = new Set(local.map(v => v.name));
+    const variables = [...local, ...parent.variables.filter(v => !names.has(v.name) && !v.name.startsWith(`${alias}.`))];
+    const byName = new Map(variables.map(v => [v.name, v]));
+    return { ...parent, variables, byName, loopSource: source, loopAlias: alias,
+      loopFields: local.filter(v => v.name.startsWith(`${alias}.`)).map(v => ({...v, name:v.name.slice(alias.length + 1)})),
+      scopeError: local.length ? "" : `Connect data: source "${source}" is not a configured collection.`,
+      lookup: name => byName.get(name) || null };
+  }, [parent, source, alias]);
   return <CmsVariablesContext.Provider value={value}>{children}</CmsVariablesContext.Provider>;
 }
 
@@ -112,6 +128,7 @@ export function useCmsVariables() {
       loading: false,
       error: "",
       variables: [],
+      pageSources: [],
       tree: [],
       categories: [],
       registry: { lastSyncedAt: null, modelCount: 0, variableCount: 0, deprecatedCount: 0 },

@@ -1,3 +1,4 @@
+import { SOURCE_OPERATIONS } from "@/lib/cms/sourceDefinition";
 import { requireCmsCapability } from "@/lib/cms/permissions";
 import { safeErrorResponse, successResponse, badRequestResponse } from "@/lib/errors";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit";
@@ -17,10 +18,10 @@ export async function GET(request) {
       const desc = getModelDescriptor(model);
       if (!desc) return badRequestResponse("Unknown model");
       return successResponse({
-        data: { model: desc, populatable: populatableFields(model), operators: FILTER_OPS },
+        data: { model: desc, populatable: populatableFields(model), operators: FILTER_OPS, operations: SOURCE_OPERATIONS },
       });
     }
-    return successResponse({ data: { models: allowedModels(), operators: FILTER_OPS } });
+    return successResponse({ data: { models: allowedModels(), operators: FILTER_OPS, operations: SOURCE_OPERATIONS } });
   } catch (error) {
     console.error("CMS data meta error:", error);
     return safeErrorResponse(error, 500);
@@ -49,7 +50,7 @@ export async function POST(request) {
     }
     if (!body?.source?.model) return badRequestResponse("A data source with a model is required");
 
-    const result = await runDataSource(body.source, body.context || {});
+    const result = await runDataSource(body.source, { ...(body.context || {}), user });
     return successResponse({ data: result });
   } catch (error) {
     console.error("CMS data query error:", error);

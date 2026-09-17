@@ -1897,7 +1897,7 @@ function AnimatedBlock({ animation, animDuration, animDelay, id, blockType = "",
   );
 }
 
-export function BlockView({ block, showWarnings = false }) {
+export function BlockView({ block, data = null, sampleMode = false, showWarnings = false }) {
   const Cmp = RENDERERS[block?.type];
   if (!Cmp) return null;
   const { style, maxWidth, className, anchorId, animation, animDuration, animDelay } = buildWrapper(block);
@@ -1935,7 +1935,7 @@ export function BlockView({ block, showWarnings = false }) {
           </span>
         </div>
       ) : null}
-      <Cmp p={block.props || {}} s={block._style || {}} showWarnings={showWarnings} />
+      <Cmp block={block} data={block._runtimeData || data} sampleMode={sampleMode} p={block.props || {}} s={block._style || {}} showWarnings={showWarnings} />
     </>
   );
   const inner = maxWidth ? (
@@ -1998,23 +1998,23 @@ function MissingVariableWarning({ missing }) {
  * it is omitted the blocks render exactly as stored, which is what keeps every
  * pre-existing static page working untouched.
  */
-export default function BlockRenderer({ blocks, data = null, showWarnings = false }) {
+export default function BlockRenderer({ blocks, data = null, sampleMode = false, showWarnings = false }) {
   const rendered = useMemo(() => {
     if (!Array.isArray(blocks) || blocks.length === 0) return [];
     if (!data) return blocks;
     try {
-      return expandBlocks(blocks, data, { isBuilder: showWarnings });
+      return expandBlocks(blocks, data, { isBuilder: showWarnings, sampleMode });
     } catch (err) {
       console.error("CMS binding failed, falling back to raw blocks:", err?.message);
       return blocks;
     }
-  }, [blocks, data, showWarnings]);
+  }, [blocks, data, showWarnings, sampleMode]);
 
   if (!rendered.length) return null;
   return (
     <>
       {rendered.map((b, i) => (
-        <BlockView key={b.id || `block-${i}`} block={b} showWarnings={showWarnings} />
+        <BlockView key={b.id || `block-${i}`} block={b} data={data} sampleMode={sampleMode} showWarnings={showWarnings} />
       ))}
     </>
   );

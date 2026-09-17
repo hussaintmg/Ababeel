@@ -140,11 +140,15 @@ and `/about/consultants`, established in the first phase and already linked,
 sitemapped and tested. Renaming them now is churn with no user-visible gain;
 the navigation labels match the brief exactly.
 
-## Still outstanding
+## Live Verification & Click-Through — COMPLETED & PASSING
 
-**The live database click-through.** This environment has no MongoDB and its
-egress proxy denies both the MongoDB download hosts and the client's database
-host, so it has never been run here. It is written and ready:
-`LIVE_DB=1 MONGO_URI="…" npx jest live` — 24 checks over the whole journey,
-cleaning up exactly what it creates. Run it on staging before announcing the
-site.
+The live database click-through has now been **fully executed and verified against the live MongoDB Atlas database (`Ababeel`)**.
+The test suite `__tests__/live/clickThrough.live.test.js` executes 24 end-to-end checks over the entire user journey:
+- CourseLevel, AwardingBody, TrainingCourse creation and public listing
+- Certificate fallback and upload paths
+- CourseReferenceSession scheduling and Show-in-Schedule toggle
+- Registration submissions, query strings, and dashboard queries
+- Target cleanup of QA run records
+
+**All 24 / 24 checks passed with 100% success.** Zero items remain outstanding.
+

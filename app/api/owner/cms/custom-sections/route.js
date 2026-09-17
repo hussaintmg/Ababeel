@@ -46,12 +46,16 @@ export async function POST(request) {
       options = {},
       defaultProps = {},
       previewHtml = "",
+      kind = "sdk",
+      template = null,
     } = body;
 
     if (!name || typeof name !== "string") {
       return badRequestResponse("Section name is required");
     }
 
+    if (!["sdk", "template"].includes(kind)) return badRequestResponse("Invalid template kind");
+    if (kind === "template" && (!template || template.version !== 2 || !Array.isArray(template.blocks))) return badRequestResponse("Version 2 template blocks are required");
     const id = sectionId || `sdk_sec_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
 
     await connectDB();
@@ -60,6 +64,8 @@ export async function POST(request) {
       { sectionId: id },
       {
         sectionId: id,
+        kind,
+        template: kind === "template" ? template : null,
         name: name.trim(),
         category: (category || "Custom Sections").trim(),
         description: (description || "").trim(),

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { CmsLoopScope } from "@/context/CmsVariablesContext";
 import { BLOCK_TYPES, defaultStyle } from "@/Components/cms/blockSchemas";
 import {
   FieldRenderer, Label, TextInput, ColorInput, ImagePicker, SelectInput,
@@ -19,7 +20,7 @@ import DecorationEditor from "@/Components/owner/cms/DecorationEditor";
 import ReducedMotionNotice from "@/Components/owner/cms/ReducedMotionNotice";
 import { scopeCss } from "@/lib/cms/scopeCss";
 
-export default function BlockEditor({ block, onChange, features = {}, scopeHint = "", previewDoc = null, onOpenStudio = null }) {
+function BlockEditorContent({ block, onChange, features = {}, scopeHint = "", previewDoc = null, onOpenStudio = null }) {
   if (!block) return null;
   const def = BLOCK_TYPES[block.type];
   const [tab, setTab] = useState("content");
@@ -56,7 +57,7 @@ export default function BlockEditor({ block, onChange, features = {}, scopeHint 
     onChange({ ...block, _fallbacks: next });
   };
 
-  const effectiveScope = block._repeat?.enabled ? (block._repeat?.item || "item") : scopeHint;
+  const effectiveScope = block._repeat?.enabled ? (block._repeat?.alias || block._repeat?.item || "item") : scopeHint;
   const effectiveSource = block._repeat?.enabled ? (block._repeat?.source || "") : "";
 
   // Every leaf property gets the Static/Dynamic/Formula control; list fields
@@ -72,7 +73,7 @@ export default function BlockEditor({ block, onChange, features = {}, scopeHint 
           value={value}
           onChange={onValue}
           renderField={renderLeaf}
-          repeatConfig={block._repeat}
+          repeatConfig={!pathKey || pathKey === field.key ? block._repeat : null}
           onSwitchToDataTab={() => setTab("data")}
         />
       );
@@ -573,4 +574,9 @@ function cleanFieldLabel(label, key = "") {
       ))}
     </div>
   );
+}
+
+export default function BlockEditor(props) {
+  const repeat = props.block?._repeat;
+  return <CmsLoopScope source={repeat?.enabled ? repeat.source : ""} alias={repeat?.alias || repeat?.item || "item"}><BlockEditorContent {...props} /></CmsLoopScope>;
 }

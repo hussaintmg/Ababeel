@@ -1,3 +1,4 @@
+import { normalizeSource } from "@/lib/cms/sourceDefinition";
 import connectDB from "@/utils/db";
 import CmsDataSource from "@/models/CmsDataSource";
 import { requireCmsCapability } from "@/lib/cms/permissions";
@@ -8,7 +9,8 @@ export const dynamic = "force-dynamic";
 
 function serialize(doc) {
   return {
-    id: String(doc._id),
+    ...normalizeSource(doc),
+    sourceId: String(doc._id),
     key: doc.key,
     label: doc.label || doc.key,
     model: doc.model,
@@ -57,23 +59,14 @@ export async function PUT(request) {
     }
     if (!isAllowedModel(body?.model)) return badRequestResponse("Unknown or blocked model");
 
+    let definition;
+    try { definition=normalizeSource(body); } catch(error) { return badRequestResponse(error.message); }
     await connectDB();
     const doc = await CmsDataSource.findOneAndUpdate(
       { key },
       {
         $set: {
-          key,
-          label: String(body.label || key).slice(0, 120),
-          model: body.model,
-          mode: body.mode === "single" || body.mode === "count" ? body.mode : "list",
-          filters: Array.isArray(body.filters) ? body.filters.slice(0, 20) : [],
-          match: body.match === "any" ? "any" : "all",
-          sortField: String(body.sortField || "createdAt"),
-          sortDir: body.sortDir === "asc" ? "asc" : "desc",
-          limit: Math.min(Math.max(parseInt(body.limit, 10) || 12, 1), 200),
-          skip: Math.max(parseInt(body.skip, 10) || 0, 0),
-          paginate: !!body.paginate,
-          populate: Array.isArray(body.populate) ? body.populate.slice(0, 10) : [],
+          ...definition,
           updatedByEmail: user.email || "",
         },
       },

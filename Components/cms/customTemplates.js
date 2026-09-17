@@ -31,6 +31,7 @@ function persist(list) {
 // Convert a database CmsCustomSection record into a template card object
 export function formatSdkSectionAsTemplate(sec) {
   if (!sec) return null;
+  if (sec.kind === "template") return { ...sec.template, id: sec.sectionId, custom: true, persistence: "server" };
   const sectionId = sec.sectionId || sec._id || `sdk_${Date.now()}`;
   return {
     id: sectionId,
@@ -38,6 +39,7 @@ export function formatSdkSectionAsTemplate(sec) {
     category: sec.category || "Custom Sections",
     desc: sec.description || "Custom SDK Section with scoped code & styles",
     custom: true,
+    persistence: "server",
     isSdkCustom: true,
     sdkData: {
       sectionId,
@@ -69,83 +71,36 @@ export function formatSdkSectionAsTemplate(sec) {
   };
 }
 
-// Fetch custom sections from the backend API, merge with local cache, and persist
+// Server-confirmed templates replace their cache; only explicitly local drafts survive.
 export async function fetchRemoteCustomSections() {
-  const localList = loadCustomTemplates();
-  try {
-    const res = await axios.get("/api/owner/cms/custom-sections");
-    const sections = res.data?.data?.sections || res.data?.sections || [];
-    if (Array.isArray(sections)) {
-      const remoteTemplates = sections.map(formatSdkSectionAsTemplate).filter(Boolean);
-      // Map remote by ID
-      const remoteMap = new Map(remoteTemplates.map((t) => [t.id, t]));
-      // Keep local standard custom templates that are not SDK sections or not on remote yet
-      const keptLocal = localList.filter((lt) => !remoteMap.has(lt.id));
-      const merged = [...remoteTemplates, ...keptLocal];
-      persist(merged);
-      return merged;
-    }
-  } catch (err) {
-    console.warn("Could not sync remote custom sections (using local cache):", err?.message);
-  }
-  return localList;
+  const local = loadCustomTemplates();
+  const res = await axios.get("/api/owner/cms/custom-sections");
+  const sections = res.data?.data?.sections || res.data?.sections;
+  if (!Array.isArray(sections)) throw new Error("Invalid section library response");
+  const remote = sections.map(formatSdkSectionAsTemplate).filter(Boolean);
+  const ids = new Set(remote.map(t => t.id));
+  const drafts = local.filter(t => t.persistence === "local" || (!t.persistence && !t.isSdkCustom)).filter(t => !ids.has(t.id)).map(t => ({...t,persistence:"local",desc:"Local draft — not saved to server"}));
+  const merged = [...remote,...drafts]; persist(merged); return merged;
 }
 
-// Save a set of live blocks as a standard custom template (non-SDK or multi-block)
-export function saveCustomTemplate(name, blocks) {
-  const list = loadCustomTemplates();
-  const tpl = {
-    id: `ct_${Date.now().toString(36)}`,
-    name: name || "My template",
-    category: "My Templates",
-    desc: `${(blocks || []).length} block(s) â€¢ saved ${new Date().toLocaleDateString()}`,
-    custom: true,
-    // Store in the same shape createBlocksFromTemplate expects: {type, props, style}
-    blocks: (blocks || []).map((b) => ({
-      type: b.type,
-      props: structuredClone(b.props || {}),
-      style: structuredClone(b._style || {}),
-    })),
-  };
-  const next = [tpl, ...list];
-  persist(next);
-  return tpl;
+export async function saveCustomTemplate(name, blocks, dataSources = []) {
+  const id = `ct_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,6)}`;
+  const template = {version:2,id,name:name || "My template",category:"My Templates",custom:true,blocks:JSON.parse(JSON.stringify(blocks || [])),dataSources:JSON.parse(JSON.stringify(dataSources))};
+  await axios.post("/api/owner/cms/custom-sections", {sectionId:id,name:template.name,kind:"template",template});
+  const saved={...template,persistence:"server"}; persist([saved,...loadCustomTemplates()]); return saved;
 }
 
-// Save or update an SDK custom section to backend API and local storage
 export async function saveSdkCustomTemplate(payload) {
-  const sectionId =
-    payload.sectionId || `sdk_sec_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
-  const cleanPayload = {
-    ...payload,
-    sectionId,
-  };
-
-  let savedRecord = null;
-  try {
-    const res = await axios.post("/api/owner/cms/custom-sections", cleanPayload);
-    savedRecord = res.data?.data?.section || res.data?.section || cleanPayload;
-  } catch (err) {
-    console.warn("API save failed, persisting locally in browser:", err?.message);
-    savedRecord = cleanPayload;
-  }
-
-  const tpl = formatSdkSectionAsTemplate(savedRecord);
-  const list = loadCustomTemplates();
-  const filtered = list.filter((t) => t.id !== sectionId);
-  const next = [tpl, ...filtered];
-  persist(next);
-  return tpl;
+  const sectionId=payload.sectionId || `sdk_sec_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,6)}`;
+  const res=await axios.post("/api/owner/cms/custom-sections", {...payload,sectionId});
+  const record=res.data?.data?.section || res.data?.section;
+  if(!record) throw new Error("Server did not confirm the saved section");
+  const template=formatSdkSectionAsTemplate(record);
+  persist([template,...loadCustomTemplates().filter(t=>t.id!==sectionId)]); return template;
 }
 
-// Delete a custom template by id (both local and server if it's an SDK section)
 export async function deleteCustomTemplate(id) {
-  try {
-    await axios.delete(`/api/owner/cms/custom-sections?sectionId=${encodeURIComponent(id)}`);
-  } catch (err) {
-    console.warn("Remote delete failed, removing locally:", err?.message);
-  }
-  const next = loadCustomTemplates().filter((t) => t.id !== id);
-  persist(next);
-  return next;
+  const local=loadCustomTemplates();
+  if(local.find(t=>t.id===id)?.persistence!=="local") await axios.delete(`/api/owner/cms/custom-sections?sectionId=${encodeURIComponent(id)}`);
+  const next=local.filter(t=>t.id!==id); persist(next); return next;
 }

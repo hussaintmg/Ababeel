@@ -132,7 +132,7 @@ export default function VariablePicker({
   // The floating palette supplies its own title bar, so it hides this one.
   hideHeader = false,
 }) {
-  const { variables, tree, loading } = useCmsVariables();
+  const { variables, tree, loading, loopFields = [], scopeError } = useCmsVariables();
   const [query, setQuery] = useState("");
   const [tab, setTab] = useState("models");
   const inputRef = useRef(null);
@@ -143,50 +143,7 @@ export default function VariablePicker({
     [variables, query]
   );
 
-  // Match the active model from the collection source
-  const activeModel = useMemo(() => {
-    if (!activeSource && !scopeHint) return null;
-    const s = String(activeSource || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-    if (s) {
-      const match = tree.find(
-        (m) =>
-          m.key.toLowerCase().replace(/[^a-z0-9]/g, "") === s ||
-          m.collectionKey.toLowerCase().replace(/[^a-z0-9]/g, "") === s ||
-          m.name.toLowerCase().replace(/[^a-z0-9]/g, "") === s
-      );
-      if (match) return match;
-    }
-    if (s.includes("course")) {
-      const match = tree.find((m) => m.name.toLowerCase().includes("course"));
-      if (match) return match;
-    }
-    if (scopeHint && scopeHint.toLowerCase().includes("course")) {
-      const match = tree.find((m) => m.name.toLowerCase().includes("course"));
-      if (match) return match;
-    }
-    return null;
-  }, [activeSource, scopeHint, tree]);
-
-  // Quick fields to show when in repeat mode
-  const quickFields = useMemo(() => {
-    if (activeModel?.fields?.length) {
-      return activeModel.fields;
-    }
-    // Fallback common fields for courses or general lists
-    return [
-      { name: "courseName", type: "String", label: "Course Name" },
-      { name: "coursePrice", type: "Number", label: "Price" },
-      { name: "currencySymbol", type: "String", label: "Currency" },
-      { name: "duration", type: "String", label: "Duration" },
-      { name: "mode", type: "String", label: "Delivery Mode" },
-      { name: "location", type: "String", label: "Location" },
-      { name: "referenceNumber", type: "String", label: "Ref Number" },
-      { name: "seats", type: "Number", label: "Available Seats" },
-      { name: "thumbnail", type: "Image", label: "Thumbnail / Image" },
-      { name: "description", type: "String", label: "Description" },
-      { name: "startDate", type: "Date", label: "Start Date" },
-    ];
-  }, [activeModel]);
+  const quickFields = loopFields;
 
   const [arrayAction, setArrayAction] = useState(null);
 
@@ -245,6 +202,7 @@ export default function VariablePicker({
         </div>
       ) : null}
 
+      {scopeError ? <p className="p-2 text-xs text-amber-800 bg-amber-50">{scopeError}</p> : null}
       {/* Repeater Scope Quick-Pick banner */}
       {scopeHint ? (
         <div className="p-2.5 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-200/80">

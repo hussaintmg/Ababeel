@@ -5,7 +5,7 @@
 // A template block = { type, props, style? }. `createBlocksFromTemplate` turns
 // these into real blocks (fresh ids + merged default _style). `style` seeds the
 // block's Design tab (gradients, animations, spacing, hover, etc.).
-import { newId, defaultStyle } from "@/Components/cms/blockSchemas";
+import { cloneTemplateBlocks } from "@/lib/cms/templateTree";
 import { PUBLIC_TEMPLATES } from "@/Components/cms/publicPages/catalog";
 import { PUBLIC_WEBSITE_TEMPLATES } from "@/Components/cms/publicPageSections";
 import { STUDIO_TEMPLATES, refreshLegacyTemplate } from "@/Components/cms/studioCatalog";
@@ -551,25 +551,5 @@ export const TEMPLATES = [
   ...STUDIO_TEMPLATES,
 ].map(template => (template.id.startsWith('aba-') || template.id.startsWith('public') || template.id.startsWith('pub-') || template.id.startsWith('studio-')) ? template : refreshLegacyTemplate(template));
 
-function safeClone(data) {
-  if (!data) return {};
-  try {
-    return structuredClone(data);
-  } catch {
-    try {
-      return JSON.parse(JSON.stringify(data));
-    } catch {
-      return { ...data };
-    }
-  }
-}
+export function createBlocksFromTemplate(template) { return cloneTemplateBlocks(template?.blocks || []); }
 
-// Turn a template's block specs into real, editable blocks.
-export function createBlocksFromTemplate(template) {
-  return (template?.blocks || []).map((spec) => ({
-    id: newId(),
-    type: spec.type,
-    props: safeClone(spec.props),
-    _style: { ...defaultStyle(), ...(spec.style || {}) },
-  }));
-}

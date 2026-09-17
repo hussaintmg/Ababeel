@@ -25,6 +25,7 @@ import {
   AlertCircle,
   ExternalLink,
 } from "lucide-react";
+import PreviewFrame from "@/Components/owner/cms/PreviewFrame";
 import SdkCustomBlock from "@/Components/cms/SdkCustomBlock";
 import { saveSdkCustomTemplate } from "@/Components/cms/customTemplates";
 import { toast } from "react-toastify";
@@ -563,43 +564,8 @@ return (
     code: `// Dynamic data bindings + interactive category filtering
 const [selectedCategory, setSelectedCategory] = useState("All");
 
-// Read courses from live CMS data, or use realistic sample fallback
-const courseList = (data?.courses && data.courses.length > 0)
-  ? data.courses
-  : (data?.courseRef && data.courseRef.length > 0)
-    ? data.courseRef
-    : [
-        {
-          _id: "c1",
-          courseName: "NVQ Level 6 Diploma in Occupational Health & Safety Practice",
-          coursePrice: "£1,450",
-          duration: "6-8 Weeks",
-          mode: "Online / Distance Learning",
-          referenceNumber: "PRO-L6-OHS",
-          category: "Health & Safety",
-          seats: "Open",
-        },
-        {
-          _id: "c2",
-          courseName: "NVQ Level 7 Diploma in Strategic Health & Safety Leadership",
-          coursePrice: "£1,850",
-          duration: "10-12 Weeks",
-          mode: "Online Portfolio Assessment",
-          referenceNumber: "PRO-L7-LEAD",
-          category: "Management",
-          seats: "Open",
-        },
-        {
-          _id: "c3",
-          courseName: "Emergency First Aid at Work (EFAW) Accredited",
-          coursePrice: "£175",
-          duration: "1 Day Intensive",
-          mode: "On-Site Classroom Training",
-          referenceNumber: "HFD-EFAW-1D",
-          category: "First Aid",
-          seats: "Limited",
-        },
-      ];
+// Read the explicitly selected preview or public data context
+const courseList = Array.isArray(data?.courses) ? data.courses : Array.isArray(data?.courseRef) ? data.courseRef : [];
 
 const categories = ["All", "Health & Safety", "Management", "First Aid"];
 
@@ -1130,39 +1096,7 @@ return (
     code: `// Dynamic Course Qualification Matrix
 const [selectedMode, setSelectedMode] = useState("All");
 
-const rawList = Array.isArray(data?.courses) && data.courses.length
-  ? data.courses
-  : Array.isArray(data?.courseRef) && data.courseRef.length
-  ? data.courseRef
-  : [
-      {
-        courseName: "NVQ Level 6 Diploma in Occupational Health and Safety Practice",
-        coursePrice: "£1,450",
-        duration: "6 - 12 Months",
-        mode: "Online / Portfolio",
-        level: "Level 6 RQF",
-        passRate: "99.2%",
-        slug: "nvq-level-6-occupational-health-safety",
-      },
-      {
-        courseName: "NVQ Level 3 Certificate in Occupational Health and Safety",
-        coursePrice: "£850",
-        duration: "3 - 6 Months",
-        mode: "Online",
-        level: "Level 3 RQF",
-        passRate: "98.9%",
-        slug: "nvq-level-3-occupational-health-safety",
-      },
-      {
-        courseName: "Site Safety Plus (CITB SMSTS)",
-        coursePrice: "£495",
-        duration: "5 Days",
-        mode: "Classroom / Virtual",
-        level: "Site Safety",
-        passRate: "97.5%",
-        slug: "smsts-site-management-safety-training-scheme",
-      },
-    ];
+const rawList = Array.isArray(data?.courses) ? data.courses : Array.isArray(data?.courseRef) ? data.courseRef : [];
 
 const filtered = selectedMode === "All"
   ? rawList
@@ -1304,6 +1238,8 @@ export default function SectionStudioModal({
   isOpen,
   onClose,
   initialSection = null,
+  data = {},
+  sampleMode = false,
   onSave,
   onInsert,
 }) {
@@ -2225,21 +2161,9 @@ export default function SectionStudioModal({
 
               {/* Viewport Frame with SdkCustomBlock */}
               <div className="flex-1 min-h-0 bg-slate-900/50 p-4 flex items-center justify-center overflow-auto preview-scrollbar">
-                <div
-                  style={{
-                    width:
-                      previewDevice === "mobile"
-                        ? "375px"
-                        : previewDevice === "tablet"
-                        ? "768px"
-                        : "100%",
-                    maxWidth: "100%",
-                    transition: "width 0.3s ease",
-                  }}
-                  className="h-full bg-white rounded-2xl shadow-2xl overflow-y-auto border border-slate-700/60 preview-scrollbar flex flex-col"
-                >
-                  <SdkCustomBlock block={previewBlock} />
-                </div>
+                <PreviewFrame width={previewDevice === "mobile" ? 390 : previewDevice === "tablet" ? 820 : 1440} height={600}>
+                  <SdkCustomBlock block={previewBlock} data={data} sampleMode={sampleMode} />
+                </PreviewFrame>
               </div>
             </div>
           </div>

@@ -482,7 +482,7 @@ export function ListEditor({
     ? field.fields
     : [{ key: "value", label: field?.itemLabel || "Value", type: "text" }];
 
-  const isDynamicRepeat = Boolean(repeatConfig?.enabled && repeatConfig?.source);
+  const isDynamicRepeat = Boolean(repeatConfig?.enabled && repeatConfig?.source && repeatConfig.target !== "block" && (repeatConfig.targetProp || "items") === field?.key);
   const repeatSource = repeatConfig?.source || "";
   const repeatAlias = repeatConfig?.alias || repeatConfig?.item || "item";
 
@@ -553,7 +553,7 @@ export function ListEditor({
                       field={f}
                       value={val}
                       onChange={(v) => updateTemplate(f.key, v)}
-                      repeatConfig={repeatConfig}
+                      repeatConfig={null}
                       onSwitchToDataTab={onSwitchToDataTab}
                     />
                   )}
@@ -677,7 +677,7 @@ export function ListEditor({
                       field={f}
                       value={val}
                       onChange={(v) => update(i, f.key, v)}
-                      repeatConfig={repeatConfig}
+                      repeatConfig={null}
                       onSwitchToDataTab={onSwitchToDataTab}
                     />
                   )}

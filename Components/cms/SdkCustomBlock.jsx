@@ -7,14 +7,17 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { getPath } from "@/lib/cms/expression";
 import { createSampleItem } from "@/lib/cms/binding";
+import { scopeCss, blockScopeId } from "@/lib/cms/scopeCss";
 import * as CmsSdk from "@/lib/cms/sdk";
 
 /* ---------- Cache & Script Loaders ---------- */
 const _loadedScripts = new Set();
+const _scriptPromises = new Map();
 export function loadExternalScript(src) {
   if (typeof window === "undefined" || !src) return Promise.resolve();
   if (_loadedScripts.has(src)) return Promise.resolve();
-  return new Promise((resolve) => {
+  if (_scriptPromises.has(src)) return _scriptPromises.get(src);
+  const promise = new Promise((resolve) => {
     // Check if already in DOM
     if (document.querySelector(`script[src="${src}"]`)) {
       _loadedScripts.add(src);
@@ -33,6 +36,8 @@ export function loadExternalScript(src) {
     };
     document.head.appendChild(s);
   });
+  _scriptPromises.set(src, promise);
+  return promise;
 }
 
 const _loadedFonts = new Set();
@@ -201,7 +206,7 @@ export function prepareExecutableCode(rawCode) {
  * Renders a custom section built in the Section Code Studio (SDK).
  * Supports JSX, React Hooks, Framer Motion, GSAP, Tailwind, Google Fonts, and API actions.
  */
-export default function SdkCustomBlock({ p = {}, s = {}, block = null, data = null, showWarnings = false }) {
+export default function SdkCustomBlock({ p = {}, s = {}, block = null, data = null, showWarnings = false, sampleMode = false }) {
   const actualProps = block?.props || p || {};
   const actualStyle = block?._style || s || {};
   const code = actualProps._code || actualProps.code || "";
@@ -214,6 +219,13 @@ export default function SdkCustomBlock({ p = {}, s = {}, block = null, data = nu
   const [CompiledComponent, setCompiledComponent] = useState(null);
   const [compilationError, setCompilationError] = useState(null);
   const [isCompiling, setIsCompiling] = useState(false);
+  const [prevCode, setPrevCode] = useState(code);
+
+  if (prevCode !== code) {
+    setPrevCode(code);
+    setCompiledComponent(null);
+    setCompilationError(null);
+  }
 
   // Load Google Font if requested
   useEffect(() => {
@@ -231,18 +243,10 @@ export default function SdkCustomBlock({ p = {}, s = {}, block = null, data = nu
     }
   }, [options.enableTailwind]);
 
-  // Load GSAP if requested
-  useEffect(() => {
-    if (options.enableGsap) {
-      loadExternalScript("https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js").then(() => {
-        loadExternalScript("https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js");
-      });
-    }
-  }, [options.enableGsap]);
-
   // Provide sample fallback when collections are empty so SDK sections render dynamically
   const effectiveData = useMemo(() => {
-    const d = data || {};
+    const d = block?._runtimeData || data || {};
+    if (!sampleMode) return d;
     const hasCourses =
       (Array.isArray(d.courses) && d.courses.length > 0) ||
       (Array.isArray(d.courseRef) && d.courseRef.length > 0) ||
@@ -257,20 +261,17 @@ export default function SdkCustomBlock({ p = {}, s = {}, block = null, data = nu
       };
     }
     return d;
-  }, [data]);
+  }, [data, block?._runtimeData, sampleMode]);
 
-  // Determine whether code is JSX/React Component or HTML
-  const isJsxOrComponent = useMemo(() => {
-    if (!code) return false;
-    const trimmed = code.trim();
-    return (
-      trimmed.includes("return") ||
-      trimmed.includes("<") ||
-      trimmed.startsWith("function") ||
-      trimmed.startsWith("const ") ||
-      trimmed.includes("=>")
-    );
-  }, [code]);
+  // Stable closures read the latest runtime without recreating component identity.
+  const runtimeRef = useRef({ props: actualProps, data: effectiveData });
+  runtimeRef.current = { props: actualProps, data: effectiveData };
+  const runtimeScopes = useMemo(() => Object.fromEntries(["props", "data"].map(key => [key, new Proxy({}, {
+    get: (_, prop) => runtimeRef.current[key]?.[prop],
+    has: (_, prop) => prop in (runtimeRef.current[key] || {}),
+    ownKeys: () => Reflect.ownKeys(runtimeRef.current[key] || {}),
+    getOwnPropertyDescriptor: (_, prop) => ({ configurable: true, enumerable: true, value: runtimeRef.current[key]?.[prop] }),
+  })])), []);
 
   // Compile / evaluate component code
   useEffect(() => {
@@ -291,8 +292,8 @@ export default function SdkCustomBlock({ p = {}, s = {}, block = null, data = nu
       if (isPlainHtml) {
         if (active) {
           setCompiledComponent(() => {
-            return function HtmlRenderer({ props: compProps }) {
-              const interpolated = interpolateHtml(trimmed, compProps, data);
+            return function HtmlRenderer({ props: compProps, data: currentData }) {
+              const interpolated = interpolateHtml(trimmed, compProps, currentData);
               return <div className="cms-sdk-html" dangerouslySetInnerHTML={{ __html: interpolated }} />;
             };
           });
@@ -304,6 +305,11 @@ export default function SdkCustomBlock({ p = {}, s = {}, block = null, data = nu
       // React / JSX Component compilation
       setIsCompiling(true);
       try {
+        if (options.enableGsap) {
+          await loadExternalScript("https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js");
+          await loadExternalScript("https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js");
+          if (window.gsap && window.ScrollTrigger) window.gsap.registerPlugin(window.ScrollTrigger);
+        }
         const Babel = await ensureBabel();
         if (!active) return;
 
@@ -363,8 +369,8 @@ export default function SdkCustomBlock({ p = {}, s = {}, block = null, data = nu
           typeof window !== "undefined" ? window.gsap : null,
           axios,
           toast,
-          actualProps,
-          effectiveData,
+          runtimeScopes.props,
+          runtimeScopes.data,
           ...sdkValues,
           ...lucideValues,
         ];
@@ -401,21 +407,16 @@ export default function SdkCustomBlock({ p = {}, s = {}, block = null, data = nu
     return () => {
       active = false;
     };
-  }, [code, effectiveData, actualProps.mode]);
+  }, [code, actualProps.mode, options.enableGsap, runtimeScopes]);
 
   // Scoped CSS styles
   const scopedCss = useMemo(() => {
     if (!css || typeof css !== "string") return "";
-    return `
-      .${uniqueId} {
-        ${font ? `font-family: '${font}', sans-serif;` : ""}
-      }
-      ${css}
-    `;
+    return scopeCss(css, uniqueId);
   }, [css, font, uniqueId]);
 
   return (
-    <SdkErrorBoundary sectionName={sectionName}>
+    <SdkErrorBoundary key={code} sectionName={sectionName}>
       <CmsSdk.CMSDataContext.Provider
         value={{
           data: effectiveData,
@@ -425,7 +426,7 @@ export default function SdkCustomBlock({ p = {}, s = {}, block = null, data = nu
           theme: CmsSdk.cms.theme,
         }}
       >
-        <div className={`cms-sdk-section ${uniqueId}`} style={font ? { fontFamily: `'${font}', sans-serif` } : undefined}>
+        <div className={`cms-sdk-section ${blockScopeId(uniqueId)}`} style={font ? { fontFamily: `'${font}', sans-serif` } : undefined}>
           {scopedCss ? <style dangerouslySetInnerHTML={{ __html: scopedCss }} /> : null}
 
           {compilationError ? (

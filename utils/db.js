@@ -7,36 +7,62 @@ try {
 
 let isConnected = false;
 let connecting = null;
-// When the database is unreachable, every request would otherwise wait out the
-// selection timeout again. Remembering the failure for a moment means the first
-// request in each short window pays that wait and the rest fail instantly, so an
-// outage makes the site fall back to its built-in content quickly rather than
-// making every visitor wait five seconds for the same answer.
 let failedAt = 0;
 const RETRY_AFTER_MS = 3000;
 
 /**
+ * Resilient SRV resolver for environments where the default local DNS resolver
+ * refuses or does not support SRV lookups (e.g. Windows local loopback DNS).
+ */
+async function resolveSrvUri(uri) {
+  if (!uri || !uri.startsWith("mongodb+srv://")) return uri;
+  try {
+    const m = /^mongodb\+srv:\/\/([^:]+):([^@]+)@([^/?]+)(\/[^?]*)?(\?.*)?$/.exec(uri);
+    if (!m) return uri;
+    const [_, user, pass, host, dbPath = "", query = ""] = m;
+
+    try {
+      dns.setServers(["8.8.8.8", "1.1.1.1"]);
+    } catch {}
+
+    const srvRecords = await new Promise((res, rej) =>
+      dns.resolveSrv("_mongodb._tcp." + host, (err, r) => (err ? rej(err) : res(r)))
+    );
+    if (!srvRecords || srvRecords.length === 0) return uri;
+
+    let txtOptions = "";
+    try {
+      const txtRecords = await new Promise((res, rej) =>
+        dns.resolveTxt(host, (err, r) => (err ? rej(err) : res(r)))
+      );
+      txtOptions = (txtRecords || []).flat().join("&");
+    } catch {}
+
+    const hosts = srvRecords.map((r) => `${r.name}:${r.port}`).join(",");
+    const params = new URLSearchParams(txtOptions || "");
+    if (query) {
+      const extraParams = new URLSearchParams(query.replace(/^\?/, ""));
+      for (const [k, v] of extraParams.entries()) params.set(k, v);
+    }
+    if (!params.has("tls") && !params.has("ssl")) params.set("tls", "true");
+    if (!params.has("authSource")) params.set("authSource", "admin");
+
+    return `mongodb://${user}:${pass}@${hosts}${dbPath}?${params.toString()}`;
+  } catch {
+    return uri;
+  }
+}
+
+/**
  * Connect to MongoDB.
  *
- * Two things here are deliberate, and both were the difference between a
- * database blip and the whole site going down.
- *
  * `bufferCommands: false` — by default Mongoose queues every query while it is
- * disconnected and rejects each one ten seconds later. With the database down,
- * a page that reads three documents spent thirty seconds rendering and then
- * returned a 500. Off, a query fails at once and the caller's fallback runs
- * while the visitor is still waiting a normal amount of time.
- *
- * The failure is re-thrown rather than logged and swallowed. Swallowing it left
- * every caller believing it had a connection, so their `try` blocks never ran
- * and the error surfaced later as an unhandled rejection from deep inside a
- * render. A caller that wants to carry on without the database can catch this;
- * one that cannot, fails honestly.
+ * disconnected and rejects each one ten seconds later. Off, a query fails at once
+ * and the caller's fallback runs while the visitor is still waiting a normal amount
+ * of time.
  */
 export default async function connectDB() {
   if (isConnected && mongoose.connection.readyState === 1) return;
-  // Several requests arriving together must share one attempt rather than
-  // opening a connection each.
   if (connecting) return connecting;
   if (failedAt && Date.now() - failedAt < RETRY_AFTER_MS) {
     throw new Error("MongoDB is unreachable");
@@ -45,11 +71,13 @@ export default async function connectDB() {
   const rawUri = (process.env.MONGO_URI || "").trim();
   const cleanUri = rawUri.replace(/\/+(\?)/, "$1").replace(/\/+$/, "");
 
-  connecting = mongoose
-    .connect(cleanUri, {
+  connecting = (async () => {
+    const uriToConnect = await resolveSrvUri(cleanUri);
+    return mongoose.connect(uriToConnect, {
       bufferCommands: false,
-      serverSelectionTimeoutMS: 5000,
-    })
+      serverSelectionTimeoutMS: 8000,
+    });
+  })()
     .then(() => {
       isConnected = true;
       failedAt = 0;

@@ -20,7 +20,7 @@ import { TEMPLATES, TEMPLATE_CATEGORIES, createBlocksFromTemplate } from "@/Comp
 import SectionStudioModal from "@/Components/owner/cms/SectionStudioModal";
 import BlockEditor from "@/Components/owner/cms/BlockEditor";
 import BlockRenderer from "@/Components/cms/BlockRenderer";
-import { CmsVariablesProvider, useCmsVariables } from "@/context/CmsVariablesContext";
+import { CmsVariablesProvider, useCmsVariables, CmsLoopScope } from "@/context/CmsVariablesContext";
 import DataSourcesPanel from "@/Components/owner/cms/dynamic/DataSourcesPanel";
 import DataInspector from "@/Components/owner/cms/dynamic/DataInspector";
 import PreviewFrame, { DEVICES } from "@/Components/owner/cms/PreviewFrame";
@@ -28,6 +28,8 @@ import { formatHtml } from "@/lib/cms/formatHtml";
 import VariablesFloatingPanel from "@/Components/owner/cms/dynamic/VariablesFloatingPanel";
 import { getFeatures } from "@/lib/cms/features";
 import { buildSampleContext } from "@/lib/cms/sampleData";
+
+import { insertTemplateSources, updateSdkInstance } from "@/lib/cms/templateTree";
 
 const ICONS = {
   Sparkles, Heading, Type, Image: ImageIcon, LayoutGrid, BarChart3,
@@ -61,7 +63,7 @@ function ChildBlocks({ block, onChange, features, scopeHint, previewDoc, onOpenS
   };
 
   return (
-    <div className="rounded-lg border border-dashed border-blue-200 bg-blue-50/40 p-3">
+    <CmsLoopScope source={block.props?.source} alias={scopeHint}><div className="rounded-lg border border-dashed border-blue-200 bg-blue-50/40 p-3">
       <p className="text-[11px] font-semibold uppercase tracking-wide text-blue-600 mb-2">
         Repeated design — rendered once per record
       </p>
@@ -127,7 +129,7 @@ function ChildBlocks({ block, onChange, features, scopeHint, previewDoc, onOpenS
           </Modal>
         ) : null}
       </AnimatePresence>
-    </div>
+    </div></CmsLoopScope>
   );
 }
 
@@ -277,7 +279,10 @@ function PageBuilderInner({ pageKey, meta }) {
   const [features, setFeatures] = useState(() => getFeatures(null));
   const [dataSources, setDataSources] = useState([]);
   const [dynamicRoute, setDynamicRoute] = useState(null);
-  const [previewMode, setPreviewMode] = useState("static"); // static | live | sample
+  const [previewMode, setPreviewMode] = useState("live"); // static | live | sample
+  const [previewParams, setPreviewParams] = useState({});
+  const [previewError, setPreviewError] = useState("");
+  const previewRequest = useRef(0);
   const [previewData, setPreviewData] = useState(null);
   const [previewCatalogue, setPreviewCatalogue] = useState({});
   const [previewMeta, setPreviewMeta] = useState({});
@@ -296,6 +301,7 @@ function PageBuilderInner({ pageKey, meta }) {
     return () => window.removeEventListener("resize", sync);
   }, []);
   const [showData, setShowData] = useState(false);
+  useEffect(() => { const connect = () => setShowData(true); window.addEventListener("cms:connect-data", connect); return () => window.removeEventListener("cms:connect-data", connect); }, []);
   const [showInspector, setShowInspector] = useState(false);
   const [showVariables, setShowVariables] = useState(false);
   const { tree, setPageSources } = useCmsVariables();
@@ -333,10 +339,10 @@ function PageBuilderInner({ pageKey, meta }) {
   useEffect(() => {
     setCustomTemplates(loadCustomTemplates());
     fetchRemoteCustomSections().then((remote) => {
-      if (Array.isArray(remote) && remote.length > 0) {
+      if (Array.isArray(remote)) {
         setCustomTemplates(remote);
       }
-    });
+    }).catch(() => toast.error("Could not refresh section library"));
   }, []);
 
   // Feature switches come from the same global CMS settings as the rest of the
@@ -396,6 +402,9 @@ function PageBuilderInner({ pageKey, meta }) {
   );
 
   const loadPreviewData = useCallback(async () => {
+    const requestId = ++previewRequest.current;
+    setPreviewError("");
+    setPreviewCatalogue({});
     if (previewMode === "static") {
       setPreviewData(null);
       setPreviewMeta({});
@@ -410,20 +419,22 @@ function PageBuilderInner({ pageKey, meta }) {
     try {
       const res = await axios.post(
         "/api/owner/cms/preview/data",
-        { dataSources, dynamicRoute, blocks: (blocks || []).slice(0, 50), params: {}, mode: "mixed" },
+        { dataSources, dynamicRoute, blocks: (blocks || []).slice(0, 50), params: previewParams, mode: "live" },
         { withCredentials: true }
       );
+      if (requestId !== previewRequest.current) return;
       setPreviewData(res.data?.data?.context || {});
       setPreviewMeta(res.data?.data?.meta || {});
       setPreviewCatalogue(res.data?.data?.catalogue || {});
     } catch (e) {
-      toast.error(e?.response?.data?.error || "Could not load live data");
+      if (requestId !== previewRequest.current) return;
+      setPreviewError(e?.response?.data?.error || "Could not load live data");
       setPreviewData({});
     } finally {
-      setPreviewLoading(false);
+      if (requestId === previewRequest.current) setPreviewLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [previewMode, dataSourcesKey, dynamicRouteKey, tree, catalogueTypesKey]);
+  }, [previewMode, dataSourcesKey, dynamicRouteKey, tree, catalogueTypesKey, previewParams]);
 
   useEffect(() => {
     const timer = setTimeout(loadPreviewData, 400);
@@ -462,25 +473,24 @@ function PageBuilderInner({ pageKey, meta }) {
     setShowPalette(false);
   };
   const insertTemplate = (tpl) => {
-    const newBlocks = createBlocksFromTemplate(tpl);
+    const insertion = insertTemplateSources(tpl, dataSources);
+    const newBlocks = insertion.blocks;
+    setDataSources(insertion.dataSources);
     setBlocks((prev) => [...prev, ...newBlocks]);
     setShowTemplates(false);
     toast.success(`Added "${tpl.name}"`);
   };
-  const saveAsTemplate = () => {
+  const saveAsTemplate = async () => {
     if (!blocks.length) {
       toast.info("Add some blocks first, then save them as a template.");
       return;
     }
     const name = window.prompt("Name this template (it will appear under “My Templates”):", title || meta?.title || "My template");
     if (!name) return;
-    saveCustomTemplate(name, blocks);
-    setCustomTemplates(loadCustomTemplates());
-    toast.success(`Saved "${name}" to My Templates`);
+    try { await saveCustomTemplate(name, blocks, dataSources); setCustomTemplates(loadCustomTemplates()); toast.success(`Saved "${name}" to My Templates`); } catch (error) { toast.error(error?.message || "Template save failed"); }
   };
-  const removeCustomTemplate = (id) => {
-    setCustomTemplates(deleteCustomTemplate(id));
-    toast.success("Template deleted");
+  const removeCustomTemplate = async (id) => {
+    try { setCustomTemplates(await deleteCustomTemplate(id)); toast.success("Template deleted"); } catch (error) { toast.error(error?.message || "Delete failed; please retry"); }
   };
   const updateBlock = (id, next) => setBlocks((prev) => prev.map((b) => (b.id === id ? next : b)));
   const removeBlock = (id) => setBlocks((prev) => prev.filter((b) => b.id !== id));
@@ -842,6 +852,11 @@ function PageBuilderInner({ pageKey, meta }) {
               </span>
             </div>
 
+            {dynamicRoute?.enabled ? <label className="block px-3 py-2 text-xs">Preview route parameter ({dynamicRoute.paramName || "slug"})<input className="ml-2 border rounded p-1" value={previewParams[dynamicRoute.paramName || "slug"] || ""} onChange={e => setPreviewParams({...previewParams,[dynamicRoute.paramName || "slug"]:e.target.value})} /></label> : null}
+            {previewMode === "sample" ? <p className="p-3 text-xs text-amber-800 bg-amber-50">Sample data — illustrative records only.</p> : null}
+            {previewMode === "live" && !dataSources.length ? <p className="p-3 text-xs text-amber-800">No page data sources configured. <button onClick={() => setShowData(true)} className="underline">Connect data</button></p> : null}
+            {previewError ? <p role="alert" className="p-3 text-xs text-red-700">{previewError} <button onClick={loadPreviewData} className="underline">Retry</button></p> : null}
+            {previewMode === "live" && !previewLoading && !previewError ? Object.entries(previewData || {}).filter(([key,value]) => dataSources.some(source => source.key === key) && Array.isArray(value) && !value.length).map(([key]) => <p key={key} className="px-3 py-1 text-xs text-gray-600">{key}: query completed — no matching records.</p>) : null}
             {/* Rendered in an iframe so the section's own media queries answer
                 to the chosen width — a narrowed div would still lay out as
                 desktop. */}
@@ -854,7 +869,7 @@ function PageBuilderInner({ pageKey, meta }) {
             >
               {customCss ? <style dangerouslySetInnerHTML={{ __html: customCss }} /> : null}
               {blocks.length ? (
-                <BlockRenderer blocks={previewMode === 'live' ? blocks.map(block => ({ ...block, props: { ...block.props, ...previewCatalogue[block.id] } })) : blocks} data={previewData} showWarnings />
+                <BlockRenderer blocks={previewMode === 'live' ? blocks.map(block => ({ ...block, props: { ...block.props, ...previewCatalogue[block.id] } })) : blocks} data={previewData} sampleMode={previewMode === "sample"} showWarnings />
               ) : (
                 <div className="py-24 text-center text-gray-300 text-sm">Preview appears here</div>
               )}
@@ -905,6 +920,8 @@ function PageBuilderInner({ pageKey, meta }) {
             onClose={() => setShowTemplates(false)}
             onInsert={insertTemplate}
             customTemplates={customTemplates}
+            dataSources={dataSources}
+            previewParams={previewParams}
             onDeleteCustom={removeCustomTemplate}
             onOpenStudio={() => {
               setShowTemplates(false);
@@ -926,19 +943,11 @@ function PageBuilderInner({ pageKey, meta }) {
           setStudioInitialSection(null);
         }}
         initialSection={studioInitialSection}
+        data={previewData || {}}
+        sampleMode={previewMode === "sample"}
         onSave={async (savedData) => {
           if (studioInitialSection?.blockId) {
-            updateBlock(studioInitialSection.blockId, {
-              props: {
-                ...studioInitialSection.props,
-                _name: savedData.name,
-                _code: savedData.code,
-                _css: savedData.css,
-                _fields: savedData.fields,
-                _options: savedData.options,
-                ...(savedData.defaultProps || {}),
-              },
-            });
+            setBlocks(previous => updateSdkInstance(previous, studioInitialSection.blockId, savedData));
           }
           const updated = await fetchRemoteCustomSections();
           setCustomTemplates(updated);
@@ -1331,7 +1340,7 @@ function TemplatesModal({ onClose, onInsert, customTemplates = [], onDeleteCusto
                             {t.name}
                           </h4>
                           <p className="text-[11px] text-gray-500 truncate">
-                            {t.desc || "Pre-designed section"}
+                            {t.persistence === "local" ? "Local draft — not saved to server" : (t.desc || "Pre-designed section")}
                           </p>
                         </div>
 

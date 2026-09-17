@@ -214,61 +214,111 @@ export default function PublicPage(cmsProps = {}) {
           <p className="text-gray-600 text-base sm:text-lg">{cms.Description_Choose_from_industry_standard_vocational_certifi_37}</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {FEATURED_COURSES.map(course => <div key={course.id} className={`relative flex flex-col justify-between rounded-2xl border ${course.popular ? "border-blue-600 ring-2 ring-blue-600/20 shadow-xl" : "border-gray-200 shadow-sm hover:shadow-md"} bg-white p-6 sm:p-8 transition-all duration-200 hover:-translate-y-1`}>
-              {course.popular && <div className="absolute -top-3 right-6 bg-linear-to-r from-blue-600 to-indigo-600 text-white text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full shadow-sm">{cms.Text_Most_Popular_38}</div>}
+        {FEATURED_COURSES.length === 0 ? (
+          <div className="text-center py-12 px-6 rounded-2xl bg-gray-50 border border-gray-200 max-w-md mx-auto my-8 space-y-4">
+            <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mx-auto text-xl">
+              <Calendar size={24} />
+            </div>
+            <h3 className="text-base font-bold text-gray-900">No Upcoming Sessions Scheduled</h3>
+            <p className="text-xs text-gray-500">There are currently no sessions scheduled for this period. View our complete training calendar to plan ahead.</p>
+            <Link href="/schedule" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs transition-colors">
+              <span>View Training Schedule</span>
+              <ArrowRight size={14} />
+            </Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {FEATURED_COURSES.map((course, idx) => {
+              const isRegClosed = course.registrationAvailable === false || course.registrationAvailable === "false";
+              const regUrl = course.registrationUrl || (course.courseId && course.id ? `/registration?course=${course.courseId}&reference=${course.id}` : (course.slug ? `/registration?course=${course.slug}` : ''));
+              const detailsUrl = course.slug ? `/courses/${course.slug}` : (course.courseSlug ? `/courses/${course.courseSlug}` : '/courses');
+              const displayPrice = course.price === 0 ? "Free" : (typeof course.price === "number" ? `${course.currency || "£"}${course.price.toLocaleString()}` : (course.price || "Enquire"));
 
-              <div className="space-y-4">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className={`text-xs font-semibold px-2.5 py-1 rounded-md border ${course.levelColor}`}>
-                    {course.level}
-                  </span>
-                  <span className="text-xs text-gray-500 font-medium flex items-center gap-1">
-                    <Award size={13} className="text-gray-400" />
-                    {course.body}
-                  </span>
-                </div>
+              return (
+                <div key={course.id || idx} className={`relative flex flex-col justify-between rounded-2xl border ${course.popular ? "border-blue-600 ring-2 ring-blue-600/20 shadow-xl" : "border-gray-200 shadow-sm hover:shadow-md"} bg-white p-6 sm:p-8 transition-all duration-200 hover:-translate-y-1`}>
+                  {course.popular && <div className="absolute -top-3 right-6 bg-linear-to-r from-blue-600 to-indigo-600 text-white text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full shadow-sm">{cms.Text_Most_Popular_38}</div>}
 
-                <h3 className="text-xl font-bold text-gray-900 leading-snug hover:text-blue-600 transition-colors">
-                  <Link href={`/courses/${course.slug}`}>{course.title}</Link>
-                </h3>
+                  <div className="space-y-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className={`text-xs font-semibold px-2.5 py-1 rounded-md border ${course.levelColor || "bg-blue-50 text-blue-700 border-blue-200"}`}>
+                        {course.level || "Accredited"}
+                      </span>
+                      {course.body ? (
+                        <span className="text-xs text-gray-500 font-medium flex items-center gap-1">
+                          <Award size={13} className="text-gray-400" />
+                          {course.body}
+                        </span>
+                      ) : null}
+                    </div>
 
-                <p className="text-gray-600 text-sm leading-relaxed">{course.description}</p>
+                    {(course.batch || course.referenceName || course.startDate) && (
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-50/80 border border-blue-100 text-blue-800 text-xs font-semibold">
+                        <Calendar size={13} className="text-blue-600 shrink-0" />
+                        <span>
+                          {course.batch || course.referenceName ? `${course.batch || course.referenceName}${course.startDate ? ` • ${new Date(course.startDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" })}` : ""}` : (course.startDate ? new Date(course.startDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }) : "")}
+                        </span>
+                      </div>
+                    )}
 
-                <div className="flex items-center gap-4 text-xs text-gray-500 pt-1">
-                  <div className="flex items-center gap-1.5 font-medium">
-                    <Clock size={14} className="text-blue-500" />
-                    <span>{course.duration}</span>
+                    <h3 className="text-xl font-bold text-gray-900 leading-snug hover:text-blue-600 transition-colors">
+                      <Link href={detailsUrl}>{course.title}</Link>
+                    </h3>
+
+                    <p className="text-gray-600 text-sm leading-relaxed">{course.description}</p>
+
+                    <div className="flex items-center gap-4 text-xs text-gray-500 pt-1">
+                      <div className="flex items-center gap-1.5 font-medium">
+                        <Clock size={14} className="text-blue-500 shrink-0" />
+                        <span>{course.duration || "Flexible"}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 font-medium">
+                        <MapPin size={14} className="text-orange-500 shrink-0" />
+                        <span>{course.location || course.modeLabel || course.mode || cms.Text_Online___UK_Centre_39}</span>
+                      </div>
+                    </div>
+
+                    {Array.isArray(course.highlights) && course.highlights.length > 0 && (
+                      <div className="pt-3 border-t border-gray-100 space-y-2">
+                        <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide">{cms.Description_Key_Highlights__40}</p>
+                        {course.highlights.map((h, i) => (
+                          <div key={i} className="flex items-center gap-2 text-xs text-gray-600">
+                            <Check size={14} className="text-emerald-500 shrink-0" />
+                            <span>{typeof h === "object" ? h.value : h}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                  <div className="flex items-center gap-1.5 font-medium">
-                    <MapPin size={14} className="text-orange-500" />
-                    <span>{cms.Text_Online___UK_Centre_39}</span>
+
+                  <div className="pt-6 mt-6 border-t border-gray-100 flex items-center justify-between">
+                    <div>
+                      <p className="text-[11px] text-gray-400 font-medium">{cms.Description_Fee_41}</p>
+                      <p className="text-2xl font-extrabold text-gray-900">{displayPrice}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {isRegClosed ? (
+                        <button type="button" disabled className="px-4 py-2.5 bg-gray-200 text-gray-400 text-xs font-semibold rounded-lg cursor-not-allowed">
+                          Closed
+                        </button>
+                      ) : regUrl ? (
+                        <Link href={regUrl} className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg shadow-sm transition-colors">
+                          {cms.Text_Enrol_Now_42 || "Enrol Now"}
+                        </Link>
+                      ) : (
+                        <Link href="/contact-us" className="px-4 py-2.5 bg-gray-600 hover:bg-gray-700 text-white text-xs font-semibold rounded-lg shadow-sm transition-colors">
+                          Enquire
+                        </Link>
+                      )}
+                      <Link href={detailsUrl} className="px-3 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-medium rounded-lg transition-colors" aria-label={`View details for ${course.title}`}>
+                        <ArrowRight size={14} />
+                      </Link>
+                    </div>
                   </div>
                 </div>
-
-                <div className="pt-3 border-t border-gray-100 space-y-2">
-                  <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide">{cms.Description_Key_Highlights__40}</p>
-                  {course.highlights.map((h, i) => <div key={i} className="flex items-center gap-2 text-xs text-gray-600">
-                      <Check size={14} className="text-emerald-500 shrink-0" />
-                      <span>{h}</span>
-                    </div>)}
-                </div>
-              </div>
-
-              <div className="pt-6 mt-6 border-t border-gray-100 flex items-center justify-between">
-                <div>
-                  <p className="text-[11px] text-gray-400 font-medium">{cms.Description_Fee_41}</p>
-                  <p className="text-2xl font-extrabold text-gray-900">{course.price}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Link href={`/registration?course=${course.slug}`} className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg shadow-sm transition-colors">{cms.Text_Enrol_Now_42}</Link>
-                  <Link href={`/courses/${course.slug}`} className="px-3 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-medium rounded-lg transition-colors" aria-label={`View details for ${course.title}`}>
-                    <ArrowRight size={14} />
-                  </Link>
-                </div>
-              </div>
-            </div>)}
-        </div>
+              );
+            })}
+          </div>
+        )}
 
         <div className="mt-12 text-center">
           <Link href={cms.href__courses_43} className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl border border-gray-300 hover:border-gray-400 bg-white hover:bg-gray-50 text-gray-800 font-semibold shadow-xs transition-colors">

@@ -32,6 +32,13 @@ const cmsDataSourceSchema = new mongoose.Schema(
     // documents match, so a page can bind a headline figure to real data.
     mode: { type: String, enum: ["list", "single", "count"], default: "list" },
 
+    operation: {type:String, enum:['findMany','findOne','findById','findBySlug','currentUser','routeParam','count','upcomingSessions']},
+    documentId: String,
+    id: String,
+    slug: String,
+    paramName: String,
+    lookupField: String,
+    months: {type:Number,min:1,max:12,default:3},
     filters: { type: [filterSchema], default: [] },
     match: { type: String, enum: ["all", "any"], default: "all" },
     sortField: { type: String, default: "createdAt" },

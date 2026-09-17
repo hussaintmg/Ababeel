@@ -13,6 +13,7 @@ import PickerPopover from "@/Components/owner/cms/dynamic/PickerPopover";
 import { Label } from "@/Components/owner/cms/fields";
 import { BLOCK_TYPES, isContainer } from "@/Components/cms/blockSchemas";
 import { newGroup } from "@/lib/cms/conditions";
+import { useCmsVariables } from "@/context/CmsVariablesContext";
 import { defaultRepeat } from "@/lib/cms/binding";
 
 // Style keys that accept a bound value (colours, sizes, opacity…).
@@ -74,6 +75,7 @@ function BoundInput({ value, onChange, fieldType, placeholder }) {
 }
 
 export default function BlockDataTab({ block, onChange, features = {} }) {
+  const { pageSources = [] } = useCmsVariables();
   const def = BLOCK_TYPES[block.type] || {};
   const style = block._style || {};
   const repeat = block._repeat || defaultRepeat();
@@ -83,9 +85,10 @@ export default function BlockDataTab({ block, onChange, features = {} }) {
     .filter((f) => ["text", "textarea", "richtext", "image", "video", "color", "select", "code"].includes(f.type))
     .map((f) => ({ key: f.key, label: f.label, fieldType: f.type }));
 
-  const hasListField = (def.fields || []).some((f) => f.type === "list");
+  const listFields = (block.props?._fields || def.fields || []).filter(f => f.type === "list");
+  const hasListField = listFields.length > 0;
 
-  const setRepeat = (patch) => onChange({ ...block, _repeat: { ...repeat, ...patch } });
+  const setRepeat = (patch) => onChange({ ...block, _repeat: { ...repeat, targetProp: repeat.targetProp || listFields[0]?.key || "items", ...patch } });
   const setCondProps = (next) => onChange({ ...block, _condProps: next });
 
   return (
@@ -117,15 +120,9 @@ export default function BlockDataTab({ block, onChange, features = {} }) {
             <div className="mt-3 space-y-3">
               {/* Preset Collection Quick Pick */}
               <div>
-                <Label>Quick Select Database Collection</Label>
+                <Label>Configured page sources</Label>
                 <div className="flex flex-wrap gap-1 mt-1">
-                  {[
-                    { id: "courses", label: "Courses (courses)", alias: "course" },
-                    { id: "courseRef", label: "Courses (courseRef)", alias: "course" },
-                    { id: "candidates", label: "Candidates", alias: "candidate" },
-                    { id: "testimonials", label: "Testimonials", alias: "testimonial" },
-                    { id: "teamMembers", label: "Team / Instructors", alias: "member" },
-                  ].map((col) => (
+                  {pageSources.filter(source => source.mode !== "single" && source.mode !== "count" && !["count", "findOne", "findById", "findBySlug", "routeParam", "currentUser"].includes(source.operation)).map(source => ({ id: source.key, label: source.label || source.key, alias: repeat.alias || repeat.item || "item" })).map((col) => (
                     <button
                       key={col.id}
                       type="button"
@@ -142,6 +139,12 @@ export default function BlockDataTab({ block, onChange, features = {} }) {
                 </div>
               </div>
 
+              {!pageSources.some(source => source.key === repeat.source) ? (
+                <div className="rounded border border-amber-200 bg-amber-50 p-2 text-xs text-amber-900">
+                  This repeater needs a configured page source.
+                  <button type="button" className="ml-2 underline font-semibold" onClick={() => window.dispatchEvent(new CustomEvent("cms:connect-data", {detail: {source: repeat.source}}))}>Connect data</button>
+                </div>
+              ) : null}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <Label>Collection Source</Label>
@@ -203,6 +206,9 @@ export default function BlockDataTab({ block, onChange, features = {} }) {
                       <option value="items">Repeat inner cards/items (1 component, multiple cards)</option>
                       <option value="block">Repeat entire section/block (multiple sections)</option>
                     </select>
+                    {repeat.target !== "block" ? <select aria-label="Card list to repeat" value={repeat.targetProp || listFields[0]?.key || "items"} onChange={e => setRepeat({ targetProp: e.target.value })} className="mt-2 w-full rounded border p-2 text-xs">
+                      {listFields.map(field => <option key={field.key} value={field.key}>{field.label || field.key}</option>)}
+                    </select> : null}
                     <p className="mt-1 text-[11px] text-gray-500">
                       <b>Repeat inner cards</b> keeps one section header and repeats the cards from dynamic data.
                     </p>
@@ -233,11 +239,11 @@ export default function BlockDataTab({ block, onChange, features = {} }) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
                   <div>
                     <select
-                      value={repeat.emptyMode || "showSample"}
+                      value={repeat.emptyMode || "showEmptyMessage"}
                       onChange={(e) => setRepeat({ emptyMode: e.target.value })}
                       className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                     >
-                      <option value="showSample">Show Sample Card in Builder (Recommended)</option>
+                      <option value="showSample">Sample card (explicit Sample preview only)</option>
                       <option value="showEmptyMessage">Show Custom Message on Live Page</option>
                       <option value="hide">Hide Section Completely</option>
                     </select>

@@ -43,7 +43,7 @@ describe("sanitizeDocument", () => {
       atcDetails: { atcName: "ATC", secretCode: "x" },
       transactions: [{ amount: 5 }],
     };
-    const clean = sanitizeDocument("User", doc);
+    const clean = sanitizeDocument("User", doc, {isPublic:false});
     expect(clean.email).toBe("a@b.com");
     expect(clean.password).toBeUndefined();
     expect(clean.transactions).toBeUndefined();
@@ -53,7 +53,7 @@ describe("sanitizeDocument", () => {
 
   test("handles arrays, dates and nullish values", () => {
     const now = new Date();
-    const clean = sanitizeDocument("Course", { list: [{ name: "a" }], when: now, nothing: null });
+    const clean = sanitizeDocument("Course", { list: [{ name: "a" }], when: now, nothing: null }, {isPublic:false});
     expect(clean.list[0].name).toBe("a");
     expect(clean.when).toBe(now);
     expect(clean.nothing).toBeNull();

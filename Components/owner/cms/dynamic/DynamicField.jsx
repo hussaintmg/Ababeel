@@ -119,7 +119,7 @@ function FieldDiagnostics({ text, scopeHint = "", lookup, onChange }) {
 
     // 1. Wrong Alias Diagnostic (Req 51):
     // If loop alias is e.g. "course" but template contains "item.title"
-    if (root === "item" && scopeHint && scopeHint !== "item") {
+    if (root === "item" && scopeHint && scopeHint !== "item" && !lookup(tok)) {
       diagnostics.push({
         id: `alias_${tok}`,
         severity: "warning",
@@ -145,6 +145,11 @@ function FieldDiagnostics({ text, scopeHint = "", lookup, onChange }) {
         title: `"${root}" returns an Array of records`,
         message: `"${root}" contains multiple records. Use it as a repeater source (${root} → alias ${singular}), then bind "${singular}.${leaf}".`,
       });
+      continue;
+    }
+
+    if (scopeHint && root === scopeHint && !lookup(tok)) {
+      diagnostics.push({ id: `missing_field_${tok}`, severity: "warning", title: lookup(root) ? `Unknown field: ${tok}` : `No collection connected for ${root}`, message: lookup(root) ? "Choose a field available on the current source." : "Connect a page data source in the Data tab." });
       continue;
     }
 

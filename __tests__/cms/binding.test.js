@@ -268,7 +268,7 @@ describe("published payload contains no authoring data", () => {
 });
 
 describe("empty collection and repeater preview handling", () => {
-  test("when collection is empty in builder mode, renders sample card preview instead of disappearing", () => {
+  test("when collection is empty in builder mode, renders sample card only in explicit sample mode", () => {
     const b = {
       id: "course-card",
       type: "heading",
@@ -277,7 +277,7 @@ describe("empty collection and repeater preview handling", () => {
     };
     // Context with empty courseRef array
     const emptyCtx = { courseRef: [] };
-    const out = expandBlocks([b], emptyCtx, { isBuilder: true });
+    const out = expandBlocks([b], emptyCtx, { isBuilder: true, sampleMode: true });
     expect(out).toHaveLength(1);
     expect(out[0]._isRepeatPlaceholder).toBe(true);
     expect(out[0].props.text).toContain("First Aid at Work");
@@ -297,7 +297,7 @@ describe("empty collection and repeater preview handling", () => {
     expect(out).toHaveLength(0);
   });
 
-  test("when repeater container has 0 items in builder mode, renders sample child preview", () => {
+  test("when repeater container has 0 items in builder mode, renders sample child in explicit sample mode", () => {
     const rep = {
       id: "rep-container",
       type: "repeater",
@@ -305,7 +305,7 @@ describe("empty collection and repeater preview handling", () => {
       children: [{ id: "c1", type: "heading", props: { text: "{{item.courseName}}" } }],
     };
     const emptyCtx = { courseRef: [] };
-    const [out] = expandBlocks([rep], emptyCtx, { isBuilder: true });
+    const [out] = expandBlocks([rep], emptyCtx, { isBuilder: true, sampleMode: true });
     expect(out.props._items).toHaveLength(1);
     expect(out.props._items[0]._isRepeatPlaceholder).toBe(true);
     expect(out.props._items[0].blocks[0].props.text).toContain("First Aid at Work");
