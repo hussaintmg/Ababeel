@@ -11,13 +11,14 @@ function getStripe() {
   return stripe;
 }
 
-export async function createPaymentIntent(amount, currency = "gbp", customerId) {
+export async function createPaymentIntent(amount, currency = "gbp", customerId, metadata = {}) {
   try {
     const paymentIntent = await getStripe().paymentIntents.create({
       amount: Math.round(amount * 100),
       currency,
       customer: customerId || undefined,
       automatic_payment_methods: { enabled: true },
+      metadata,
     });
 
     return {

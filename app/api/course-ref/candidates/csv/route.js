@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import connectDB from "@/utils/db";
 import Candidate from "@/models/Candidate";
 import CourseReference from "@/models/CourseReference";
-import Invoice from "@/models/Invoice";
 import { webData } from "@/constants";
 import { getAuthenticatedUser } from "@/lib/auth";
 import { isValidObjectId } from "@/lib/validation";
@@ -262,46 +261,6 @@ export async function POST(request) {
     const unpaidCandidates = allCandidates.filter(
       (c) => c.paymentStatus === "unpaid"
     );
-
-    // Update invoice if it exists
-    if (course.invoiceId) {
-      const pricePerCandidate = course.coursePrice || 0;
-
-      // Calculate new totals
-      const newSubtotal = pricePerCandidate * allCandidates.length;
-      const newBalanceDue = pricePerCandidate * unpaidCandidates.length;
-
-      // Get current invoice to check payment status
-      const existingInvoice = await Invoice.findById(course.invoiceId);
-
-      if (existingInvoice) {
-        // Update invoice fields
-        existingInvoice.subtotal = newSubtotal;
-        existingInvoice.totalAmount = newSubtotal;
-
-        // Calculate amount paid based on paid candidates
-        const paidCandidates = allCandidates.filter(
-          (c) => c.paymentStatus === "paid"
-        );
-        const amountPaid = pricePerCandidate * paidCandidates.length;
-        existingInvoice.amountPaid = amountPaid;
-
-        // Update balance due
-        existingInvoice.balanceDue = newBalanceDue;
-
-        // Update payment status
-        if (newBalanceDue <= 0) {
-          existingInvoice.paymentStatus = "paid";
-        } else if (amountPaid > 0) {
-          existingInvoice.paymentStatus = "partially_paid";
-        } else {
-          existingInvoice.paymentStatus = "pending";
-        }
-
-        existingInvoice.updatedAt = new Date();
-        await existingInvoice.save();
-      }
-    }
 
     return NextResponse.json({
       success: results.failedCount ? false : true,

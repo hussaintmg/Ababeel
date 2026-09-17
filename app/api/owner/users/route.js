@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/utils/db";
 import User from "@/models/User";
-import Invoice from "@/models/Invoice";
 import { requireOwner } from "@/lib/auth";
 import { safeErrorResponse, successResponse } from "@/lib/errors";
 import { ORG_ROLE, serializeOrganization } from "@/lib/organizations";
@@ -22,7 +21,7 @@ export async function GET(request) {
     // Organizations are Users with role "organization", so there is a single
     // source here rather than the previous merge of an Organization collection
     // with legacy organization users.
-    const [organizationUsers, admins, users, invoices] = await Promise.all([
+    const [organizationUsers, admins, users] = await Promise.all([
       User.find({ role: ORG_ROLE })
         .select(SAFE_USER_FIELDS)
         .sort({ createdAt: -1 })
@@ -35,25 +34,16 @@ export async function GET(request) {
         .select(SAFE_USER_FIELDS)
         .sort({ createdAt: -1 })
         .lean(),
-      Invoice.find({}).populate("courseId").sort({ createdAt: -1 }).lean(),
     ]);
 
     const allOrganizations = organizationUsers.map(serializeOrganization);
 
     const usersWithInvoiceData = users.map((user) => {
-      const userInvoices = invoices.filter(
-        (inv) => inv.userId?.toString() === user._id.toString()
-      );
-      const paidInvoices = userInvoices.filter((inv) => inv.status === "paid");
-      const totalPurchases = paidInvoices.reduce(
-        (sum, inv) => sum + (inv.totalAmount || 0),
-        0
-      );
       return {
         ...user,
-        totalPurchases,
-        invoiceCount: userInvoices.length,
-        paidCount: paidInvoices.length,
+        totalPurchases: 0,
+        invoiceCount: 0,
+        paidCount: 0,
       };
     });
 

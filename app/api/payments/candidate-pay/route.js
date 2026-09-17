@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/utils/db";
 import CourseReference from "@/models/CourseReference";
-import Invoice from "@/models/Invoice";
 import User from "@/models/User";
 import Candidate from "@/models/Candidate";
 import Notification from "@/models/Notification";
@@ -21,7 +20,7 @@ export async function POST(request) {
 
     await connectDB();
 
-    const { courseId, paymentMethod, invoiceId: providedInvoiceId, candidateIds } =
+    const { courseId, paymentMethod, candidateIds } =
       await request.json();
 
     const userId = authUser._id.toString();
@@ -72,24 +71,6 @@ export async function POST(request) {
       );
     }
 
-    const invoiceId = providedInvoiceId || course.invoiceId;
-
-    if (!invoiceId) {
-      return NextResponse.json(
-        { success: false, message: "Invoice not found for this course" },
-        { status: 404 },
-      );
-    }
-
-    const invoice = await Invoice.findById(invoiceId);
-
-    if (!invoice) {
-      return NextResponse.json(
-        { success: false, message: "Invoice not found" },
-        { status: 404 },
-      );
-    }
-
     const user = await User.findById(userId);
 
     if (!user) {
@@ -130,7 +111,6 @@ export async function POST(request) {
         amount: -amount,
         description: `Payment for ${candidateIds.length} candidate(s) in course: ${course.courseName}`,
         referenceId: course.referenceNumber,
-        invoiceId: invoice._id,
       });
     } else if (paymentMethod === "stripe") {
       user.transactions.push({
@@ -139,32 +119,11 @@ export async function POST(request) {
         amount: -amount,
         description: `Direct card payment for ${candidateIds.length} candidate(s) in course: ${course.courseName}`,
         referenceId: course.referenceNumber,
-        invoiceId: invoice._id,
         status: "completed",
       });
     }
 
     await user.save();
-
-    invoice.amountPaid += amount;
-    invoice.balanceDue = invoice.totalAmount - invoice.amountPaid;
-    invoice.paymentMethod = paymentMethod;
-
-    invoice.transactions.push({
-      date: new Date(),
-      amount: amount,
-      paymentMethod: paymentMethod,
-      transactionId: `PAY-${Date.now()}`,
-      notes: `Payment for ${candidateIds.length} candidate(s) via ${paymentMethod} for course: ${course.courseName}`,
-    });
-
-    if (invoice.balanceDue <= 0) {
-      invoice.paymentStatus = "paid";
-    } else if (invoice.amountPaid > 0) {
-      invoice.paymentStatus = "partially_paid";
-    }
-
-    await invoice.save();
 
     const updatedCandidates = [];
 
@@ -220,11 +179,9 @@ export async function POST(request) {
         paymentId: `PAY-${Date.now()}`,
         courseId: course._id,
         courseName: course.courseName,
-        invoiceNumber: invoice.invoiceNumber,
-        invoiceID: invoice._id,
         amountPaid: amount,
         remainingBalance: user.accountBalance,
-        paymentStatus: invoice.paymentStatus,
+        paymentStatus: "paid",
         candidatesUpdated: {
           total: allCandidatesAfterUpdate.length,
           paid: updatedPaidCandidates.length,

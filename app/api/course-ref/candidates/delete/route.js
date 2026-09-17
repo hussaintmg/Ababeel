@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import connectDB from "@/utils/db";
 import Candidate from "@/models/Candidate";
 import CourseReference from "@/models/CourseReference";
-import Invoice from "@/models/Invoice";
 import { deleteFile } from "@/utils/upload";
 import { getAuthenticatedUser } from "@/lib/auth";
 import { isValidObjectId } from "@/lib/validation";
@@ -78,68 +77,16 @@ export async function DELETE(request) {
         .lean();
     }
 
-    const paidCandidates = allCandidates.filter(
-      (c) => c.paymentStatus === "paid",
-    );
-    const unpaidCandidates = allCandidates.filter(
-      (c) => c.paymentStatus === "unpaid",
-    );
-
-    const invoice = await Invoice.findById(course.invoiceId);
-
-    if (!invoice) {
-      await Candidate.findByIdAndDelete(candidateId);
-
-      return NextResponse.json({
-        success: true,
-        message: "Candidate deleted successfully (no invoice found)",
-        deletedCandidate: {
-          id: candidateId,
-          name: `${candidate.firstName} ${candidate.lastName}`,
-          email: candidate.email,
-          paymentStatus: candidatePaymentStatus,
-        },
-      });
-    }
-
-    const newTotalCandidates = allCandidates.length;
-    const newSubtotal = pricePerCandidate * newTotalCandidates;
-    const newBalanceDue = pricePerCandidate * unpaidCandidates.length;
-    const newAmountPaid = pricePerCandidate * paidCandidates.length;
-
-    invoice.subtotal = newSubtotal;
-    invoice.totalAmount = newSubtotal;
-    invoice.amountPaid = newAmountPaid;
-    invoice.balanceDue = newBalanceDue;
-
-    if (newBalanceDue <= 0) {
-      invoice.paymentStatus = "paid";
-    } else if (newAmountPaid > 0) {
-      invoice.paymentStatus = "partially_paid";
-    } else {
-      invoice.paymentStatus = "pending";
-    }
-
-    invoice.updatedAt = new Date();
-    await invoice.save();
-
     await Candidate.findByIdAndDelete(candidateId);
 
     return NextResponse.json({
       success: true,
-      message: "Candidate deleted successfully with financial adjustments",
+      message: "Candidate deleted successfully",
       deletedCandidate: {
         id: candidateId,
         name: `${candidate.firstName} ${candidate.lastName}`,
         email: candidate.email,
         paymentStatus: candidatePaymentStatus,
-      },
-      financialAdjustments: {
-        newSubtotal,
-        newAmountPaid,
-        newBalanceDue,
-        paidCandidatesCount: paidCandidates.length,
-        unpaidCandidatesCount: unpaidCandidates.length,
       },
     });
   } catch (error) {

@@ -338,7 +338,7 @@ const DefaultCoursesPage = () => {
         title="Delete All Courses"
         message={
           <>
-            Are you sure you want to delete <span className="font-semibold text-red-600">ALL default courses</span>?
+            Are you sure you want to delete <span className="font-semibold text-red-600">ALL courses</span>?
             <p className="mt-2 text-red-600">This will permanently remove all {courses.length} courses. This action cannot be undone.</p>
           </>
         }
@@ -372,10 +372,10 @@ const DefaultCoursesPage = () => {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
-              Default Courses
+              Courses
             </h1>
             <p className="text-gray-600 mt-1">
-              Manage your default course catalog
+              Manage your course catalog
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">

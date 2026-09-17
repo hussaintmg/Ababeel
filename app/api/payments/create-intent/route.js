@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 import connectDB from "@/utils/db";
 import User from "@/models/User";
-import Deposit from "@/models/Deposit";
 import { createPaymentIntent, createCustomer } from "@/utils/stripe";
 
 export async function POST(request) {
@@ -57,34 +56,20 @@ export async function POST(request) {
       }
     }
 
-    // Create payment intent
+    // Create payment intent with user metadata
     const paymentIntentResult = await createPaymentIntent(
       amount,
       "gbp",
       customerId,
+      {
+        userId: user._id.toString(),
+        amount: String(amount),
+      },
     );
 
     if (!paymentIntentResult.success) {
       return NextResponse.json(
         { success: false, message: paymentIntentResult.error },
-        { status: 500 },
-      );
-    }
-
-    const deposit = await Deposit.create({
-      userId: user._id,
-      amount,
-      stripePaymentId: paymentIntentResult.paymentIntentId,
-      stripeCustomerId: customerId,
-      status: "pending",
-      currency: "gbp",
-    });
-    if (!deposit) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Failed to save Request",
-        },
         { status: 500 },
       );
     }

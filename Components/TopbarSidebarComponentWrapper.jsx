@@ -69,10 +69,10 @@ const adminNavLinks = [
   {
     name: "Courses",
     dropdown: [
-      { name: "Add Course", url: "/admin/default-course/new" },
+      { name: "Add Course", url: "/admin/courses/new" },
       {
         name: "Manage Courses",
-        url: "/admin/default-course/all",
+        url: "/admin/courses/all",
       },
     ],
   },
@@ -84,10 +84,10 @@ const ownerNavLinks = [
   {
     name: "Courses",
     dropdown: [
-      { name: "Add Course", url: "/owner/default-course/new" },
+      { name: "Add Course", url: "/owner/courses/new" },
       {
         name: "Manage Courses",
-        url: "/owner/default-course/all",
+        url: "/owner/courses/all",
       },
     ],
   },
@@ -95,7 +95,6 @@ const ownerNavLinks = [
     name: "Training",
     dropdown: [
       { name: "Course Levels", url: "/owner/training/course-levels" },
-      { name: "Accreditations", url: "/owner/training/accreditations" },
       { name: "Awarding Bodies", url: "/owner/training/awarding-bodies" },
       { name: "Registrations", url: "/owner/registrations" },
     ],

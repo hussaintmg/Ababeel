@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import connectDB from "@/utils/db";
 import Candidate from "@/models/Candidate";
 import CourseReference from "@/models/CourseReference";
-import Invoice from "@/models/Invoice";
 import { deleteFile } from "@/utils/upload";
 import { getAuthenticatedUser } from "@/lib/auth";
 import { isValidObjectId } from "@/lib/validation";
@@ -129,36 +128,6 @@ export async function DELETE(request) {
     const remainingUnpaidCandidates = remainingCandidates.filter(
       (c) => c.paymentStatus === "unpaid",
     );
-
-    const invoice = await Invoice.findById(updatedCourse.invoiceId);
-
-    if (invoice) {
-      const newTotalCandidates = remainingCandidates.length;
-      const newSubtotal = pricePerCandidate * newTotalCandidates;
-      const newBalanceDue = pricePerCandidate * remainingUnpaidCandidates.length;
-      const newAmountPaid = pricePerCandidate * remainingPaidCandidates.length;
-
-      let paymentStatus = "pending";
-      if (newBalanceDue <= 0) {
-        paymentStatus = "paid";
-      } else if (newAmountPaid > 0) {
-        paymentStatus = "partially_paid";
-      }
-
-      await Invoice.findByIdAndUpdate(
-        updatedCourse.invoiceId,
-        {
-          $set: {
-            subtotal: newSubtotal,
-            totalAmount: newSubtotal,
-            amountPaid: newAmountPaid,
-            balanceDue: newBalanceDue,
-            paymentStatus: paymentStatus,
-            updatedAt: new Date()
-          }
-        }
-      );
-    }
 
     await Candidate.deleteMany({
       _id: { $in: candidateIds },

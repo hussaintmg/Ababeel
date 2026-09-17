@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import connectDB from '@/utils/db';
 import User from '@/models/User';
-import Deposit from '@/models/Deposit';
 
 let stripe;
 function getStripe() {
@@ -47,26 +46,18 @@ export async function POST(request) {
     if (event.type === 'payment_intent.succeeded') {
       const paymentIntent = event.data.object;
       console.log('🎉 Payment succeeded:', paymentIntent.id);
-      
-      // Find and update deposit
-      const deposit = await Deposit.findOne({ 
-        stripePaymentId: paymentIntent.id 
-      });
 
-      if (deposit) {
-        // Update deposit status
-        deposit.status = 'completed';
-        deposit.receiptUrl = paymentIntent.receipt_url;
-        deposit.paymentMethod = paymentIntent.payment_method_types?.[0] || 'card';
-        deposit.updatedAt = new Date();
-        await deposit.save();
-        console.log('✅ Deposit updated to completed');
+      const userId = paymentIntent.metadata?.userId;
+      const amount = paymentIntent.metadata?.amount
+        ? parseFloat(paymentIntent.metadata.amount)
+        : (paymentIntent.amount_received || paymentIntent.amount || 0) / 100;
 
-        // Update user balance
-        const user = await User.findById(deposit.userId);
+      if (userId) {
+        const user = await User.findById(userId);
         if (user) {
-          user.accountBalance += deposit.amount;
+          user.accountBalance = (user.accountBalance || 0) + amount;
           await user.save();
+          console.log('✅ User account balance credited:', amount);
         }
       }
     }

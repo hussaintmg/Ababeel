@@ -31,7 +31,7 @@ describe("discovery", () => {
   test("finds the application's models", () => {
     const registry = getSchemaRegistry();
     const names = registry.map((m) => m.name);
-    expect(names).toEqual(expect.arrayContaining(["User", "Course", "CourseReference", "Candidate", "Invoice"]));
+    expect(names).toEqual(expect.arrayContaining(["User", "Course", "CourseReference", "Candidate"]));
   });
 
   test("excludes models blocked by policy", () => {
@@ -108,9 +108,9 @@ describe("arrays", () => {
     expect(findField(pages.children, "pageNumber").fullPath).toBe("template.designData.pages[].pageNumber");
   });
 
-  test("a blocked subdocument array is not discovered at all", () => {
-    // Invoice.transactions carries payment detail and is blocked by policy.
-    expect(findField(getModelDescriptor("Invoice").fields, "transactions")).toBeUndefined();
+  test("a blocked field is not discovered at all", () => {
+    // User.password carries credential detail and is blocked by policy.
+    expect(findField(getModelDescriptor("User").fields, "password")).toBeUndefined();
   });
 
   test("arrays are never reported as strings", () => {

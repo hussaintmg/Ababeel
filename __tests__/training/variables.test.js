@@ -35,7 +35,6 @@ describe("the catalogue is available as variables", () => {
         "CourseReference",
         "CourseLevel",
         "AwardingBody",
-        "Accreditation",
       ]),
     );
   });

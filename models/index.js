@@ -8,7 +8,6 @@
  * ⚠ Add every new file in `models/` here — `__tests__/cms/schemaRegistry.test.js`
  * fails if a model file is missing from this list.
  */
-import Accreditation from "@/models/Accreditation";
 import ActivationToken from "@/models/ActivationToken";
 import AuditLog from "@/models/AuditLog";
 import AwardingBody from "@/models/AwardingBody";
@@ -23,9 +22,6 @@ import Contact from "@/models/Contact";
 import Course from "@/models/Course";
 import CourseLevel from "@/models/CourseLevel";
 import CourseReference from "@/models/CourseReference";
-import DefaultCourse from "@/models/DefaultCourse";
-import Deposit from "@/models/Deposit";
-import Invoice from "@/models/Invoice";
 import Notification from "@/models/Notification";
 import Registration from "@/models/Registration";
 import RegistrationField from "@/models/RegistrationField";
@@ -37,7 +33,6 @@ import Testimonial from "@/models/Testimonial";
 import User from "@/models/User";
 
 export {
-  Accreditation,
   ActivationToken,
   AuditLog,
   AwardingBody,
@@ -52,9 +47,6 @@ export {
   Course,
   CourseLevel,
   CourseReference,
-  DefaultCourse,
-  Deposit,
-  Invoice,
   Notification,
   Registration,
   RegistrationField,
@@ -67,7 +59,6 @@ export {
 };
 
 export const ALL_MODELS = {
-  Accreditation,
   ActivationToken,
   AuditLog,
   AwardingBody,
@@ -82,9 +73,6 @@ export const ALL_MODELS = {
   Course,
   CourseLevel,
   CourseReference,
-  DefaultCourse,
-  Deposit,
-  Invoice,
   Notification,
   Registration,
   RegistrationField,
@@ -97,3 +85,4 @@ export const ALL_MODELS = {
 };
 
 export default ALL_MODELS;
+

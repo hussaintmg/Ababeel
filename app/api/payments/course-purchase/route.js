@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/utils/db";
 import CourseReference from "@/models/CourseReference";
-import Invoice from "@/models/Invoice";
 import User from "@/models/User";
 import Candidate from "@/models/Candidate";
 import Notification from "@/models/Notification";
@@ -21,7 +20,7 @@ export async function POST(request) {
 
     await connectDB();
 
-    const { courseId, paymentMethod, invoiceId: providedInvoiceId } =
+    const { courseId, paymentMethod } =
       await request.json();
 
     const userId = authUser._id.toString();
@@ -61,33 +60,7 @@ export async function POST(request) {
       );
     }
 
-    // 3. Fetch invoice using invoiceId from course or provided invoiceId
-    const invoiceId = providedInvoiceId || course.invoiceId;
-
-    if (!invoiceId) {
-      return NextResponse.json(
-        { success: false, message: "Invoice not found for this course" },
-        { status: 404 },
-      );
-    }
-
-    const invoice = await Invoice.findById(invoiceId);
-
-    if (!invoice) {
-      return NextResponse.json(
-        { success: false, message: "Invoice not found" },
-        { status: 404 },
-      );
-    }
-
-    if (invoice.userId.toString() !== userId) {
-      return NextResponse.json(
-        { success: false, message: "Unauthorized: Invoice does not belong to this user" },
-        { status: 403 },
-      );
-    }
-
-    // 4. Fetch user from authenticated session
+    // 3. Fetch user from authenticated session
     const user = await User.findById(userId);
 
     if (!user) {
@@ -136,7 +109,6 @@ export async function POST(request) {
           amount: -amount, // Negative amount for deduction
           description: `Payment for course: ${course.courseName}`,
           referenceId: course.referenceNumber,
-          invoiceId: invoice._id,
         });
       } else if (paymentMethod === "stripe") {
         // No balance deduction for direct Stripe payment
@@ -147,37 +119,11 @@ export async function POST(request) {
           amount: -amount,
           description: `Direct card payment for course: ${course.courseName}`,
           referenceId: course.referenceNumber,
-          invoiceId: invoice._id,
           status: "completed",
         });
       }
 
       await user.save();
-
-      // 7. Update invoice with payment
-      invoice.amountPaid += amount;
-      invoice.balanceDue = invoice.totalAmount - invoice.amountPaid;
-      invoice.paymentMethod = paymentMethod || "account_balance";
-
-      // Add transaction to invoice
-      invoice.transactions.push({
-        date: new Date(),
-        amount: amount,
-        paymentMethod: paymentMethod || "account_balance",
-        transactionId: `PAY-${Date.now()}`,
-        notes: `Payment via ${paymentMethod || "account_balance"} for course: ${
-          course.courseName
-        }`,
-      });
-
-      // Update payment status
-      if (invoice.balanceDue <= 0) {
-        invoice.paymentStatus = "paid";
-      } else if (invoice.amountPaid > 0) {
-        invoice.paymentStatus = "partially_paid";
-      }
-
-      await invoice.save();
 
       // 8. Get all candidates for this course
       const pricePerCandidateInner = course.coursePrice || 0;
@@ -258,11 +204,9 @@ export async function POST(request) {
           paymentId: `PAY-${Date.now()}`,
           courseId: course._id,
           courseName: course.courseName,
-          invoiceNumber: invoice.invoiceNumber,
-          invoiceID: invoice._id,
           amountPaid: amount,
           remainingBalance: user.accountBalance,
-          paymentStatus: invoice.paymentStatus,
+          paymentStatus: "paid",
           candidatesUpdated: {
             total: allCandidates.length,
             paid: updatedPaidCandidates.length,

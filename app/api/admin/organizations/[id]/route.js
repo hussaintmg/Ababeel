@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import connectDB from "@/utils/db";
 import User from "@/models/User";
 import CourseReference from "@/models/CourseReference";
-import Invoice from "@/models/Invoice";
 import { requireRole } from "@/lib/auth";
 import { validateAndSanitize, schemas } from "@/lib/validation";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit";
