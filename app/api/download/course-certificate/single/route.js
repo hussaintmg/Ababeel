@@ -4,7 +4,6 @@ import Template from "@/models/Template";
 import Candidate from "@/models/Candidate";
 import CourseReference from "@/models/CourseReference";
 import Course from "@/models/Course";
-import DefaultCourse from "@/models/DefaultCourse";
 import User from "@/models/User";
 import jwt from "jsonwebtoken";
 import { SinglePdfGenerator } from "@/utils/pdfGenerator";
@@ -187,12 +186,11 @@ export async function POST(request) {
       );
     }
 
-    // Fetch course (try user Course first, fallback to DefaultCourse)
-    let course = await Course.findById(courseReference.courseId).catch(
+    let course = await Course.findById(courseReference.course || courseReference.courseId).catch(
       () => null,
     );
-    if (!course) {
-      course = await DefaultCourse.findOne({
+    if (!course && courseReference.courseName) {
+      course = await Course.findOne({
         name: courseReference.courseName,
       }).catch(() => null);
     }

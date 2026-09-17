@@ -1,8 +1,6 @@
 import connectDB from "@/utils/db";
 import Registration from "@/models/Registration";
-import TrainingCourse from "@/models/TrainingCourse";
-import DefaultCourse from "@/models/DefaultCourse";
-import CourseReferenceSession from "@/models/CourseReferenceSession";
+import Course from "@/models/Course";
 import CourseReference from "@/models/CourseReference";
 import { getFormFields, toPublicField, validateSubmission, promoteContact } from "@/lib/training/registrationForm";
 import { uniqueReference } from "@/lib/training/reference";
@@ -79,13 +77,9 @@ export async function POST(request) {
 
     await connectDB();
 
-    // Look for course in TrainingCourse or DefaultCourse
-    let course = await TrainingCourse.findById(courseId).lean().catch(() => null);
-    let courseModel = "TrainingCourse";
-    if (!course) {
-      course = await DefaultCourse.findById(courseId).lean().catch(() => null);
-      courseModel = "DefaultCourse";
-    }
+    // Look for course in Course
+    const course = await Course.findById(courseId).lean().catch(() => null);
+    const courseModel = "Course";
 
     if (!course || !isCoursePublic(course)) {
       return badRequestResponse("That course is not available for registration");
@@ -136,17 +130,10 @@ export async function POST(request) {
     });
 
     if (session?._id) {
-      if (sessionModel === "CourseReference") {
-        CourseReference.updateOne(
-          { _id: session._id },
-          { $inc: { registrationsCount: 1 } },
-        ).catch(() => {});
-      } else {
-        CourseReferenceSession.updateOne(
-          { _id: session._id },
-          { $inc: { registrationsCount: 1 } },
-        ).catch(() => {});
-      }
+      CourseReference.updateOne(
+        { _id: session._id },
+        { $inc: { registrationsCount: 1 } },
+      ).catch(() => {});
     }
 
     return successResponse(

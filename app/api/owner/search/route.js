@@ -3,14 +3,10 @@ import { requireOwner } from "@/lib/auth";
 import { successResponse, safeErrorResponse } from "@/lib/errors";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit";
 import { plain } from "@/lib/training/queries";
-import TrainingCourse from "@/models/TrainingCourse";
-import CourseReferenceSession from "@/models/CourseReferenceSession";
+import Course from "@/models/Course";
+import CourseReference from "@/models/CourseReference";
 import Registration from "@/models/Registration";
 import AwardingBody from "@/models/AwardingBody";
-import Consultant from "@/models/Consultant";
-import TeamMember from "@/models/TeamMember";
-import Testimonial from "@/models/Testimonial";
-import Resource from "@/models/Resource";
 import SiteContent from "@/models/SiteContent";
 
 /**
@@ -38,10 +34,10 @@ const GROUPS = [
   {
     key: "courses",
     label: "Courses",
-    Model: TrainingCourse,
+    Model: Course,
     fields: ["name", "code", "shortDescription"],
     select: "name code slug status featuredImage",
-    href: (d) => `/owner/training/courses/${d._id}`,
+    href: (d) => `/owner/courses/all`,
     title: (d) => d.name,
     meta: (d) => [d.code, d.status].filter(Boolean).join(" · "),
   },
@@ -58,13 +54,13 @@ const GROUPS = [
   {
     key: "sessions",
     label: "Course references",
-    Model: CourseReferenceSession,
-    fields: ["referenceName", "referenceCode", "location"],
-    select: "referenceName referenceCode startDate status course",
+    Model: CourseReference,
+    fields: ["referenceName", "referenceCode", "referenceNumber", "location", "courseName"],
+    select: "referenceName referenceCode referenceNumber startDate status course courseName",
     populate: { path: "course", select: "name" },
-    href: (d) => `/owner/training/sessions/${d._id}`,
-    title: (d) => d.referenceName || d.referenceCode || d.course?.name || "Session",
-    meta: (d) => [d.course?.name, d.status].filter(Boolean).join(" · "),
+    href: (d) => `/dashboard/course-reference/all`,
+    title: (d) => d.referenceName || d.referenceCode || d.referenceNumber || d.courseName || "Reference",
+    meta: (d) => [d.courseName || d.course?.name, d.status].filter(Boolean).join(" · "),
   },
   {
     key: "awarding-bodies",
@@ -77,36 +73,6 @@ const GROUPS = [
     meta: (d) => d.status,
   },
   {
-    key: "consultants",
-    label: "Consultants",
-    Model: Consultant,
-    fields: ["name", "position", "expertise"],
-    select: "name position status profileImage",
-    href: (d) => `/owner/training/consultants/${d._id}`,
-    title: (d) => d.name,
-    meta: (d) => [d.position, d.status].filter(Boolean).join(" · "),
-  },
-  {
-    key: "team",
-    label: "Team",
-    Model: TeamMember,
-    fields: ["name", "position"],
-    select: "name position status profileImage",
-    href: (d) => `/owner/training/team/${d._id}`,
-    title: (d) => d.name,
-    meta: (d) => [d.position, d.status].filter(Boolean).join(" · "),
-  },
-  {
-    key: "testimonials",
-    label: "Testimonials",
-    Model: Testimonial,
-    fields: ["name", "company", "reviewText"],
-    select: "name company status profileImage",
-    href: (d) => `/owner/training/testimonials/${d._id}`,
-    title: (d) => d.name,
-    meta: (d) => [d.company, d.status].filter(Boolean).join(" · "),
-  },
-  {
     key: "pages",
     label: "Pages",
     Model: SiteContent,
@@ -116,16 +82,6 @@ const GROUPS = [
     title: (d) => d.title || d.key,
     meta: (d) =>
       [d.route || `/${d.key}`, d.enabled ? "enabled" : "built-in content"].join(" · "),
-  },
-  {
-    key: "resources",
-    label: "Resources",
-    Model: Resource,
-    fields: ["title", "shortDescription"],
-    select: "title slug type status featuredImage",
-    href: (d) => `/owner/training/resources/${d._id}`,
-    title: (d) => d.title,
-    meta: (d) => [d.type, d.status].filter(Boolean).join(" · "),
   },
 ];
 

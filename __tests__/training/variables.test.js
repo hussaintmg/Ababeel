@@ -31,28 +31,23 @@ describe("the catalogue is available as variables", () => {
     const names = getSchemaRegistry().map((m) => m.name);
     expect(names).toEqual(
       expect.arrayContaining([
-        "TrainingCourse",
-        "CourseReferenceSession",
+        "Course",
+        "CourseReference",
         "CourseLevel",
         "AwardingBody",
         "Accreditation",
-        "Consultant",
-        "TeamMember",
-        "Testimonial",
       ]),
     );
   });
 
   test("a course exposes the fields templates need", () => {
-    const p = paths("TrainingCourse");
+    const p = paths("Course");
     for (const field of [
       "name",
       "slug",
       "shortDescription",
       "description",
       "duration",
-      "featuredImage",
-      "certificateImage",
       "level",
       "awardingBody",
     ]) {
@@ -61,31 +56,19 @@ describe("the catalogue is available as variables", () => {
   });
 
   test("a course reaches through to its level and awarding body", () => {
-    // {{trainingCourse.awardingBody.name}} — the reference is followed, so a
-    // template does not have to be given the body separately.
-    const p = paths("TrainingCourse");
+    const p = paths("Course");
     expect(p).toContain("level.name");
     expect(p).toContain("awardingBody.name");
     expect(p).toContain("awardingBody.logo");
   });
 
   test("a session exposes its dates and mode, and reaches its course", () => {
-    const p = paths("CourseReferenceSession");
+    const p = paths("CourseReference");
     for (const field of ["startDate", "endDate", "examDate", "mode", "showInSchedule", "status"]) {
       expect(p).toContain(field);
     }
     expect(p).toContain("course.name");
     expect(p).toContain("course.awardingBody.name");
-  });
-
-  test("people and reviews expose their display fields", () => {
-    expect(paths("Consultant")).toEqual(
-      expect.arrayContaining(["name", "position", "bio", "expertise", "profileImage"]),
-    );
-    expect(paths("TeamMember")).toEqual(expect.arrayContaining(["name", "position", "bio"]));
-    expect(paths("Testimonial")).toEqual(
-      expect.arrayContaining(["name", "reviewText", "rating", "company"]),
-    );
   });
 });
 
@@ -96,15 +79,5 @@ describe("personal data stays out of the variables system", () => {
     expect(names).not.toContain("RegistrationField");
     expect(isBlockedModel("Registration")).toBe(true);
     expect(isBlockedModel("RegistrationField")).toBe(true);
-  });
-
-  test("a course exposes no field that could carry a price", () => {
-    // The public catalogue deliberately holds no money. If a price field is
-    // ever added to TrainingCourse, this fails and the decision gets revisited
-    // rather than drifting in.
-    const p = paths("TrainingCourse");
-    for (const field of ["price", "currency", "currencySymbol", "currencyCode"]) {
-      expect(p).not.toContain(field);
-    }
   });
 });

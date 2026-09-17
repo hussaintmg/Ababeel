@@ -18,14 +18,12 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { useAuth } from "@/context/AuthContext";
 import ConfirmationModal from "@/Components/ConfirmationModal";
-import { useInvoices } from "@/context/InvoiceContext";
 import DataTablePagination from "@/Components/common/DataTablePagination";
 import DataTableBulkBar from "@/Components/common/DataTableBulkBar";
 
 export default function AddCandidatesPage() {
   const { id: courseId } = useParams();
   const { user } = useAuth();
-  const { fetchInvoices } = useInvoices();
   const router = useRouter();
 
   const {
@@ -162,7 +160,6 @@ export default function AddCandidatesPage() {
       if (typeof refreshCourses === "function") {
         refreshCourses();
       }
-      await fetchInvoices();
 
       toast.success(
         `${selectedCandidates.length} candidates deleted successfully!`,
@@ -421,7 +418,6 @@ export default function AddCandidatesPage() {
       });
     } finally {
       setSubmitting(false);
-      fetchInvoices();
     }
   };
 
@@ -576,7 +572,6 @@ export default function AddCandidatesPage() {
       setShowDeleteModal(false);
       setCandidateToDelete(null);
       setDeleteCandidateInfo(null);
-      fetchInvoices();
     }
   };
 

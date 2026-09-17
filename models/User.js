@@ -81,7 +81,7 @@ const userSchema = new mongoose.Schema({
       amount: { type: Number, required: true },
       description: String,
       referenceId: String,
-      invoiceId: { type: mongoose.Schema.Types.ObjectId, ref: "Invoice" },
+      invoiceId: { type: mongoose.Schema.Types.ObjectId },
     },
   ],
 }, { timestamps: true });

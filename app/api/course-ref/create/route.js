@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/utils/db";
 import CourseReference from "@/models/CourseReference";
-import Invoice from "@/models/Invoice";
 import { getAuthenticatedUser } from "@/lib/auth";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit";
 import { isValidObjectId } from "@/lib/validation";
@@ -90,54 +89,11 @@ export async function POST(request) {
 
     const course = await CourseReference.create(courseData);
 
-    const invoiceCount = await Invoice.countDocuments();
-    const invoiceNumber = `INV-${String(invoiceCount + 1).padStart(6, "0")}`;
-
-    const dueDate = new Date();
-    dueDate.setDate(dueDate.getDate() + 2);
-
-    const items = [
-      {
-        description: data.courseName || "Course",
-        quantity: 1,
-        unitPrice: data.coursePrice || 0,
-        amount: data.coursePrice || 0,
-      },
-    ];
-
-    const invoiceData = {
-      invoiceNumber,
-      invoiceDate: new Date(),
-      dueDate,
-      courseId: course._id,
-      subtotal: data.coursePrice || 0,
-      totalAmount: data.coursePrice || 0,
-      balanceDue: data.coursePrice || 0,
-      clientId: userId,
-      clientName: authUser.username || "Client",
-      items,
-      paymentStatus: "pending",
-    };
-
-    let invoice;
-    try {
-      invoice = await Invoice.create(invoiceData);
-    } catch (invoiceError) {
-      await CourseReference.findByIdAndDelete(course._id);
-      throw new Error(`Invoice creation failed: ${invoiceError.message}`);
-    }
-
-    course.invoiceId = invoice._id;
-    await course.save();
-
-    // The ATC-details backfill was removed along with the ATC form fields.
-
     return NextResponse.json({
       success: true,
-      message: "Course created successfully with invoice",
+      message: "Course reference created successfully",
       data: {
         course,
-        invoice,
       },
     });
   } catch (error) {

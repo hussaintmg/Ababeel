@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/utils/db";
-import DefaultCourse from "@/models/DefaultCourse";
+import Course from "@/models/Course";
 import { requireAdmin } from "@/lib/auth";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit";
 import mongoose from "mongoose";
@@ -39,7 +39,7 @@ export async function DELETE(request) {
     }
 
     await connectDB();
-    const result = await DefaultCourse.deleteMany({ _id: { $in: validIds } });
+    const result = await Course.deleteMany({ _id: { $in: validIds } });
 
     return NextResponse.json({
       success: true,

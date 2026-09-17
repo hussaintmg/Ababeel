@@ -23,7 +23,6 @@ import Contact from "@/models/Contact";
 import Course from "@/models/Course";
 import CourseLevel from "@/models/CourseLevel";
 import CourseReference from "@/models/CourseReference";
-import CourseReferenceSession from "@/models/CourseReferenceSession";
 import DefaultCourse from "@/models/DefaultCourse";
 import Deposit from "@/models/Deposit";
 import Invoice from "@/models/Invoice";
@@ -35,7 +34,6 @@ import SiteContent from "@/models/SiteContent";
 import TeamMember from "@/models/TeamMember";
 import Template from "@/models/Template";
 import Testimonial from "@/models/Testimonial";
-import TrainingCourse from "@/models/TrainingCourse";
 import User from "@/models/User";
 
 export {
@@ -54,7 +52,6 @@ export {
   Course,
   CourseLevel,
   CourseReference,
-  CourseReferenceSession,
   DefaultCourse,
   Deposit,
   Invoice,
@@ -66,7 +63,6 @@ export {
   TeamMember,
   Template,
   Testimonial,
-  TrainingCourse,
   User,
 };
 
@@ -86,7 +82,6 @@ export const ALL_MODELS = {
   Course,
   CourseLevel,
   CourseReference,
-  CourseReferenceSession,
   DefaultCourse,
   Deposit,
   Invoice,
@@ -98,7 +93,6 @@ export const ALL_MODELS = {
   TeamMember,
   Template,
   Testimonial,
-  TrainingCourse,
   User,
 };
 

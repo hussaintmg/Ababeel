@@ -6,8 +6,8 @@ import Registration from "@/models/Registration";
 import Template from "@/models/Template";
 import { getPaymentInfo } from "@/lib/training/settings";
 import { SinglePdfGenerator } from "@/utils/pdfGenerator";
-import "@/models/TrainingCourse";
-import "@/models/CourseReferenceSession";
+import "@/models/Course";
+import "@/models/CourseReference";
 
 /**
  * Renders an invoice PDF for one registration, using the active

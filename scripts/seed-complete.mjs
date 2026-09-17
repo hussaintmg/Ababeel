@@ -267,34 +267,6 @@ async function main() {
         courseIds.push({ id: courseId, name: doc.name, code: doc.code, price: doc.price });
         console.log(`✓ Default Course exists: ${c.name}`);
       }
-
-      // Also ensure TrainingCourse collection has this course
-      let tc = await db.collection("trainingcourses").findOne({ slug: c.slug });
-      if (!tc) {
-        await db.collection("trainingcourses").insertOne({
-          _id: courseId,
-          name: c.name,
-          title: c.name,
-          slug: c.slug,
-          code: c.code,
-          price: c.price,
-          currency: c.currency,
-          level: c.level,
-          awardingBody: c.awardingBody,
-          category: c.category,
-          duration: c.duration,
-          durationDays: c.durationDays,
-          shortDescription: c.shortDescription,
-          description: c.description,
-          featured: c.featured,
-          displayOrder: c.displayOrder,
-          status: "published",
-          isPublished: true,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        });
-        console.log(`+ Training Course synced: ${c.name}`);
-      }
     }
 
     // 5. Seed Public Course References / Sessions (showInSchedule: true)
@@ -382,34 +354,6 @@ async function main() {
       } else {
         refId = existing._id;
         console.log(`✓ Course Reference exists: ${ref.referenceName}`);
-      }
-
-      // Also ensure CourseReferenceSession collection has this intake
-      let sess = await db.collection("coursereferencesessions").findOne({ referenceCode: ref.referenceCode });
-      if (!sess) {
-        await db.collection("coursereferencesessions").insertOne({
-          _id: refId,
-          course: ref.course,
-          referenceName: ref.referenceName,
-          referenceCode: ref.referenceCode,
-          referenceNumber: ref.referenceNumber,
-          startDate: ref.startDate,
-          endDate: ref.endDate,
-          mode: ref.mode,
-          modeLabel: ref.modeLabel,
-          location: ref.location,
-          duration: ref.duration,
-          seats: ref.seats,
-          status: "scheduled",
-          showInSchedule: true,
-          coursePrice: ref.coursePrice,
-          price: ref.coursePrice,
-          currency: "GBP",
-          currencySymbol: "£",
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        });
-        console.log(`+ Course Reference Session created: ${ref.referenceName}`);
       }
     }
 

@@ -8,7 +8,6 @@ import Footer from "@/Components/Footer";
 import { PathProvider } from "@/context/PathContext";
 import { NotificationsProvider } from "@/context/NotificationsContext";
 import NotificationComponent from "@/Components/NotificationComponent";
-import { InvoiceProvider } from "@/context/InvoiceContext";
 import { ContactProvider } from "@/context/ContactContext";
 import { ContactReferenceProvider } from "@/context/ContactReferenceContext";
 import CookieBanner from "@/Components/CookieBanner";
@@ -89,30 +88,28 @@ export default async function RootLayout({ children }) {
           >
           <PathProvider>
               <NotificationsProvider>
-                <InvoiceProvider>
-                    <ContactReferenceProvider>
-                      <ContactProvider>
-                        <ToastContainer
-                          position="top-right"
-                          autoClose={3000}
-                          hideProgressBar={false}
-                          newestOnTop={false}
-                          closeOnClick
-                          pauseOnHover
-                          theme="dark"
-                        />
-                        <MaintenanceGate>
-                          <TopbarSidebarComponentWrapper />
-                          {children}
-                          <Footer />
-                          <div className="fixed bottom-4 right-4 z-51">
-                            <NotificationComponent />
-                          </div>
-                          <CookieBanner />
-                        </MaintenanceGate>
-                      </ContactProvider>
-                    </ContactReferenceProvider>
-                </InvoiceProvider>
+                <ContactReferenceProvider>
+                  <ContactProvider>
+                    <ToastContainer
+                      position="top-right"
+                      autoClose={3000}
+                      hideProgressBar={false}
+                      newestOnTop={false}
+                      closeOnClick
+                      pauseOnHover
+                      theme="dark"
+                    />
+                    <MaintenanceGate>
+                      <TopbarSidebarComponentWrapper />
+                      {children}
+                      <Footer />
+                      <div className="fixed bottom-4 right-4 z-51">
+                        <NotificationComponent />
+                      </div>
+                      <CookieBanner />
+                    </MaintenanceGate>
+                  </ContactProvider>
+                </ContactReferenceProvider>
               </NotificationsProvider>
           </PathProvider>
           </SiteContentProvider>

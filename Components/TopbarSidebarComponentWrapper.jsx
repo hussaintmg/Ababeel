@@ -43,8 +43,6 @@ const navLinks = [
     url: "/about-us",
     dropdown: [
       { name: "About Us", url: "/about-us" },
-      { name: "Our Team", url: "/about/team" },
-      { name: "Our Consultants", url: "/about/consultants" },
       { name: "Accreditations & Certifications", url: "/about/accreditations" },
       { name: "Why Ababeel", url: "/why-ababeel" },
     ],
@@ -52,27 +50,24 @@ const navLinks = [
   { name: "Courses", url: "/courses" },
   { name: "Awarding Bodies", url: "/awarding-bodies" },
   { name: "Schedule", url: "/schedule" },
-  { name: "Resources", url: "/resources" },
   { name: "Contact Us", url: "/contact-us" },
   { name: "Register Now", url: "/registration" },
 ];
 const dashNavLinks = [
   { name: "Dashboard", url: "/dashboard" },
   {
-    name: "References",
+    name: "Course References",
     dropdown: [
-      { name: "New Reference", url: "/dashboard/course-reference/new" },
-      { name: "All References", url: "/dashboard/course-reference/all" },
+      { name: "New Course Reference", url: "/dashboard/course-reference/new" },
+      { name: "All Course References", url: "/dashboard/course-reference/all" },
     ],
   },
-
-  // Invoices, Transactions, Trainers, Deposit, and Training Resources removed.
 ];
 const adminNavLinks = [
   { name: "Dashboard", url: "/admin" },
   { name: "Organizations", url: "/admin/organizations" },
   {
-    name: "Default Courses",
+    name: "Courses",
     dropdown: [
       { name: "Add Course", url: "/admin/default-course/new" },
       {
@@ -87,7 +82,7 @@ const ownerNavLinks = [
   { name: "Organizations", url: "/owner/organizations" },
   { name: "Users", url: "/owner/users" },
   {
-    name: "Default Courses",
+    name: "Courses",
     dropdown: [
       { name: "Add Course", url: "/owner/default-course/new" },
       {
@@ -99,6 +94,8 @@ const ownerNavLinks = [
   {
     name: "Training",
     dropdown: [
+      { name: "Course Levels", url: "/owner/training/course-levels" },
+      { name: "Accreditations", url: "/owner/training/accreditations" },
       { name: "Awarding Bodies", url: "/owner/training/awarding-bodies" },
       { name: "Registrations", url: "/owner/registrations" },
     ],

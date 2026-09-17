@@ -20,7 +20,6 @@ import { useAuth } from "@/context/AuthContext";
 import ConfirmationModal from "@/Components/ConfirmationModal";
 import IdCardGenerator from "@/Components/candidates/IdCardGenerator";
 import CertificateGenerator from "@/Components/candidates/CertificateGenerator";
-import { useInvoices } from "@/context/InvoiceContext";
 import DataTablePagination from "@/Components/common/DataTablePagination";
 import DataTableBulkBar from "@/Components/common/DataTableBulkBar";
 
@@ -28,7 +27,6 @@ export default function AddCandidatesPage() {
   const { id: courseId } = useParams();
   const { user } = useAuth();
   const router = useRouter();
-  const { fetchInvoices } = useInvoices();
 
   const {
     courses,
@@ -187,7 +185,6 @@ export default function AddCandidatesPage() {
       setSelectedCandidates([]);
       setSelectAll(false);
       refreshCourses();
-      await fetchInvoices();
 
       toast.success(
         `${selectedCandidates.length} candidates deleted successfully!`,
@@ -199,7 +196,6 @@ export default function AddCandidatesPage() {
       setIsDeletingSelected(false);
       setShowDeleteSelectedModal(false);
       setSelectedCandidatesList([]);
-      fetchInvoices();
     }
   };
 
@@ -548,7 +544,6 @@ export default function AddCandidatesPage() {
       });
     } finally {
       setSubmitting(false);
-      fetchInvoices();
     }
   };
 
@@ -704,7 +699,6 @@ export default function AddCandidatesPage() {
       setShowDeleteModal(false);
       setCandidateToDelete(null);
       setDeleteCandidateInfo(null);
-      fetchInvoices();
       setIsLoadingDelete(false);
     }
   };

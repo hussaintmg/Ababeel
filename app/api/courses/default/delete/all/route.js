@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/utils/db";
-import DefaultCourse from "@/models/DefaultCourse";
+import Course from "@/models/Course";
 import { requireAdmin } from "@/lib/auth";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit";
 
@@ -16,7 +16,7 @@ export async function DELETE(request) {
 
     await connectDB();
 
-    await DefaultCourse.deleteMany({});
+    await Course.deleteMany({});
 
     return NextResponse.json({
       success: true,

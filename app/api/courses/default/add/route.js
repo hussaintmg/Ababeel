@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import connectDB from "@/utils/db";
-import DefaultCourse from "@/models/DefaultCourse";
+import Course from "@/models/Course";
 import User from "@/models/User";
 
 export const dynamic = "force-dynamic";
@@ -126,7 +126,7 @@ export async function POST(request) {
     }
 
     // Check if course with same name exists
-    const existingCourse = await DefaultCourse.findOne({
+    const existingCourse = await Course.findOne({
       name: name.trim(),
     });
 
@@ -174,7 +174,7 @@ export async function POST(request) {
       updatedBy: user._id,
     };
 
-    const newCourse = await DefaultCourse.create(courseData);
+    const newCourse = await Course.create(courseData);
 
     return NextResponse.json(
       {

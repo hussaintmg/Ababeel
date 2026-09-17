@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/utils/db";
-import DefaultCourse from "@/models/DefaultCourse";
+import Course from "@/models/Course";
 import CourseLevel from "@/models/CourseLevel";
 import AwardingBody from "@/models/AwardingBody";
 
@@ -26,7 +26,7 @@ export async function GET(request) {
       ];
     }
 
-    const courses = await DefaultCourse.find(query)
+    const courses = await Course.find(query)
       .populate("level", "name slug color icon")
       .populate("awardingBody", "name slug logo")
       .sort({ displayOrder: 1, createdAt: -1 })

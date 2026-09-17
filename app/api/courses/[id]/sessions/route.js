@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/utils/db";
 import CourseReference from "@/models/CourseReference";
-import CourseReferenceSession from "@/models/CourseReferenceSession";
 import { isValidObjectId } from "@/lib/validation";
 
 export const dynamic = "force-dynamic";
@@ -15,24 +14,13 @@ export async function GET(request, { params }) {
 
     await connectDB();
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const [crSessions, crRefs] = await Promise.all([
-      CourseReferenceSession.find({
-        course: id,
-        status: { $in: ["open", "active", "published", "scheduled"] },
-      })
-        .sort({ startDate: 1 })
-        .lean(),
-      CourseReference.find({
-        $or: [{ course: id }, { courseId: id }],
-        showInSchedule: { $ne: false },
-        status: { $in: ["active", "open", "published", "scheduled"] },
-      })
-        .sort({ startDate: 1 })
-        .lean(),
-    ]);
+    const crRefs = await CourseReference.find({
+      $or: [{ course: id }, { courseId: id }],
+      showInSchedule: { $ne: false },
+      status: { $in: ["active", "open", "published", "scheduled"] },
+    })
+      .sort({ startDate: 1 })
+      .lean();
 
     const formattedRefs = crRefs.map((r) => ({
       _id: r._id.toString(),
@@ -50,13 +38,9 @@ export async function GET(request, { params }) {
       status: r.status,
     }));
 
-    const combined = [...crSessions, ...formattedRefs].sort(
-      (a, b) => new Date(a.startDate || 0) - new Date(b.startDate || 0)
-    );
-
     return NextResponse.json({
       success: true,
-      data: combined,
+      data: formattedRefs,
     });
   } catch (error) {
     console.error("Error fetching course sessions:", error);

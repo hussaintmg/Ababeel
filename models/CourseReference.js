@@ -11,7 +11,7 @@ const CourseReferenceSchema = new mongoose.Schema({
   // Link to Course model
   course: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "DefaultCourse",
+    ref: "Course",
     default: null,
     index: true,
   },
@@ -65,8 +65,7 @@ const CourseReferenceSchema = new mongoose.Schema({
   // Candidates and payment
   candidates: [{ type: mongoose.Schema.Types.ObjectId, ref: "Candidate" }],
   candidatesCount: { type: Number, default: 0 },
-  registrationsCount: { type: Number, default: 0 },
-  invoiceId: { type: mongoose.Schema.Types.ObjectId, ref: "Invoice" },
+  invoiceId: { type: mongoose.Schema.Types.ObjectId },
 
   // Public Visibility & CMS Presentation
   title: { type: String, default: "", trim: true },

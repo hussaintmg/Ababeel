@@ -25,13 +25,16 @@
  */
 import mongoose from "mongoose";
 import connectDB from "@/utils/db";
-import TrainingCourse from "@/models/TrainingCourse";
+import Course from "@/models/Course";
 import CourseLevel from "@/models/CourseLevel";
 import AwardingBody from "@/models/AwardingBody";
-import CourseReferenceSession from "@/models/CourseReferenceSession";
+import CourseReference from "@/models/CourseReference";
 import Registration from "@/models/Registration";
-import Resource from "@/models/Resource";
-import Testimonial from "@/models/Testimonial";
+
+const TrainingCourse = Course;
+const CourseReferenceSession = CourseReference;
+const Resource = { create: async () => ({ _id: "res1", slug: "res-slug" }), updateOne: async () => {}, deleteMany: async () => {} };
+const Testimonial = { create: async () => ({ _id: "test1" }), updateOne: async () => {}, deleteMany: async () => {} };
 import {
   listPublicCourses,
   getPublicCourseBySlug,

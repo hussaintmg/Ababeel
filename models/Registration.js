@@ -49,24 +49,22 @@ const registrationSchema = new mongoose.Schema(
 
     course: {
       type: mongoose.Schema.Types.ObjectId,
-      refPath: "courseModel",
+      ref: "Course",
       required: true,
       index: true,
     },
     courseModel: {
       type: String,
-      enum: ["TrainingCourse", "DefaultCourse"],
-      default: "DefaultCourse",
+      default: "Course",
     },
     session: {
       type: mongoose.Schema.Types.ObjectId,
-      refPath: "sessionModel",
+      ref: "CourseReference",
       default: null,
       index: true,
     },
     sessionModel: {
       type: String,
-      enum: ["CourseReferenceSession", "CourseReference"],
       default: "CourseReference",
     },
 

@@ -1,7 +1,7 @@
 // app/api/courses/upload-csv/route.js
 import { NextResponse } from "next/server";
 import connectDB from "@/utils/db";
-import DefaultCourse from "@/models/DefaultCourse";
+import Course from "@/models/Course";
 import User from "@/models/User";
 import jwt from "jsonwebtoken";
 
@@ -84,7 +84,7 @@ export async function POST(request) {
         ...course,
         createdBy: user._id,
         updatedBy: user._id,
-        isDefaultCourse: true,
+        isCourse: true,
         status: "active",
       });
     }
@@ -101,7 +101,7 @@ export async function POST(request) {
     }
 
     // Insert courses in bulk
-    const insertedCourses = await DefaultCourse.insertMany(validatedCourses);
+    const insertedCourses = await Course.insertMany(validatedCourses);
 
     return NextResponse.json({
       success: true,

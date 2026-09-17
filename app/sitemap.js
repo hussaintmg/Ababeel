@@ -1,20 +1,13 @@
 import connectDB from "@/utils/db";
-import TrainingCourse from "@/models/TrainingCourse";
+import Course from "@/models/Course";
 import AwardingBody from "@/models/AwardingBody";
 import SiteContent from "@/models/SiteContent";
-import Resource from "@/models/Resource";
 
 /**
  * The site's sitemap.
  *
  * Everything here is derived: the static routes, the published courses and
- * awarding bodies, and any custom CMS page the owner has published. Nothing is
- * listed by hand, so a course published this morning is in the sitemap this
- * afternoon without anyone remembering to add it.
- *
- * A database failure must not take the sitemap down — an empty section is a
- * temporary gap a crawler will re-read, whereas a 500 teaches it to stop
- * asking. So every query falls back to an empty list.
+ * awarding bodies, and any custom CMS page the owner has published.
  */
 export const dynamic = "force-dynamic";
 export const revalidate = 3600;
@@ -24,21 +17,13 @@ const STATIC_ROUTES = [
   { path: "/courses", priority: 0.9, changeFrequency: "daily" },
   { path: "/schedule", priority: 0.9, changeFrequency: "daily" },
   { path: "/awarding-bodies", priority: 0.7, changeFrequency: "monthly" },
-  { path: "/resources", priority: 0.7, changeFrequency: "weekly" },
   { path: "/about-us", priority: 0.7, changeFrequency: "monthly" },
-  { path: "/about/team", priority: 0.6, changeFrequency: "monthly" },
-  { path: "/about/consultants", priority: 0.6, changeFrequency: "monthly" },
   { path: "/about/accreditations", priority: 0.6, changeFrequency: "monthly" },
-  { path: "/qualification", priority: 0.6, changeFrequency: "monthly" },
   { path: "/contact-us", priority: 0.5, changeFrequency: "yearly" },
   { path: "/verify-certificate", priority: 0.5, changeFrequency: "yearly" },
   { path: "/privacy-policy", priority: 0.2, changeFrequency: "yearly" },
   { path: "/terms-of-services", priority: 0.2, changeFrequency: "yearly" },
 ];
-
-// /registration is deliberately absent: it is a form, it needs a course in its
-// query string to mean anything, and an indexed one collects stray submissions
-// with no course attached. The page sets noindex to match.
 
 function baseUrl() {
   const raw =
@@ -53,20 +38,16 @@ export default async function sitemap() {
   const base = baseUrl();
   const now = new Date();
 
-  const [courses, bodies, resources, customPages, hidden] = await Promise.all([
+  const [courses, bodies, customPages, hidden] = await Promise.all([
     safe(async () => {
       await connectDB();
-      return TrainingCourse.find({ status: "published" })
+      return Course.find({ status: { $in: ["published", "active"] } })
         .select("slug updatedAt seo.noIndex")
         .lean();
     }),
     safe(async () => {
       await connectDB();
       return AwardingBody.find({ status: "published" }).select("slug updatedAt seo.noIndex").lean();
-    }),
-    safe(async () => {
-      await connectDB();
-      return Resource.find({ status: "published" }).select("slug updatedAt seo.noIndex").lean();
     }),
     safe(async () => {
       await connectDB();
@@ -114,16 +95,6 @@ export default async function sitemap() {
       lastModified: body.updatedAt || now,
       changeFrequency: "monthly",
       priority: 0.6,
-    });
-  }
-
-  for (const resource of resources) {
-    if (!resource.slug || resource.seo?.noIndex) continue;
-    entries.push({
-      url: `${base}/resources/${resource.slug}`,
-      lastModified: resource.updatedAt || now,
-      changeFrequency: "monthly",
-      priority: 0.5,
     });
   }
 

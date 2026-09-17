@@ -5,7 +5,6 @@ import Template from "@/models/Template";
 import Candidate from "@/models/Candidate";
 import CourseReference from "@/models/CourseReference";
 import Course from "@/models/Course";
-import DefaultCourse from "@/models/DefaultCourse";
 import User from "@/models/User";
 import jwt from "jsonwebtoken";
 import { SinglePdfGenerator } from "@/utils/pdfGenerator";
@@ -152,9 +151,9 @@ export async function POST(request) {
       return NextResponse.json({ success: false, error: "Course reference not found" }, { status: 404 });
     }
 
-    let course = await Course.findById(courseReference.courseId).catch(() => null);
-    if (!course) {
-      course = await DefaultCourse.findOne({ name: courseReference.courseName }).catch(() => null);
+    let course = await Course.findById(courseReference.course || courseReference.courseId).catch(() => null);
+    if (!course && courseReference.courseName) {
+      course = await Course.findOne({ name: courseReference.courseName }).catch(() => null);
     }
 
     const template = await Template.findOne({ type: "Course Id Card", isActive: true });

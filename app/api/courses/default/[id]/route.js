@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/utils/db";
-import DefaultCourse from "@/models/DefaultCourse";
+import Course from "@/models/Course";
 import { getAuthenticatedUser, requireAdmin } from "@/lib/auth";
 import { isValidObjectId } from "@/lib/validation";
 
@@ -17,7 +17,7 @@ export async function GET(request, { params }) {
 
     await connectDB();
 
-    const course = await DefaultCourse.findById(id);
+    const course = await Course.findById(id);
 
     if (!course) {
       return NextResponse.json(
@@ -55,7 +55,7 @@ export async function DELETE(request, { params }) {
 
     await connectDB();
 
-    const course = await DefaultCourse.findByIdAndDelete(id);
+    const course = await Course.findByIdAndDelete(id);
 
     if (!course) {
       return NextResponse.json(
@@ -134,7 +134,7 @@ export async function PUT(request, { params }) {
     if (body.displayOrder !== undefined) updateFields.displayOrder = Number(body.displayOrder) || 0;
     if (body.status !== undefined) updateFields.status = body.status || "active";
 
-    const course = await DefaultCourse.findByIdAndUpdate(
+    const course = await Course.findByIdAndUpdate(
       id,
       { $set: updateFields },
       {
