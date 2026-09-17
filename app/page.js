@@ -385,7 +385,7 @@ const HomePageInner = () => {
               <div className="space-y-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className={`text-xs font-semibold px-2.5 py-1 rounded-md border ${course.levelColor}`}>
-                    {course.level}
+                    {typeof course.level === "object" ? course.level?.name : (course.level || "Accredited")}
                   </span>
                   <span className="text-xs text-gray-500 font-medium flex items-center gap-1">
                     <Award size={13} className="text-gray-400" />

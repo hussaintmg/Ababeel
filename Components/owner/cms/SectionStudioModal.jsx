@@ -1157,7 +1157,7 @@ return (
                   <td className="py-4 px-4">
                     <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-sky-50 text-sky-700 text-xs font-semibold border border-sky-200">
                       <Award size={12} />
-                      {item.level || "RQF Standard"}
+                      {typeof item.level === "object" ? item.level?.name : (item.level || "RQF Standard")}
                     </span>
                   </td>
                   <td className="py-4 px-4 text-slate-600 font-medium">
