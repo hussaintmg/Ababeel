@@ -162,6 +162,22 @@ CourseSchema.pre('validate', function ensureSlug() {
   }
 });
 
+CourseSchema.virtual('courseName').get(function() {
+  return this.name;
+});
+
+CourseSchema.virtual('title').get(function() {
+  return this.name;
+});
+
+CourseSchema.virtual('coursePrice').get(function() {
+  return this.price;
+});
+
+CourseSchema.virtual('courseCode').get(function() {
+  return this.code;
+});
+
 CourseSchema.index({ status: 1, displayOrder: 1, name: 1 });
 CourseSchema.index({ name: 'text', shortDescription: 'text', code: 'text' });
 
