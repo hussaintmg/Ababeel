@@ -154,6 +154,26 @@ export function prepareExecutableCode(rawCode) {
   let clean = (rawCode || "").trim();
   if (!clean) return "return function EmptySection() { return null; };";
 
+  // Check if author passed a JSON definition (e.g. copied directly from AI prompt or JSON export)
+  if (clean.startsWith("{")) {
+    try {
+      const parsed = JSON.parse(clean);
+      if (parsed && typeof parsed === "object") {
+        if (typeof parsed.code === "string") {
+          return prepareExecutableCode(parsed.code);
+        }
+      }
+    } catch {
+      const codeMatch = clean.match(/"code"\s*:\s*"((?:[^"\\]|\\.)*)"/s);
+      if (codeMatch && codeMatch[1]) {
+        try {
+          const unescaped = JSON.parse(`"${codeMatch[1]}"`);
+          return prepareExecutableCode(unescaped);
+        } catch {}
+      }
+    }
+  }
+
   // Strip ES module imports e.g. import { defineSection } from "@platform/cms-sdk"
   clean = clean.replace(/import\s+[\s\S]*?from\s+['"][^'"]+['"];?/g, "").trim();
 
@@ -445,7 +465,10 @@ export default function SdkCustomBlock({ p = {}, s = {}, block = null, data = nu
             <CompiledComponent
               props={actualProps}
               {...actualProps}
+              {...effectiveData}
               data={effectiveData}
+              featuredCourses={effectiveData.featuredCourses || effectiveData.courses}
+              courses={effectiveData.courses || effectiveData.featuredCourses}
               motion={FramerMotion.motion}
               icons={LucideIcons}
               toast={toast}

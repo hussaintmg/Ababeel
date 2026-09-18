@@ -264,7 +264,16 @@ export default function PublicPage(cmsProps = {}) {
                       <Link href={detailsUrl}>{course.title}</Link>
                     </h3>
 
-                    <p className="text-gray-600 text-sm leading-relaxed">{course.description}</p>
+                    {course.description ? (
+                      /<[a-z][\s\S]*>/i.test(course.description) ? (
+                        <div
+                          className="text-gray-600 text-sm leading-relaxed line-clamp-3 prose prose-sm max-w-none"
+                          dangerouslySetInnerHTML={{ __html: course.description }}
+                        />
+                      ) : (
+                        <p className="text-gray-600 text-sm leading-relaxed line-clamp-3">{course.description}</p>
+                      )
+                    ) : null}
 
                     <div className="flex items-center gap-4 text-xs text-gray-500 pt-1">
                       <div className="flex items-center gap-1.5 font-medium">

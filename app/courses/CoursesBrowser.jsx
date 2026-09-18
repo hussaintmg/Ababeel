@@ -17,6 +17,7 @@ import {
   LoadingAnnouncer,
   RevealStagger,
 } from "@/Components/ui";
+import { useCommands } from "@/context/CommandContext";
 
 /**
  * The interactive part of /courses.
@@ -53,6 +54,39 @@ export default function CoursesBrowser({ initial = {}, filters = {}, cardTemplat
   // Guards against an early slow response overwriting a later fast one.
   const requestId = useRef(0);
   const resultsTop = useRef(null);
+  const searchInputRef = useRef(null);
+
+  useCommands([
+    {
+      id: "courses.search.focus",
+      title: "Focus Course Search",
+      shortcut: "/",
+      category: "Navigation",
+      scope: "page",
+      safeInEditable: false,
+      execute: () => {
+        searchInputRef.current?.focus?.();
+        searchInputRef.current?.select?.();
+      },
+    },
+    {
+      id: "courses.filters.clear",
+      title: "Clear Course Filters",
+      category: "Filters",
+      scope: "page",
+      safeInEditable: false,
+      enabled: Boolean(
+        query.search ||
+        query.level ||
+        query.awardingBody ||
+        query.category ||
+        query.duration
+      ),
+      execute: () => {
+        clearAll();
+      },
+    },
+  ]);
 
   const fetchPage = useCallback(async (next) => {
     const id = ++requestId.current;
@@ -145,9 +179,10 @@ export default function CoursesBrowser({ initial = {}, filters = {}, cardTemplat
           {/* Search, sort, and the mobile filter trigger */}
           <div className="mb-6 flex flex-wrap items-center gap-3">
             <SearchInput
+              inputRef={searchInputRef}
               value={query.search}
               onChange={(value) => update({ search: value })}
-              placeholder="Search courses…"
+              placeholder="Search courses… (press / to focus)"
               className="min-w-52 flex-1"
             />
             <FilterTrigger

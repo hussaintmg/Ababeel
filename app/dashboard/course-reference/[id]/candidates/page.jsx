@@ -20,6 +20,8 @@ import { useAuth } from "@/context/AuthContext";
 import ConfirmationModal from "@/Components/ConfirmationModal";
 import DataTablePagination from "@/Components/common/DataTablePagination";
 import DataTableBulkBar from "@/Components/common/DataTableBulkBar";
+import { useSelection } from "@/hooks/useSelection";
+import { useCommand } from "@/context/CommandContext";
 
 export default function AddCandidatesPage() {
   const { id: courseId } = useParams();
@@ -39,7 +41,24 @@ export default function AddCandidatesPage() {
   useEffect(() => {
     if (courses.length) {
       const foundCourse = courses.find((c) => c._id === courseId);
-      setCourse(foundCourse || {});
+      if (foundCourse) {
+        setCourse(foundCourse);
+        return;
+      }
+    }
+    if (courseId) {
+      axios
+        .get(`/api/course-ref/${courseId}`)
+        .then((res) => {
+          if (res.data?.success && res.data.data) {
+            setCourse(res.data.data);
+          } else if (res.data?.course) {
+            setCourse(res.data.course);
+          }
+        })
+        .catch((err) => {
+          console.warn("Direct fetch course ref error:", err);
+        });
     }
   }, [courses, courseId]);
 
@@ -61,10 +80,11 @@ export default function AddCandidatesPage() {
   const [candidatePage, setCandidatePage] = useState(1);
   const [candidatePageSize, setCandidatePageSize] = useState(20);
   const [candidateSearch, setCandidateSearch] = useState("");
-  const [selectedCandidates, setSelectedCandidates] = useState([]);
   const [showDeleteSelectedModal, setShowDeleteSelectedModal] = useState(false);
   const [isDeletingSelected, setIsDeletingSelected] = useState(false);
   const [selectedCandidatesList, setSelectedCandidatesList] = useState([]);
+
+  const { pushOverlay, popOverlay } = useCommand();
 
   // Filter candidates by search
   const filteredCandidates = useMemo(() => {
@@ -87,23 +107,61 @@ export default function AddCandidatesPage() {
     return filteredCandidates.slice(startIndex, startIndex + candidatePageSize);
   }, [filteredCandidates, startIndex, candidatePageSize]);
 
-  // Check if all visible rows on CURRENT page are selected
-  const isPageAllSelected =
-    visibleCandidates.length > 0 &&
-    visibleCandidates.every((c) => selectedCandidates.includes(c._id));
+  const {
+    selectedIds: selectedCandidates,
+    setSelectedIds: setSelectedCandidates,
+    selectedCount,
+    focusedIndex,
+    isAllSelected: isPageAllSelected,
+    isSomeSelected: isPageSomeSelected,
+    toggleSelectAll: handleToggleSelectPage,
+    handleRowClick: handleSelectionRowClick,
+    handleCheckboxChange,
+    handleKeyDown: handleTableKeyDown,
+    clearSelection,
+    tableProps,
+  } = useSelection({
+    items: visibleCandidates,
+    itemIdKey: "_id",
+    tableId: "dashboard.candidates",
+    onDeleteSelected: () => {
+      const selectedCandidatesData = candidates.filter((c) =>
+        selectedCandidates.includes(c._id),
+      );
+      setSelectedCandidatesList(selectedCandidatesData);
+      setShowDeleteSelectedModal(true);
+    },
+    onCopySelected: (ids) => {
+      const selected = candidates.filter((c) => ids.includes(c._id));
+      const text = selected
+        .map((c) => `${c.firstName || ""} ${c.lastName || c.name || ""} - ${c.traineeId || c.email || ""}`)
+        .join("\n");
+      navigator.clipboard?.writeText(text);
+      toast.info(`Copied ${ids.length} candidate(s) to clipboard`);
+    },
+  });
 
-  const isPageSomeSelected =
-    !isPageAllSelected &&
-    visibleCandidates.some((c) => selectedCandidates.includes(c._id));
+  // Overlay Stack integration for modals
+  useEffect(() => {
+    if (showDeleteSelectedModal) {
+      pushOverlay("candidates-del-selected", () => setShowDeleteSelectedModal(false));
+      return () => popOverlay("candidates-del-selected");
+    }
+  }, [showDeleteSelectedModal, pushOverlay, popOverlay]);
 
-  // Toggle selection for a single candidate
-  const handleSelectCandidate = (candidateId) => {
-    setSelectedCandidates((prev) =>
-      prev.includes(candidateId)
-        ? prev.filter((id) => id !== candidateId)
-        : [...prev, candidateId],
-    );
-  };
+  useEffect(() => {
+    if (showDeleteModal) {
+      pushOverlay("candidates-del-single", () => setShowDeleteModal(false));
+      return () => popOverlay("candidates-del-single");
+    }
+  }, [showDeleteModal, pushOverlay, popOverlay]);
+
+  useEffect(() => {
+    if (showUploadModal) {
+      pushOverlay("candidates-upload-csv", () => setShowUploadModal(false));
+      return () => popOverlay("candidates-upload-csv");
+    }
+  }, [showUploadModal, pushOverlay, popOverlay]);
 
   // Toggle selection for visible rows on the CURRENT page (persisting selections across other pages)
   const handleToggleSelectPage = () => {
@@ -583,20 +641,17 @@ export default function AddCandidatesPage() {
   };
 
   const handleSubmitAllCandidates = async () => {
-    if (candidates.length === 0) {
-      toast.warning("Please add at least one candidate before proceeding", {
+    if (candidates.length > 0) {
+      toast.success("Candidates saved. You can now download their documents.", {
+        position: "top-right",
+        autoClose: 4000,
+      });
+    } else {
+      toast.info("Course reference opened. You can add candidates at any time.", {
         position: "top-right",
         autoClose: 3000,
       });
-      return;
     }
-
-    // No payment step: finishing takes the user straight to their course
-    // reference, where candidate ID cards and certificates can be downloaded.
-    toast.success("Candidates saved. You can now download their documents.", {
-      position: "top-right",
-      autoClose: 4000,
-    });
     router.push(`/dashboard/course-reference/${courseId}/candidates/edit`);
   };
 
@@ -1091,12 +1146,7 @@ export default function AddCandidatesPage() {
               </div>
               <button
                 onClick={handleNext}
-                disabled={candidates.length === 0}
-                className={`px-5 sm:px-6 py-2.5 sm:py-3 rounded-lg font-medium text-sm sm:text-base inline-flex items-center justify-center shrink-0 w-full sm:w-auto ${
-                  candidates.length === 0
-                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                    : "bg-blue-600 text-white hover:bg-blue-700"
-                }`}
+                className="px-5 sm:px-6 py-2.5 sm:py-3 rounded-lg font-medium text-sm sm:text-base inline-flex items-center justify-center shrink-0 w-full sm:w-auto bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-sm"
               >
                 Finish
               </button>
@@ -1490,7 +1540,7 @@ export default function AddCandidatesPage() {
                 </div>
 
                 <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
+                  <table className="min-w-full divide-y divide-gray-200 outline-none" {...tableProps}>
                     <thead className="bg-gray-50">
                       <tr>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-12">
@@ -1551,29 +1601,38 @@ export default function AddCandidatesPage() {
                           </td>
                         </tr>
                       ) : (
-                        visibleCandidates.map((candidate) => (
-                          <tr
-                            key={candidate._id}
-                            className={`hover:bg-gray-50 transition-colors duration-150 ${
-                              selectedCandidates.includes(candidate._id)
-                                ? "bg-blue-50"
-                                : ""
-                            }`}
-                          >
-                            <td className="px-4 py-4 whitespace-nowrap">
-                              <div className="flex items-center justify-center">
-                                <input
-                                  type="checkbox"
-                                  checked={selectedCandidates.includes(
-                                    candidate._id,
-                                  )}
-                                  onChange={() =>
-                                    handleSelectCandidate(candidate._id)
-                                  }
-                                  className="w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500 focus:ring-2 cursor-pointer"
-                                />
-                              </div>
-                            </td>
+                        visibleCandidates.map((candidate, idx) => {
+                          const isFocusedRow = focusedIndex === idx;
+                          return (
+                            <tr
+                              key={candidate._id}
+                              onClick={(e) => {
+                                if (e.shiftKey || e.ctrlKey || e.metaKey) {
+                                  handleSelectionRowClick(candidate._id, idx, e);
+                                }
+                              }}
+                              className={`hover:bg-gray-50 transition-colors duration-150 ${
+                                selectedCandidates.includes(candidate._id)
+                                  ? "bg-blue-50"
+                                  : isFocusedRow
+                                  ? "bg-gray-100 ring-1 ring-inset ring-blue-400"
+                                  : ""
+                              }`}
+                            >
+                              <td className="px-4 py-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                                <div className="flex items-center justify-center">
+                                  <input
+                                    type="checkbox"
+                                    checked={selectedCandidates.includes(
+                                      candidate._id,
+                                    )}
+                                    onChange={(e) =>
+                                      handleCheckboxChange(candidate._id, idx, e)
+                                    }
+                                    className="w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500 focus:ring-2 cursor-pointer"
+                                  />
+                                </div>
+                              </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="h-10 w-10 rounded-full overflow-hidden bg-gray-100">
                                 {candidate.profile?.url ? (
@@ -1717,12 +1776,7 @@ export default function AddCandidatesPage() {
                   <div className="pt-6 border-t border-gray-200 lg:hidden">
                     <button
                       onClick={handleNext}
-                      disabled={candidates.length === 0}
-                      className={`w-full py-3 rounded-lg font-medium ${
-                        candidates.length === 0
-                          ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                          : "bg-blue-600 text-white hover:bg-blue-700"
-                      }`}
+                      className="w-full py-3 rounded-lg font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-sm"
                     >
                       Finish
                     </button>

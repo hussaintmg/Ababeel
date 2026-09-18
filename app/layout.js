@@ -15,6 +15,9 @@ import { SiteContentProvider } from "@/context/SiteContentContext";
 import MaintenanceGate from "@/Components/cms/MaintenanceGate";
 import { getGlobalBundle } from "@/lib/cms";
 import { pageMetadata } from "@/lib/cms/metadata";
+import { CommandProvider } from "@/context/CommandContext";
+import CommandPalette from "@/Components/commands/CommandPalette";
+import KeyboardShortcutsModal from "@/Components/commands/KeyboardShortcutsModal";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -87,6 +90,7 @@ export default async function RootLayout({ children }) {
             initialFaviconVersion={faviconVersion}
           >
           <PathProvider>
+            <CommandProvider>
               <NotificationsProvider>
                 <ContactReferenceProvider>
                   <ContactProvider>
@@ -107,10 +111,13 @@ export default async function RootLayout({ children }) {
                         <NotificationComponent />
                       </div>
                       <CookieBanner />
+                      <CommandPalette />
+                      <KeyboardShortcutsModal />
                     </MaintenanceGate>
                   </ContactProvider>
                 </ContactReferenceProvider>
               </NotificationsProvider>
+            </CommandProvider>
           </PathProvider>
           </SiteContentProvider>
         </AuthProvider>

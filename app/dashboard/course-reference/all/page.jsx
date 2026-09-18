@@ -26,6 +26,7 @@ import axios from "axios";
 import DataTablePagination from "@/Components/common/DataTablePagination";
 import DataTableBulkBar from "@/Components/common/DataTableBulkBar";
 import ConfirmationModal from "@/Components/ConfirmationModal";
+import { useSelection } from "@/hooks/useSelection";
 
 export default function CourseReferencesPage() {
   const router = useRouter();
@@ -47,7 +48,6 @@ export default function CourseReferencesPage() {
   const [togglingMap, setTogglingMap] = useState({});
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
-  const [selectedCourses, setSelectedCourses] = useState([]);
   const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
@@ -116,28 +116,34 @@ export default function CourseReferencesPage() {
   const startIndex = (page - 1) * pageSize;
   const visibleCourses = filteredCourses.slice(startIndex, startIndex + pageSize);
 
-  const isPageAllSelected =
-    visibleCourses.length > 0 &&
-    visibleCourses.every((c) => selectedCourses.includes(c._id));
-  const isPageSomeSelected =
-    visibleCourses.some((c) => selectedCourses.includes(c._id)) && !isPageAllSelected;
-
-  const handleToggleSelectPage = () => {
-    if (isPageAllSelected) {
-      const visibleIds = new Set(visibleCourses.map((c) => c._id));
-      setSelectedCourses((prev) => prev.filter((id) => !visibleIds.has(id)));
-    } else {
-      const visibleIds = visibleCourses.map((c) => c._id);
-      setSelectedCourses((prev) => Array.from(new Set([...prev, ...visibleIds])));
-    }
-  };
-
-  const handleToggleCourse = (id, e) => {
-    e?.stopPropagation();
-    setSelectedCourses((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-    );
-  };
+  const {
+    selectedIds: selectedCourses,
+    setSelectedIds: setSelectedCourses,
+    selectedCount,
+    focusedIndex,
+    isAllSelected: isPageAllSelected,
+    isSomeSelected: isPageSomeSelected,
+    toggleSelectAll: handleToggleSelectPage,
+    handleRowClick: handleSelectionRowClick,
+    handleCheckboxChange,
+    handleKeyDown: handleTableKeyDown,
+    clearSelection,
+    tableProps,
+  } = useSelection({
+    items: visibleCourses,
+    itemIdKey: "_id",
+    tableId: "dashboard.course-references",
+    onDeleteSelected: () => setShowBulkDeleteModal(true),
+    onActivateItem: (item) => router.push(`/dashboard/course-reference/${item._id}/candidates`),
+    onCopySelected: (ids) => {
+      const selectedItems = courses.filter((c) => ids.includes(c._id));
+      const text = selectedItems
+        .map((c) => `${c.courseName} (${c.referenceName || c.referenceCode || ""})`)
+        .join("\n");
+      navigator.clipboard?.writeText(text);
+      toast.info(`Copied ${ids.length} course reference(s) to clipboard`);
+    },
+  });
 
   const handleBulkDelete = async () => {
     if (!selectedCourses.length) return;
@@ -360,7 +366,7 @@ export default function CourseReferencesPage() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
+              <table className="min-w-full divide-y divide-gray-200 outline-none" {...tableProps}>
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-4 py-3.5 text-center w-12">
@@ -417,17 +423,26 @@ export default function CourseReferencesPage() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {visibleCourses.map((course) => {
+                  {visibleCourses.map((course, idx) => {
                     const isPublic = course.showInSchedule !== false;
                     const isToggling = !!togglingMap[course._id];
+                    const isFocusedRow = focusedIndex === idx;
 
                     return (
                       <tr
                         key={course._id}
-                        onClick={() => handleRowClick(course._id)}
+                        onClick={(e) => {
+                          if (e.shiftKey || e.ctrlKey || e.metaKey) {
+                            handleSelectionRowClick(course._id, idx, e);
+                          } else {
+                            handleRowClick(course._id);
+                          }
+                        }}
                         className={`cursor-pointer transition-colors group ${
                           selectedCourses.includes(course._id)
                             ? "bg-blue-50/70 hover:bg-blue-50"
+                            : isFocusedRow
+                            ? "bg-gray-50 ring-1 ring-inset ring-blue-400"
                             : "hover:bg-blue-50/40"
                         }`}
                       >
@@ -439,7 +454,7 @@ export default function CourseReferencesPage() {
                           <input
                             type="checkbox"
                             checked={selectedCourses.includes(course._id)}
-                            onChange={(e) => handleToggleCourse(course._id, e)}
+                            onChange={(e) => handleCheckboxChange(course._id, idx, e)}
                             className="w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500 focus:ring-2 cursor-pointer"
                             aria-label={`Select ${course.referenceName || course.courseName}`}
                           />

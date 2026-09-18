@@ -19,6 +19,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import axios from "axios";
+import { useCourseReference } from "@/context/CourseReferenceContext";
 import { toast } from "react-toastify";
 
 const DELIVERY_MODES = [
@@ -32,6 +33,7 @@ const DELIVERY_MODES = [
 export default function CreateCourseReferencePage() {
   const router = useRouter();
   const { user } = useAuth();
+  const { refreshCourses } = useCourseReference();
 
   const [loading, setLoading] = useState(false);
   const [courses, setCourses] = useState([]);
@@ -43,11 +45,11 @@ export default function CreateCourseReferencePage() {
     courseId: "",
     referenceName: "",
     referenceCode: "",
-    deliveryMode: "online",
-    modeLabel: "Live Interactive Online Session",
-    location: "Online / Zoom",
-    duration: "3 Days",
-    seats: 20,
+    deliveryMode: "",
+    modeLabel: "",
+    location: "",
+    duration: "",
+    seats: "",
     startDate: "",
     endDate: "",
     examDate: "",
@@ -84,17 +86,11 @@ export default function CreateCourseReferencePage() {
 
   const handleSelectCourse = (course) => {
     setSelectedCourse(course);
-    setFormData((prev) => {
-      const autoRefName = `${course.name} - ${new Date().toLocaleDateString("en-GB", { month: "short", year: "numeric" })} Intake`;
-      const autoRefCode = course.code ? `${course.code}-${new Date().getFullYear().toString().slice(-2)}` : "";
-      return {
-        ...prev,
-        courseId: course._id,
-        referenceName: prev.referenceName || autoRefName,
-        referenceCode: prev.referenceCode || autoRefCode,
-        duration: course.duration || prev.duration,
-      };
-    });
+    setFormData((prev) => ({
+      ...prev,
+      courseId: course._id,
+      duration: prev.duration || course.duration || "",
+    }));
     setShowCourseDropdown(false);
     setCourseSearch("");
   };
@@ -140,7 +136,7 @@ export default function CreateCourseReferencePage() {
         modeLabel: formData.modeLabel.trim(),
         location: formData.location.trim(),
         duration: formData.duration.trim(),
-        seats: Number(formData.seats) || 20,
+        seats: formData.seats ? Number(formData.seats) : null,
         notes: formData.notes.trim(),
         showInSchedule: Boolean(formData.showInSchedule),
         status: formData.status,
@@ -150,6 +146,9 @@ export default function CreateCourseReferencePage() {
 
       if (res.data?.success) {
         toast.success("Course reference created successfully!");
+        if (typeof refreshCourses === "function") {
+          await refreshCourses();
+        }
         const refId = res.data.data?.course?._id;
         if (refId) {
           router.push(`/dashboard/course-reference/${refId}/candidates`);
@@ -329,6 +328,7 @@ export default function CreateCourseReferencePage() {
                     onChange={handleInputChange}
                     className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm bg-white"
                   >
+                    <option value="">Select delivery mode (Optional)</option>
                     {DELIVERY_MODES.map((dm) => (
                       <option key={dm.value} value={dm.value}>
                         {dm.label}

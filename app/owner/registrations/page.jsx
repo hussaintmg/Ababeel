@@ -9,6 +9,7 @@ import { StatusPill } from "@/Components/owner/training/ResourceTable";
 import { formatDateShort } from "@/lib/training/format";
 import DataTablePagination from "@/Components/common/DataTablePagination";
 import DataTableBulkBar from "@/Components/common/DataTableBulkBar";
+import { useSelection } from "@/hooks/useSelection";
 
 /**
  * Registrations received from the public site.
@@ -28,7 +29,6 @@ export default function RegistrationsPage() {
   const [limit, setLimit] = useState(20);
   const [loading, setLoading] = useState(true);
 
-  const [selectedIds, setSelectedIds] = useState([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -94,23 +94,32 @@ export default function RegistrationsPage() {
     setPage(1);
   };
 
-  const isPageAllSelected = rows.length > 0 && rows.every((r) => selectedIds.includes(r._id));
-  const isPageSomeSelected = rows.some((r) => selectedIds.includes(r._id)) && !isPageAllSelected;
-
-  const handleSelectAllOnPage = () => {
-    if (isPageAllSelected) {
-      setSelectedIds((prev) => prev.filter((id) => !rows.some((r) => r._id === id)));
-    } else {
-      const pageIds = rows.map((r) => r._id);
-      setSelectedIds((prev) => Array.from(new Set([...prev, ...pageIds])));
-    }
-  };
-
-  const handleToggleRow = (id) => {
-    setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-    );
-  };
+  const {
+    selectedIds,
+    setSelectedIds,
+    selectedCount,
+    focusedIndex,
+    isAllSelected: isPageAllSelected,
+    isSomeSelected: isPageSomeSelected,
+    toggleSelectAll: handleSelectAllOnPage,
+    handleRowClick,
+    handleCheckboxChange,
+    clearSelection,
+    tableProps,
+  } = useSelection({
+    items: rows,
+    itemIdKey: "_id",
+    tableId: "owner.registrations",
+    onDeleteSelected: () => setShowDeleteModal(true),
+    onCopySelected: (ids) => {
+      const selected = rows.filter((r) => ids.includes(r._id));
+      const text = selected
+        .map((r) => `${r.reference} - ${r.fullName || ""} <${r.email || ""}> (${r.course?.name || r.courseNameSnapshot || ""})`)
+        .join("\n");
+      navigator.clipboard?.writeText(text);
+      toast.info(`Copied ${ids.length} registration(s) to clipboard`);
+    },
+  });
 
   const handleBulkDelete = async () => {
     if (!selectedIds.length) return;
@@ -221,16 +230,16 @@ export default function RegistrationsPage() {
       </div>
 
       <DataTableBulkBar
-        selectedCount={selectedIds.length}
-        onClearSelection={() => setSelectedIds([])}
+        selectedCount={selectedCount}
+        onClearSelection={clearSelection}
         actions={
           <button
             type="button"
             onClick={() => setShowDeleteModal(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors shadow-sm"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors shadow-sm cursor-pointer"
           >
             <Trash2 size={13} />
-            Delete Selected ({selectedIds.length})
+            Delete Selected ({selectedCount})
           </button>
         }
       />
@@ -259,7 +268,7 @@ export default function RegistrationsPage() {
       ) : (
         <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
           <div className="aba-scroll-x">
-            <table className="w-full min-w-[880px] text-sm">
+            <table className="w-full min-w-[880px] text-sm outline-none" {...tableProps}>
               <thead className="bg-gray-50 text-left">
                 <tr>
                   <th className="w-10 px-4 py-3">
@@ -284,21 +293,29 @@ export default function RegistrationsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {rows.map((r) => {
+                {rows.map((r, idx) => {
                   const isSelected = selectedIds.includes(r._id);
                   return (
                     <tr
                       key={r._id}
+                      onClick={(e) => {
+                        if (e.shiftKey || e.ctrlKey || e.metaKey) {
+                          handleRowClick(r._id, idx, e);
+                        }
+                      }}
                       className={`hover:bg-gray-50 transition-colors ${
-                        isSelected ? "bg-blue-50/50" : ""
-                      }`}
+                        isSelected ? "bg-blue-50/50 ring-1 ring-blue-300" : ""
+                      } ${focusedIndex === idx ? "ring-2 ring-blue-500" : ""}`}
                     >
                       <td className="w-10 px-4 py-3" onClick={(e) => e.stopPropagation()}>
                         <input
                           type="checkbox"
                           checked={isSelected}
-                          onChange={() => handleToggleRow(r._id)}
+                          onChange={(e) => handleCheckboxChange(r._id, idx, e)}
                           className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                          aria-label={`Select registration ${r.reference}`}
+                        />
+                      </td>
                           aria-label={`Select registration ${r.reference}`}
                         />
                       </td>

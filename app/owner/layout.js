@@ -126,11 +126,9 @@ export default function OwnerLayout({ children }) {
       dropdown: [
         { name: "Levels", url: "/owner/training/levels" },
         { name: "Awarding Bodies", url: "/owner/training/awarding-bodies" },
-        { name: "Accreditations", url: "/owner/training/accreditations" },
         { name: "Testimonials", url: "/owner/training/testimonials" },
         { name: "Team", url: "/owner/training/team" },
         { name: "Consultants", url: "/owner/training/consultants" },
-        { name: "Resources", url: "/owner/training/resources" },
         { name: "Registration Form", url: "/owner/training/registration-fields" },
       ],
     },

@@ -55,6 +55,7 @@ export async function GET(request) {
       activationPending: admin.authenticatedEmail === false,
     }));
 
+    const invoices = [];
     return successResponse({
       data: {
         organizations: allOrganizations,

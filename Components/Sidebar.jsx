@@ -13,6 +13,7 @@ import {
   LayoutDashboard,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { overlayStack } from "@/lib/commands/overlayStack";
 
 const Sidebar = ({ isOpen, onClose, navLinks, loading = false }) => {
   const { user } = useAuth();
@@ -49,10 +50,10 @@ const Sidebar = ({ isOpen, onClose, navLinks, loading = false }) => {
   }, [isOpen]);
 
   useEffect(() => {
-    const handleEscape = (e) => e.key === "Escape" && onClose();
-    document.addEventListener("keydown", handleEscape);
-    return () => document.removeEventListener("keydown", handleEscape);
-  }, [onClose]);
+    if (!isOpen) return;
+    overlayStack.push("mobile-sidebar", onClose);
+    return () => overlayStack.pop("mobile-sidebar");
+  }, [isOpen, onClose]);
 
   useEffect(() => {
     const content = contentRef.current;

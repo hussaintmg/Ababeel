@@ -20,6 +20,7 @@ import ConfirmationModal from "@/Components/ConfirmationModal";
 import { readPath } from "@/Components/owner/training/fieldSpecs";
 import { formatDateShort } from "@/lib/training/format";
 import DataTablePagination from "@/Components/common/DataTablePagination";
+import { useSelection } from "@/hooks/useSelection";
 
 /**
  * The owner list screen for any training resource.
@@ -78,6 +79,29 @@ export default function ResourceTable({ resource, spec }) {
   const totalPages = Math.ceil(totalItems / pageSize) || 1;
   const startIndex = (page - 1) * pageSize;
   const visibleItems = items.slice(startIndex, startIndex + pageSize);
+
+  const {
+    selectedIds,
+    selectedCount,
+    focusedIndex,
+    handleRowClick,
+    clearSelection,
+    tableProps,
+  } = useSelection({
+    items: visibleItems,
+    itemIdKey: "_id",
+    tableId: `owner.training.${resource}`,
+    onDeleteSelected: (ids) => {
+      const itemToDelete = visibleItems.find((i) => ids.includes(i._id));
+      if (itemToDelete) setConfirming(itemToDelete);
+    },
+    onCopySelected: (ids) => {
+      const selected = items.filter((i) => ids.includes(i._id));
+      const text = selected.map((i) => readPath(i, spec.columns[0]?.key) || i._id).join("\n");
+      navigator.clipboard?.writeText(text);
+      toast.info(`Copied ${ids.length} ${spec.singular.toLowerCase()}(s) to clipboard`);
+    },
+  });
 
   const duplicate = async (id) => {
     setBusyId(id);
@@ -214,7 +238,7 @@ export default function ResourceTable({ resource, spec }) {
       ) : (
         <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
           <div className="aba-scroll-x">
-            <table className="w-full min-w-[720px] text-sm">
+            <table className="w-full min-w-[720px] text-sm outline-none" {...tableProps}>
               <thead className="bg-gray-50 text-left">
                 <tr>
                   {canReorder && <th className="w-14 px-3 py-3" aria-label="Reorder" />}
@@ -230,7 +254,17 @@ export default function ResourceTable({ resource, spec }) {
                 {visibleItems.map((item, index) => {
                   const actualIndex = startIndex + index;
                   return (
-                  <tr key={item._id} className="hover:bg-gray-50">
+                  <tr
+                    key={item._id}
+                    onClick={(e) => {
+                      if (e.shiftKey || e.ctrlKey || e.metaKey) {
+                        handleRowClick(item._id, index, e);
+                      }
+                    }}
+                    className={`hover:bg-gray-50 transition-colors ${
+                      selectedIds.includes(item._id) ? "bg-blue-50/50 ring-1 ring-blue-300" : ""
+                    } ${focusedIndex === index ? "ring-2 ring-blue-500" : ""}`}
+                  >
                     {canReorder && (
                       <td className="px-3 py-3">
                         <div className="flex flex-col">

@@ -124,8 +124,23 @@ export function ImagePicker({ value, onChange }) {
     }
   };
 
+  const handlePaste = (e) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type && items[i].type.startsWith("image/")) {
+        const file = items[i].getAsFile();
+        if (file) {
+          e.preventDefault();
+          handleFile(file);
+          return;
+        }
+      }
+    }
+  };
+
   return (
-    <div>
+    <div onPaste={handlePaste} tabIndex={0} className="outline-none">
       <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3">
         {value ? (
           <img
@@ -143,7 +158,8 @@ export function ImagePicker({ value, onChange }) {
             type="text"
             value={value ?? ""}
             onChange={(e) => onChange(e.target.value)}
-            placeholder="Image URL or upload →"
+            onPaste={handlePaste}
+            placeholder="Image URL, upload, or paste Ctrl+V →"
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
@@ -165,7 +181,7 @@ export function ImagePicker({ value, onChange }) {
         />
       </div>
       <p className="mt-1 text-[11px] text-gray-400">
-        Maximum 50MB. Large JPG, PNG and WebP files are automatically optimized for fast loading.
+        Maximum 50MB. Paste image from clipboard (Ctrl+V) or click Upload. Automatically optimized.
       </p>
       {error ? <p className="mt-1 text-xs text-red-500">{error}</p> : null}
     </div>

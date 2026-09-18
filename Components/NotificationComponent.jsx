@@ -17,6 +17,7 @@ import {
   EyeOff,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { overlayStack } from "@/lib/commands/overlayStack";
 
 const NotificationComponent = () => {
   const {
@@ -60,23 +61,21 @@ const NotificationComponent = () => {
     }
   };
 
-  // Handle ESC key press to close notifications and panel
+  // Handle ESC key press to close notifications and panel via overlayStack
   useEffect(() => {
-    const handleEsc = (event) => {
-      if (event.key === "Escape") {
-        // Close all individual notifications
-        setShowIndividualNotifications([]);
-        
-        // Close notification panel if open
-        if (showNotificationPanel) {
-          toggleNotificationPanel();
-        }
-      }
-    };
+    if (!showNotificationPanel && showIndividualNotifications.length === 0) return;
 
-    window.addEventListener("keydown", handleEsc);
-    return () => window.removeEventListener("keydown", handleEsc);
-  }, [showNotificationPanel, toggleNotificationPanel]);
+    overlayStack.push("notification-panel", () => {
+      setShowIndividualNotifications([]);
+      if (showNotificationPanel) {
+        toggleNotificationPanel();
+      }
+    });
+
+    return () => {
+      overlayStack.pop("notification-panel");
+    };
+  }, [showNotificationPanel, showIndividualNotifications.length, toggleNotificationPanel]);
 
   // Format time ago
   const formatTimeAgo = (dateString) => {

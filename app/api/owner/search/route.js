@@ -8,6 +8,8 @@ import CourseReference from "@/models/CourseReference";
 import Registration from "@/models/Registration";
 import AwardingBody from "@/models/AwardingBody";
 import SiteContent from "@/models/SiteContent";
+import CmsCustomSection from "@/models/CmsCustomSection";
+import CmsVariable from "@/models/CmsVariable";
 
 /**
  * Global owner search.
@@ -82,6 +84,26 @@ const GROUPS = [
     title: (d) => d.title || d.key,
     meta: (d) =>
       [d.route || `/${d.key}`, d.enabled ? "enabled" : "built-in content"].join(" · "),
+  },
+  {
+    key: "sections",
+    label: "Custom Sections",
+    Model: CmsCustomSection,
+    fields: ["name", "category", "description"],
+    select: "name category description options",
+    href: (d) => `/owner/cms/sections`,
+    title: (d) => d.name,
+    meta: (d) => [d.category, d.description].filter(Boolean).join(" · "),
+  },
+  {
+    key: "variables",
+    label: "CMS Variables",
+    Model: CmsVariable,
+    fields: ["path", "label", "category", "description"],
+    select: "path label category kind type",
+    href: (d) => `/owner/cms/variables`,
+    title: (d) => d.label || d.path,
+    meta: (d) => [d.path, d.category, d.type].filter(Boolean).join(" · "),
   },
 ];
 

@@ -67,6 +67,24 @@ export default function RegistrationForm({ data }) {
   const [done, setDone] = useState(null);
   const formTop = useRef(null);
 
+  // Auto-resolve course from URL search params if not provided via initialCourse
+  useEffect(() => {
+    if (!selectedCourse && courses.length > 0 && typeof window !== "undefined") {
+      const sp = new URLSearchParams(window.location.search);
+      const qCourse = sp.get("course");
+      if (qCourse) {
+        const found = courses.find(
+          (c) =>
+            c._id === qCourse ||
+            (c.slug && c.slug.toLowerCase() === qCourse.toLowerCase())
+        );
+        if (found) {
+          setSelectedCourse(found);
+        }
+      }
+    }
+  }, [courses, selectedCourse]);
+
   // When selectedCourse changes, fetch available sessions for that course
   useEffect(() => {
     if (!selectedCourse?._id) {

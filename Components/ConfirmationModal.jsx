@@ -1,4 +1,5 @@
-"use client";
+import { useEffect } from "react";
+import { overlayStack } from "@/lib/commands/overlayStack";
 
 export default function ConfirmationModal({
   isOpen,
@@ -11,6 +12,28 @@ export default function ConfirmationModal({
   type = "delete",
   isConfirming = false,
 }) {
+  useEffect(() => {
+    if (!isOpen) return;
+
+    overlayStack.push("confirmation-modal", onClose);
+
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose?.();
+      } else if (e.key === "Enter" && !isConfirming) {
+        e.preventDefault();
+        onConfirm?.();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      overlayStack.pop("confirmation-modal");
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen, onClose, onConfirm, isConfirming]);
+
   if (!isOpen) return null;
 
   const getTypeStyles = () => {

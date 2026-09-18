@@ -6,6 +6,8 @@ import { createApiClient } from "@/utils/api";
 import { Upload, Camera, X, Loader2, Check } from "lucide-react";
 import { toast } from "react-toastify";
 import { uploadToSupabase } from "@/utils/supabaseUpload";
+import { useClipboardPaste } from "@/hooks/useClipboardPaste";
+import { useCommands } from "@/context/CommandContext";
 
 export default function SignatureProfile({ user }) {
   const { getUserData } = useAuth();
@@ -233,6 +235,102 @@ export default function SignatureProfile({ user }) {
     }
   };
 
+  const handleProcessSignatureFile = (file) => {
+    if (hasExistingSignature) {
+      toast.error("You already have a signature. Please contact support to change.");
+      return;
+    }
+    if (file.type !== "image/png") {
+      toast.error("Please select a PNG image");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image size should be less than 5MB");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setSignatureImage(file);
+      setSignaturePreview(reader.result);
+      toast.info("Signature image pasted. Click upload to save.");
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleProcessProfileFile = async (file) => {
+    if (hasExistingProfile) {
+      toast.error("You already have a profile image. Please contact support to change.");
+      return;
+    }
+    if (file.type !== "image/png") {
+      toast.error("Please select a PNG image");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image size should be less than 5MB");
+      return;
+    }
+    setIsValidatingImage(true);
+    try {
+      await validateImageAspectRatio(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfileImage(file);
+        setProfilePreview(reader.result);
+        toast.success("✓ Image meets 1:1 aspect ratio requirement", {
+          icon: <Check className="text-green-500" />
+        });
+        toast.info("Profile image pasted. Click upload to save.");
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      toast.error(error.message || "Image must be square (1:1 aspect ratio)");
+    } finally {
+      setIsValidatingImage(false);
+    }
+  };
+
+  const { pasteProps: signaturePasteProps } = useClipboardPaste({
+    enabled: !hasExistingSignature && !isUploadingSignature,
+    acceptedTypes: ["image/png"],
+    maxSizeBytes: 5 * 1024 * 1024,
+    onFile: handleProcessSignatureFile,
+  });
+
+  const { pasteProps: profilePasteProps } = useClipboardPaste({
+    enabled: !hasExistingProfile && !isUploadingProfile,
+    acceptedTypes: ["image/png"],
+    maxSizeBytes: 5 * 1024 * 1024,
+    onFile: handleProcessProfileFile,
+  });
+
+  useCommands([
+    {
+      id: "profile.signature.save",
+      title: "Upload Signature",
+      shortcut: "$mod+s",
+      category: "Profile",
+      scope: "form",
+      safeInEditable: true,
+      enabled: Boolean(signatureImage && !isUploadingSignature && !hasExistingSignature),
+      execute: () => {
+        if (signatureImage && !isUploadingSignature) uploadSignature();
+      },
+    },
+    {
+      id: "profile.image.save",
+      title: "Upload Profile Image",
+      shortcut: "$mod+s",
+      category: "Profile",
+      scope: "form",
+      safeInEditable: true,
+      enabled: Boolean(profileImage && !isUploadingProfile && !hasExistingProfile),
+      execute: () => {
+        if (profileImage && !isUploadingProfile) uploadProfileImage();
+      },
+    },
+  ]);
+
   const clearImageSelection = (type) => {
     if (type === 'signature') {
       // Disable if already has existing image
@@ -307,10 +405,11 @@ export default function SignatureProfile({ user }) {
                 type="button"
                 onClick={() => handleUploadClick('signature')}
                 disabled={hasExistingSignature}
+                {...signaturePasteProps}
                 className={`relative w-full h-48 border-2 border-dashed rounded-lg transition-colors overflow-hidden group ${
                   hasExistingSignature 
                     ? 'border-gray-200 bg-gray-100 cursor-not-allowed' 
-                    : 'border-gray-300 hover:border-blue-500 bg-gray-50'
+                    : 'border-gray-300 hover:border-blue-500 bg-gray-50 focus:ring-2 focus:ring-blue-500'
                 }`}
               >
                 {signaturePreview ? (
@@ -433,12 +532,13 @@ export default function SignatureProfile({ user }) {
                   type="button"
                   onClick={() => handleUploadClick('profile')}
                   disabled={hasExistingProfile || isValidatingImage}
+                  {...profilePasteProps}
                   className={`relative w-48 h-48 rounded-full border-2 border-dashed overflow-hidden group ${
                     hasExistingProfile 
                       ? 'border-gray-200 bg-gray-100 cursor-not-allowed' 
                       : isValidatingImage
                       ? 'border-blue-300 bg-blue-50 cursor-wait'
-                      : 'border-gray-300 hover:border-blue-500 bg-gray-50'
+                      : 'border-gray-300 hover:border-blue-500 bg-gray-50 focus:ring-2 focus:ring-blue-500'
                   }`}
                 >
                   {isValidatingImage && (

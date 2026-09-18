@@ -4,6 +4,7 @@ import { useEffect, useId, useRef, useState, useCallback } from "react";
 import { X, Search, ChevronDown, ChevronLeft, ChevronRight, SlidersHorizontal } from "lucide-react";
 import { cn } from "@/Components/ui/cn";
 import { Button } from "@/Components/ui/Button";
+import { overlayStack } from "@/lib/commands/overlayStack";
 
 /**
  * The stateful pieces: drawer, modal, tabs, accordion, pagination, search and
@@ -20,13 +21,11 @@ import { Button } from "@/Components/ui/Button";
 
 /** Close on Escape, and lock the page behind an overlay while it is open. */
 function useOverlay(open, onClose) {
+  const id = useId();
   useEffect(() => {
     if (!open) return undefined;
 
-    const onKey = (e) => {
-      if (e.key === "Escape") onClose?.();
-    };
-    document.addEventListener("keydown", onKey);
+    overlayStack.push(id, () => onClose?.());
 
     // Restoring the exact previous value matters: two overlays can overlap
     // (a modal opened from inside a drawer), and blindly setting "" on close
@@ -35,10 +34,10 @@ function useOverlay(open, onClose) {
     document.body.style.overflow = "hidden";
 
     return () => {
-      document.removeEventListener("keydown", onKey);
+      overlayStack.pop(id);
       document.body.style.overflow = previous;
     };
-  }, [open, onClose]);
+  }, [open, onClose, id]);
 }
 
 /**
@@ -390,10 +389,13 @@ export function SearchInput({
   delay = 300,
   className = "",
   label = "Search",
+  id: customId,
+  inputRef,
 }) {
   const [local, setLocal] = useState(value);
   const timer = useRef(null);
-  const id = useId();
+  const autoId = useId();
+  const id = customId || autoId;
 
   // Follow an externally cleared value (the "Clear all filters" button).
   useEffect(() => {
@@ -422,6 +424,7 @@ export function SearchInput({
         className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-400"
       />
       <input
+        ref={inputRef}
         id={id}
         type="search"
         value={local}

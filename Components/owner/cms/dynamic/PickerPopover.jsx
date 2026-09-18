@@ -66,11 +66,18 @@ export default function PickerPopover({
 
     let left = align === "end" ? r.right - w : r.left;
     left = Math.min(Math.max(EDGE, left), vw - w - EDGE);
-    const top = up ? Math.max(EDGE, r.top - height - GAP) : r.bottom + GAP;
 
-    panel.style.top = `${Math.round(top)}px`;
+    if (up) {
+      panel.style.bottom = `${Math.round(vh - r.top + GAP)}px`;
+      panel.style.top = "auto";
+    } else {
+      panel.style.top = `${Math.round(r.bottom + GAP)}px`;
+      panel.style.bottom = "auto";
+    }
+
     panel.style.left = `${Math.round(left)}px`;
     panel.style.width = `${Math.round(w)}px`;
+    panel.style.maxHeight = `${Math.round(height)}px`;
     panel.style.setProperty("--picker-max-h", `${Math.round(height)}px`);
     panel.style.visibility = "visible";
   }, [anchorRef, width, maxHeight, align, matchAnchorWidth]);
@@ -83,9 +90,18 @@ export default function PickerPopover({
     // `true` captures scrolls of the inner panes, not just the window.
     window.addEventListener("scroll", place, true);
     window.addEventListener("resize", place);
+
+    // Watch panel mutations/content resizes as search filters reduce items
+    let ro = null;
+    if (typeof ResizeObserver !== "undefined" && panelRef.current) {
+      ro = new ResizeObserver(() => place());
+      ro.observe(panelRef.current);
+    }
+
     return () => {
       window.removeEventListener("scroll", place, true);
       window.removeEventListener("resize", place);
+      ro?.disconnect();
     };
   }, [open, place]);
 

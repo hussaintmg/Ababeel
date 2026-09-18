@@ -8,6 +8,7 @@ import { toast } from "react-toastify";
 import { ArrowLeft, Save, Loader2, ExternalLink } from "lucide-react";
 import { Label, FieldRenderer } from "@/Components/owner/cms/fields";
 import { readPath, writePath } from "@/Components/owner/training/fieldSpecs";
+import { useCommands } from "@/context/CommandContext";
 
 /**
  * The owner create/edit screen for any training resource.
@@ -133,6 +134,20 @@ export default function ResourceForm({ resource, spec, id = null }) {
       setSaving(false);
     }
   };
+
+  useCommands([
+    {
+      id: "owner.training.save",
+      title: isNew ? `Create ${spec.singular}` : `Save ${spec.singular}`,
+      shortcut: "$mod+s",
+      category: "Form",
+      scope: "form",
+      safeInEditable: true,
+      execute: () => {
+        if (!saving) save();
+      },
+    },
+  ]);
 
   /** The public URL for this record, once it has a slug and is published. */
   const publicHref = publicUrlFor(resource, draft);

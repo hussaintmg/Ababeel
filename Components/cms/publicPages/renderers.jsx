@@ -33,6 +33,30 @@ const pages = {
   'professional-detail': dynamic(() => import('./professional-detail')),
 };
 
+function SectionSkeletonLoader() {
+  return (
+    <div className="w-full py-14 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto animate-pulse">
+      <div className="flex flex-col items-center mb-10 space-y-3.5 text-center">
+        <div className="h-4 w-32 bg-slate-200/80 rounded-full" />
+        <div className="h-8 w-72 max-w-full bg-slate-200/80 rounded-lg" />
+        <div className="h-4 w-96 max-w-full bg-slate-200/60 rounded" />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="h-64 rounded-2xl bg-slate-100/80 border border-slate-200/60 p-6 flex flex-col justify-between">
+            <div className="space-y-3">
+              <div className="h-28 bg-slate-200/80 rounded-xl" />
+              <div className="h-5 w-3/4 bg-slate-200/80 rounded" />
+              <div className="h-3 w-1/2 bg-slate-200/60 rounded" />
+            </div>
+            <div className="h-8 w-28 bg-slate-200/80 rounded-lg" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export const PUBLIC_RENDERERS = Object.fromEntries(registry.flatMap(page => page.sections.map(section => {
   const isHomeFaq = page.key === 'home' && section.index === 6;
   const Page = pages[isHomeFaq ? 'home-faq' : page.key];
@@ -55,7 +79,7 @@ export const PUBLIC_RENDERERS = Object.fromEntries(registry.flatMap(page => page
             '--public-size': size > 0 ? `${Math.min(140, Math.max(18, size))}px` : undefined,
           }}
         >
-          <Suspense fallback={<div className="min-h-[140px] flex items-center justify-center text-xs text-gray-400">Loading section...</div>}>
+          <Suspense fallback={<SectionSkeletonLoader />}>
             <Page {...safeP} section={isHomeFaq ? undefined : section.index} />
           </Suspense>
         </div>

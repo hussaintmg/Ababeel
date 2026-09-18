@@ -41,7 +41,24 @@ export default function AddCandidatesPage() {
   useEffect(() => {
     if (courses.length) {
       const foundCourse = courses.find((c) => c._id === courseId);
-      setCourse(foundCourse || {});
+      if (foundCourse) {
+        setCourse(foundCourse);
+        return;
+      }
+    }
+    if (courseId) {
+      axios
+        .get(`/api/course-ref/${courseId}`)
+        .then((res) => {
+          if (res.data?.success && res.data.data) {
+            setCourse(res.data.data);
+          } else if (res.data?.course) {
+            setCourse(res.data.course);
+          }
+        })
+        .catch((err) => {
+          console.warn("Direct fetch course ref error:", err);
+        });
     }
   }, [courses, courseId]);
 

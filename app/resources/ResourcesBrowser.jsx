@@ -15,6 +15,7 @@ import {
   cn,
 } from "@/Components/ui";
 import { RESOURCE_TYPE_LABELS } from "@/lib/training/constants";
+import { useCommands } from "@/context/CommandContext";
 
 /**
  * The interactive part of /resources.
@@ -36,6 +37,33 @@ export default function ResourcesBrowser({ initial, types = [] }) {
   const pristine = useRef(true);
   const requestId = useRef(0);
   const top = useRef(null);
+  const searchInputRef = useRef(null);
+
+  useCommands([
+    {
+      id: "resources.search.focus",
+      title: "Focus Resource Search",
+      shortcut: "/",
+      category: "Navigation",
+      scope: "page",
+      safeInEditable: false,
+      execute: () => {
+        searchInputRef.current?.focus?.();
+        searchInputRef.current?.select?.();
+      },
+    },
+    {
+      id: "resources.filters.clear",
+      title: "Clear Resource Filters",
+      category: "Filters",
+      scope: "page",
+      safeInEditable: false,
+      enabled: Boolean(query.search || query.type),
+      execute: () => {
+        clear();
+      },
+    },
+  ]);
 
   const fetchPage = useCallback(async (next) => {
     const id = ++requestId.current;
@@ -96,9 +124,10 @@ export default function ResourcesBrowser({ initial, types = [] }) {
 
         <div className="mb-6 flex flex-wrap items-center gap-3">
           <SearchInput
+            inputRef={searchInputRef}
             value={query.search}
             onChange={(value) => update({ search: value })}
-            placeholder="Search resources…"
+            placeholder="Search resources… (press / to focus)"
             label="Search resources"
             className="min-w-52 flex-1"
           />

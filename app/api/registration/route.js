@@ -10,6 +10,8 @@ import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit";
 import { csrfProtection } from "@/lib/csrf";
 import { successResponse, badRequestResponse, safeErrorResponse } from "@/lib/errors";
 import { NextResponse } from "next/server";
+import mongoose from "mongoose";
+import { getPublicCourseById, getPublicSessionById } from "@/lib/training/queries";
 
 /**
  * Public registration.
@@ -77,8 +79,14 @@ export async function POST(request) {
 
     await connectDB();
 
-    // Look for course in Course
-    const course = await Course.findById(courseId).lean().catch(() => null);
+    // Look for course in Course (by ObjectId or slug)
+    const course = courseId
+      ? await Course.findOne(
+          mongoose.Types.ObjectId.isValid(courseId)
+            ? { _id: courseId }
+            : { slug: courseId.toLowerCase() }
+        ).lean().catch(() => null)
+      : null;
     const courseModel = "Course";
 
     if (!course || !isCoursePublic(course)) {

@@ -30,6 +30,7 @@ import {
 import { useState, useMemo, useEffect } from "react";
 import DataTablePagination from "@/Components/common/DataTablePagination";
 import DataTableBulkBar from "@/Components/common/DataTableBulkBar";
+import { useSelection } from "@/hooks/useSelection";
 
 const DashboardEnquiries = () => {
   const { user } = useAuth();
@@ -40,7 +41,6 @@ const DashboardEnquiries = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
-  const [selectedIds, setSelectedIds] = useState([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -85,28 +85,32 @@ const DashboardEnquiries = () => {
   const startIndex = (page - 1) * pageSize;
   const visibleEnquiries = filteredEnquiries.slice(startIndex, startIndex + pageSize);
 
-  const isPageAllSelected =
-    visibleEnquiries.length > 0 &&
-    visibleEnquiries.every((e) => selectedIds.includes(e._id));
-  const isPageSomeSelected =
-    visibleEnquiries.some((e) => selectedIds.includes(e._id)) && !isPageAllSelected;
-
-  const handleSelectAllOnPage = () => {
-    if (isPageAllSelected) {
-      setSelectedIds((prev) =>
-        prev.filter((id) => !visibleEnquiries.some((e) => e._id === id))
-      );
-    } else {
-      const pageIds = visibleEnquiries.map((e) => e._id);
-      setSelectedIds((prev) => Array.from(new Set([...prev, ...pageIds])));
-    }
-  };
-
-  const handleToggleRow = (id) => {
-    setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-    );
-  };
+  const {
+    selectedIds,
+    setSelectedIds,
+    selectedCount,
+    focusedIndex,
+    isAllSelected: isPageAllSelected,
+    isSomeSelected: isPageSomeSelected,
+    toggleSelectAll: handleSelectAllOnPage,
+    handleRowClick,
+    handleCheckboxChange,
+    clearSelection,
+    tableProps,
+  } = useSelection({
+    items: visibleEnquiries,
+    itemIdKey: "_id",
+    tableId: "owner.enquiries",
+    onDeleteSelected: () => setShowDeleteModal(true),
+    onCopySelected: (ids) => {
+      const selected = enquiries.filter((e) => ids.includes(e._id));
+      const text = selected
+        .map((e) => `${e.fullname || ""} <${e.email || ""}> (${e.inquiry_type || ""}): ${e.message || ""}`)
+        .join("\n");
+      navigator.clipboard?.writeText(text);
+      toast.info(`Copied ${ids.length} enquiry details to clipboard`);
+    },
+  });
 
   const handleBulkDelete = async () => {
     if (!selectedIds.length) return;
@@ -371,21 +375,21 @@ const DashboardEnquiries = () => {
       {/* Enquiries List */}
       <div className="w-full px-4 sm:px-6 md:px-8 pb-6 sm:pb-8 lg:pb-10">
         <DataTableBulkBar
-          selectedCount={selectedIds.length}
-          onClearSelection={() => setSelectedIds([])}
+          selectedCount={selectedCount}
+          onClearSelection={clearSelection}
           actions={
             <button
               type="button"
               onClick={() => setShowDeleteModal(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors shadow-sm"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors shadow-sm cursor-pointer"
             >
               <Trash2 size={13} />
-              Delete Selected ({selectedIds.length})
+              Delete Selected ({selectedCount})
             </button>
           }
         />
 
-        <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 overflow-hidden outline-none" {...tableProps}>
           {/* Desktop Table Header */}
           <div className="hidden md:block bg-gray-50 px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
             <div className="grid grid-cols-12 gap-4 text-xs sm:text-sm font-medium text-gray-700 items-center">
@@ -412,19 +416,24 @@ const DashboardEnquiries = () => {
           {/* Enquiries List */}
           <div className="divide-y divide-gray-200">
             {visibleEnquiries.length > 0 ? (
-              visibleEnquiries.map((enquiry) => {
+              visibleEnquiries.map((enquiry, idx) => {
                 const isSelected = selectedIds.includes(enquiry._id);
                 return (
                 <div key={enquiry._id}>
                   {/* Desktop View */}
                   <div
+                    onClick={(e) => {
+                      if (e.shiftKey || e.ctrlKey || e.metaKey) {
+                        handleRowClick(enquiry._id, idx, e);
+                      }
+                    }}
                     className={`hidden md:block px-4 sm:px-6 py-3 sm:py-4 hover:bg-gray-50 transition-colors ${
                       isSelected
-                        ? "bg-blue-50/70"
+                        ? "bg-blue-50/70 ring-1 ring-blue-300"
                         : enquiry.status === "pending"
                         ? "bg-blue-50/50"
                         : ""
-                    }`}
+                    } ${focusedIndex === idx ? "ring-2 ring-blue-500" : ""}`}
                   >
                     <div className="grid grid-cols-12 gap-4 items-center">
                       {/* Checkbox */}
@@ -435,7 +444,7 @@ const DashboardEnquiries = () => {
                         <input
                           type="checkbox"
                           checked={isSelected}
-                          onChange={() => handleToggleRow(enquiry._id)}
+                          onChange={(e) => handleCheckboxChange(enquiry._id, idx, e)}
                           className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                           aria-label={`Select enquiry from ${enquiry.fullname}`}
                         />
@@ -542,13 +551,18 @@ const DashboardEnquiries = () => {
 
                   {/* Mobile Card View */}
                   <div
+                    onClick={(e) => {
+                      if (e.shiftKey || e.ctrlKey || e.metaKey) {
+                        handleRowClick(enquiry._id, idx, e);
+                      }
+                    }}
                     className={`md:hidden p-4 hover:bg-gray-50 transition-colors ${
                       isSelected
-                        ? "bg-blue-50/70"
+                        ? "bg-blue-50/70 ring-1 ring-blue-300"
                         : enquiry.status === "pending"
                         ? "bg-blue-50/50"
                         : ""
-                    }`}
+                    } ${focusedIndex === idx ? "ring-2 ring-blue-500" : ""}`}
                   >
                     {/* Header with Checkbox, Name and Status */}
                     <div className="flex items-start justify-between gap-2 mb-3">
@@ -556,7 +570,7 @@ const DashboardEnquiries = () => {
                         <input
                           type="checkbox"
                           checked={isSelected}
-                          onChange={() => handleToggleRow(enquiry._id)}
+                          onChange={(e) => handleCheckboxChange(enquiry._id, idx, e)}
                           className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer mr-1"
                           aria-label={`Select enquiry from ${enquiry.fullname}`}
                         />
