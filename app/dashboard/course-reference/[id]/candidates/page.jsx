@@ -1696,8 +1696,9 @@ export default function AddCandidatesPage() {
                               </div>
                             </td>
                           </tr>
-                        ))
-                      )}
+                        );
+                      })
+                    )}
                     </tbody>
                   </table>
                 </div>
