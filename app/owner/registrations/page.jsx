@@ -316,9 +316,6 @@ export default function RegistrationsPage() {
                           aria-label={`Select registration ${r.reference}`}
                         />
                       </td>
-                          aria-label={`Select registration ${r.reference}`}
-                        />
-                      </td>
                       <td className="px-4 py-3 font-mono text-xs text-gray-500">{r.reference}</td>
                       <td className="px-4 py-3">
                         <Link

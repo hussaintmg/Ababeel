@@ -163,19 +163,6 @@ export default function AddCandidatesPage() {
     }
   }, [showUploadModal, pushOverlay, popOverlay]);
 
-  // Toggle selection for visible rows on the CURRENT page (persisting selections across other pages)
-  const handleToggleSelectPage = () => {
-    if (isPageAllSelected) {
-      const visibleIds = new Set(visibleCandidates.map((c) => c._id));
-      setSelectedCandidates((prev) => prev.filter((id) => !visibleIds.has(id)));
-    } else {
-      const visibleIds = visibleCandidates.map((c) => c._id);
-      setSelectedCandidates((prev) =>
-        Array.from(new Set([...prev, ...visibleIds])),
-      );
-    }
-  };
-
   const handlePageSizeChange = (newSize) => {
     setCandidatePageSize(newSize);
     setCandidatePage(1);
