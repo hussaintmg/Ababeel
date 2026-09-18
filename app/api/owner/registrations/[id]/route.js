@@ -67,63 +67,22 @@ export async function PATCH(request, { params }) {
       update.status = body.status;
       update.handledBy = user._id;
 
-      // When owner approves/confirms registration, enroll candidate into CourseReference
       if (body.status === "confirmed") {
-        try {
-          const regDoc = await Registration.findById(id);
-          if (regDoc && !regDoc.enrolledCandidate) {
-            const Candidate = (await import("@/models/Candidate")).default;
-            const CourseReference = (await import("@/models/CourseReference")).default;
-
-            let targetRef = null;
-            if (regDoc.session) {
-              targetRef = await CourseReference.findById(regDoc.session);
-            }
-            if (!targetRef && regDoc.course) {
-              targetRef = await CourseReference.findOne({
-                $or: [{ course: regDoc.course }, { courseId: String(regDoc.course) }],
-              });
-            }
-
-            if (targetRef) {
-              const traineeId = `TRN-${Math.floor(100000 + Math.random() * 900000)}`;
-              const certNum = `CERT-${Math.floor(100000 + Math.random() * 900000)}`;
-
-              let candidate = await Candidate.findOne({
-                email: regDoc.email,
-                courseId: targetRef._id,
-              });
-
-              if (!candidate) {
-                candidate = await Candidate.create({
-                  traineeId,
-                  userId: targetRef.userId || user._id,
-                  courseId: targetRef._id,
-                  firstName: regDoc.firstName || (regDoc.fullName?.split(" ")[0] || "Candidate"),
-                  lastName: regDoc.lastName || (regDoc.fullName?.split(" ").slice(1).join(" ") || "Student"),
-                  dateOfBirth: new Date("1995-01-01"),
-                  country: regDoc.country || "United Kingdom",
-                  email: regDoc.email,
-                  assessmentMarks1: 0,
-                  assessmentMarks2: 0,
-                  certificateNumber: certNum,
-                  status: "active",
-                  paymentStatus: regDoc.receiptUrl ? "paid" : "unpaid",
-                });
-
-                await CourseReference.findByIdAndUpdate(targetRef._id, {
-                  $addToSet: { candidates: candidate._id },
-                  $inc: { candidatesCount: 1 },
-                });
-              }
-
-              update.enrolledCandidate = candidate._id;
-            }
-          }
-        } catch (enrollErr) {
-          console.error("Auto-enroll error on registration approval:", enrollErr);
+        update.paymentStatus = "paid";
+      } else if (body.status === "rejected") {
+        update.paymentStatus = "failed";
+        if (body.rejectionReason) {
+          push.internalNotes = {
+            body: `Registration rejected: ${body.rejectionReason}`,
+            authorEmail: user.email || "owner",
+            createdAt: new Date(),
+          };
         }
       }
+    }
+
+    if (body?.paymentStatus !== undefined) {
+      update.paymentStatus = body.paymentStatus;
     }
 
     if (typeof body?.note === "string" && body.note.trim()) {
@@ -143,12 +102,23 @@ export async function PATCH(request, { params }) {
     if (Object.keys(update).length) ops.$set = update;
     if (Object.keys(push).length) ops.$push = push;
 
-    const doc = await Registration.findByIdAndUpdate(id, ops, { new: true })
+    const initialUpdate = await Registration.findByIdAndUpdate(id, ops, { new: true });
+    if (!initialUpdate) return notFoundResponse("Not found");
+
+    if (update.status === "confirmed" || update.paymentStatus === "paid") {
+      try {
+        const { allocateRegistration } = await import("@/lib/training/batchAllocation");
+        await allocateRegistration(id);
+      } catch (enrollErr) {
+        console.error("Auto-enroll error on registration approval:", enrollErr);
+      }
+    }
+
+    const doc = await Registration.findById(id)
       .populate({ path: "course", select: "name slug" })
       .populate({ path: "session", select: "referenceName startDate referenceCode" })
       .populate("enrolledCandidate")
       .lean();
-    if (!doc) return notFoundResponse("Not found");
 
     return successResponse({ data: plain(doc) });
   } catch (error) {

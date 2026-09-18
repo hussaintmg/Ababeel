@@ -12,6 +12,8 @@ import { TRAINING_RENDERERS } from "@/Components/cms/TrainingBlocks";
 import { PUBLIC_RENDERERS } from "@/Components/cms/publicPages/renderers";
 import StudioSection from "@/Components/cms/StudioSection";
 import SdkCustomBlock from "@/Components/cms/SdkCustomBlock";
+import BankDetailsBlock from "@/Components/cms/BankDetailsBlock";
+import RegistrationFormBlock from "@/Components/cms/RegistrationFormBlock";
 
 /* ---------- Tailwind runtime (for Custom HTML blocks) ---------- */
 // Loads the Tailwind browser build once so arbitrary Tailwind utility classes
@@ -1676,6 +1678,147 @@ function ScrollVideoBlock({ p, s, showWarnings }) {
   return <ScrollVideo p={p} radius={s?.radius} showDiagnostics={showWarnings} />;
 }
 
+/* ---------- Composable Container (Columns / Layout) ---------- */
+function ContainerBlock({ p = {}, s = {}, block, data, sampleMode, showWarnings }) {
+  const children = Array.isArray(block?.children) ? block.children : [];
+  if (!children.length) {
+    if (showWarnings) {
+      return (
+        <div className="mx-auto max-w-6xl my-6 p-8 border-2 border-dashed border-blue-200 bg-blue-50/40 rounded-2xl text-center text-sm text-blue-600 font-medium">
+          Empty Container — Wrap or add sections inside from the Page Builder.
+        </div>
+      );
+    }
+    return null;
+  }
+
+  const layout = p.layout || "grid-2";
+  const isReverse = p.direction === "reverse";
+  const reverseMobile = Boolean(p.reverseMobile);
+  const gapPx = p.gap !== undefined && p.gap !== "" ? Number(p.gap) : 24;
+  const padXPx = p.paddingX !== undefined && p.paddingX !== "" ? Number(p.paddingX) : 0;
+  const padYPx = p.paddingY !== undefined && p.paddingY !== "" ? Number(p.paddingY) : 0;
+
+  const maxWMap = {
+    full: "max-w-full",
+    "7xl": "max-w-7xl",
+    "6xl": "max-w-6xl",
+    "5xl": "max-w-5xl",
+    "4xl": "max-w-4xl",
+    prose: "max-w-prose",
+  };
+  const maxWClass = maxWMap[p.maxWidth || "6xl"] || "max-w-6xl";
+
+  let layoutClasses = "";
+  switch (layout) {
+    case "grid-2":
+      layoutClasses = "grid grid-cols-1 md:grid-cols-2";
+      break;
+    case "60-40":
+      layoutClasses = "grid grid-cols-1 md:grid-cols-[1.5fr_1fr]";
+      break;
+    case "40-60":
+      layoutClasses = "grid grid-cols-1 md:grid-cols-[1fr_1.5fr]";
+      break;
+    case "1fr-360px":
+      layoutClasses = "grid grid-cols-1 lg:grid-cols-[1fr_360px]";
+      break;
+    case "360px-1fr":
+      layoutClasses = "grid grid-cols-1 lg:grid-cols-[360px_1fr]";
+      break;
+    case "grid-3":
+      layoutClasses = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3";
+      break;
+    case "flex-row":
+      layoutClasses = `flex flex-col md:flex-row flex-wrap ${isReverse ? "md:flex-row-reverse" : ""}`;
+      break;
+    case "stacked":
+      layoutClasses = `flex flex-col ${isReverse ? "flex-col-reverse" : ""}`;
+      break;
+    default:
+      layoutClasses = "grid grid-cols-1 md:grid-cols-2";
+  }
+
+  const alignClass = {
+    stretch: "items-stretch",
+    start: "items-start",
+    center: "items-center",
+    end: "items-end",
+  }[p.align || "stretch"] || "items-stretch";
+
+  const justifyClass = {
+    start: "justify-start",
+    center: "justify-center",
+    end: "justify-end",
+    between: "justify-between",
+  }[p.justify || "start"] || "justify-start";
+
+  const mobileOrderClass = reverseMobile ? "max-md:flex-col-reverse max-md:flex" : "";
+
+  const radiusClass = {
+    none: "",
+    sm: "rounded-md",
+    md: "rounded-lg",
+    lg: "rounded-xl",
+    xl: "rounded-2xl",
+    "2xl": "rounded-3xl",
+  }[p.radius || "none"] || "";
+
+  const shadowClass = {
+    none: "",
+    sm: "shadow-sm",
+    md: "shadow-md",
+    lg: "shadow-lg",
+    xl: "shadow-xl",
+  }[p.shadow || "none"] || "";
+
+  const borderClass = p.border ? "border border-gray-200" : "";
+  const bgStyle = {};
+  if (p.bgType === "solid" && p.bgColor) {
+    bgStyle.backgroundColor = p.bgColor;
+  } else if (p.bgType === "subtle") {
+    bgStyle.backgroundColor = "rgba(248, 250, 252, 0.85)";
+  }
+
+  const wrapperStyle = {
+    ...bgStyle,
+    paddingLeft: `${padXPx}px`,
+    paddingRight: `${padXPx}px`,
+    paddingTop: `${padYPx}px`,
+    paddingBottom: `${padYPx}px`,
+  };
+
+  let orderedChildren = [...children];
+  if (isReverse && layout.startsWith("grid")) {
+    orderedChildren.reverse();
+  }
+
+  return (
+    <section className="cms-container-block w-full px-4 sm:px-6">
+      <div
+        className={`cms-container-wrap mx-auto ${maxWClass} ${radiusClass} ${shadowClass} ${borderClass}`}
+        style={wrapperStyle}
+      >
+        <div
+          className={`cms-container-grid w-full ${layoutClasses} ${alignClass} ${justifyClass} ${mobileOrderClass}`}
+          style={{ gap: `${gapPx}px` }}
+        >
+          {orderedChildren.map((child, idx) => (
+            <div key={child.id || `child-${idx}`} className="cms-container-col min-w-0 w-full flex flex-col">
+              <BlockView
+                block={{ ...child, _style: { ...(child._style || {}), _inContainer: true } }}
+                data={data}
+                sampleMode={sampleMode}
+                showWarnings={showWarnings}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 const RENDERERS = {
   hero: HeroBlock,
   heading: HeadingBlock,
@@ -1700,6 +1843,9 @@ const RENDERERS = {
   team: TeamBlock,
   video: VideoBlock,
   repeater: RepeaterBlock,
+  container: ContainerBlock,
+  registrationForm: RegistrationFormBlock,
+  bankPaymentDetails: BankDetailsBlock,
   scrollVideo: ScrollVideoBlock,
   customCode: CustomCodeBlock,
   // Blocks that render live catalogue data. Their `_items` are resolved on the

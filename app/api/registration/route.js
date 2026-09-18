@@ -95,10 +95,24 @@ export async function POST(request) {
 
     let session = null;
     let sessionModel = "CourseReference";
-    if (sessionId) {
+    let isFutureBatch = false;
+    let batchAllocationStatus = "none";
+
+    if (sessionId && sessionId !== "flexible" && sessionId !== "next-batch") {
       session = await getPublicSessionById(sessionId);
-      if(!session || session.courseId!==String(course._id) || !registrationCta(session).available) return badRequestResponse('That session is not available for this course');
-      sessionModel=session.sourceType;
+      if (!session || session.courseId !== String(course._id)) {
+        return badRequestResponse("That session is not available for this course");
+      }
+      if (!registrationCta(session).available) {
+        return badRequestResponse(
+          "Registration for that session has closed. Please select another intake or choose 'Flexible / Next Available Intake'."
+        );
+      }
+      sessionModel = session.sourceType || "CourseReference";
+      batchAllocationStatus = "allocated";
+    } else {
+      isFutureBatch = true;
+      batchAllocationStatus = "awaiting_batch";
     }
 
     const fields = await getFormFields();
@@ -118,7 +132,13 @@ export async function POST(request) {
       session?.referenceCode ||
       session?.courseName ||
       selectedMonth ||
-      "";
+      "Flexible / Next Available Intake";
+
+    const paymentMethod = String(body?.paymentMethod || (receiptUrl ? "bank_transfer" : "bank_transfer"));
+    const coursePrice = typeof session?.price === "number"
+      ? session.price
+      : (typeof course.price === "number" ? course.price : 0);
+    const courseCurrency = session?.currency || course.currency || "GBP";
 
     const registration = await Registration.create({
       reference,
@@ -131,6 +151,12 @@ export async function POST(request) {
       selectedMonth: selectedMonth || sessionTitle,
       receiptUrl,
       receiptName,
+      paymentMethod,
+      paymentStatus: "pending_verification",
+      paymentAmount: coursePrice,
+      paymentCurrency: courseCurrency,
+      batchAllocationStatus,
+      isFutureBatch,
       ...contact,
       fields: values,
       status: "pending",

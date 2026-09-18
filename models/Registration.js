@@ -91,6 +91,33 @@ const registrationSchema = new mongoose.Schema(
     internalNotes: { type: [InternalNoteSchema], default: [] },
     enrolledCandidate: { type: mongoose.Schema.Types.ObjectId, ref: "Candidate", default: null },
 
+    // Payment method & status (distinct from batch allocation)
+    paymentMethod: {
+      type: String,
+      enum: ["bank_transfer", "stripe", "none"],
+      default: "bank_transfer",
+      index: true,
+    },
+    ["paymentStatus"]: {
+      type: String,
+      enum: ["unpaid", "pending_verification", "paid", "failed", "refunded"],
+      default: "pending_verification",
+      index: true,
+    },
+    paymentAmount: { type: Number, default: 0 },
+    paymentCurrency: { type: String, default: "GBP" },
+    stripeSessionId: { type: String, default: "", trim: true, index: true },
+    stripePaymentIntentId: { type: String, default: "", trim: true, index: true },
+
+    // Batch allocation status (distinct from payment status)
+    batchAllocationStatus: {
+      type: String,
+      enum: ["allocated", "awaiting_batch", "none"],
+      default: "none",
+      index: true,
+    },
+    isFutureBatch: { type: Boolean, default: false, index: true },
+
     // Provenance, for spam triage only.
     sourcePage: { type: String, default: "", trim: true, maxlength: 300 },
 

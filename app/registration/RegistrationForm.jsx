@@ -48,17 +48,27 @@ export default function RegistrationForm({ data }) {
     copy = {},
   } = data || {};
 
+  const config = data?.config || {};
+  const courseQueryParam = config.courseQueryParam || "course";
+  const allowChangeCourse = config.allowChangeCourse !== false;
+  const allowFlexibleIntake = config.allowFlexibleIntake !== false;
+  const showReceiptUpload = config.showReceiptUpload !== false;
+  const enableStripe = config.enableStripe !== false;
+  const isCompact = config.isCompact || false;
+
   const [selectedCourse, setSelectedCourse] = useState(initialCourse);
   const [selectedSession, setSelectedSession] = useState(initialSession);
   const [selectedMonth, setSelectedMonth] = useState("");
   const [availableSessions, setAvailableSessions] = useState(initialSession ? [initialSession] : []);
   const [loadingSessions, setLoadingSessions] = useState(false);
 
+  const [paymentMethod, setPaymentMethod] = useState("bank_transfer");
   const [receiptFile, setReceiptFile] = useState(null);
   const [receiptUrl, setReceiptUrl] = useState("");
   const [receiptName, setReceiptName] = useState("");
   const [uploadingReceipt, setUploadingReceipt] = useState(false);
   const [uploadError, setUploadError] = useState("");
+  const [courseNotFoundMsg, setCourseNotFoundMsg] = useState("");
 
   const [values, setValues] = useState(() => initialValues(fields));
   const [errors, setErrors] = useState({});
@@ -67,11 +77,14 @@ export default function RegistrationForm({ data }) {
   const [done, setDone] = useState(null);
   const formTop = useRef(null);
 
-  // Auto-resolve course from URL search params if not provided via initialCourse
+  // Auto-resolve course from URL search params according to precedence:
+  // 1. URL search param (e.g. ?course=slug or ?course=id)
+  // 2. Initial course from prop
+  // 3. Fallback
   useEffect(() => {
-    if (!selectedCourse && courses.length > 0 && typeof window !== "undefined") {
+    if (typeof window !== "undefined" && courses.length > 0) {
       const sp = new URLSearchParams(window.location.search);
-      const qCourse = sp.get("course");
+      const qCourse = sp.get(courseQueryParam) || sp.get("course");
       if (qCourse) {
         const found = courses.find(
           (c) =>
@@ -80,10 +93,13 @@ export default function RegistrationForm({ data }) {
         );
         if (found) {
           setSelectedCourse(found);
+          setCourseNotFoundMsg("");
+        } else if (!selectedCourse) {
+          setCourseNotFoundMsg(`Requested course "${qCourse}" was not found or registrations are closed. Please select an active course below.`);
         }
       }
     }
-  }, [courses, selectedCourse]);
+  }, [courses, courseQueryParam]);
 
   // When selectedCourse changes, fetch available sessions for that course
   useEffect(() => {
@@ -201,8 +217,9 @@ export default function RegistrationForm({ data }) {
         course: selectedCourse._id,
         reference: selectedSession?._id || "",
         selectedMonth: selectedMonth || (selectedSession?.referenceName || "Next Available Intake"),
-        receiptUrl,
-        receiptName,
+        paymentMethod,
+        receiptUrl: paymentMethod === "bank_transfer" ? receiptUrl : "",
+        receiptName: paymentMethod === "bank_transfer" ? receiptName : "",
         values,
         sourcePage: typeof window !== "undefined" ? window.location.pathname : "",
       };
@@ -216,6 +233,39 @@ export default function RegistrationForm({ data }) {
       const resData = await res.json();
 
       if (resData?.success) {
+        if (paymentMethod === "stripe" && enableStripe) {
+          try {
+            const stripeRes = await fetch("/api/registration/stripe/checkout", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ registrationId: resData.data._id }),
+            });
+            const stripeData = await stripeRes.json();
+            if (stripeData?.url) {
+              window.location.href = stripeData.url;
+              return;
+            } else {
+              setDone({
+                ...resData.data,
+                selectedMonth: payload.selectedMonth,
+                hasReceipt: false,
+                stripeNotice: stripeData?.error || "Payment session could not be initialized. Our team will contact you to complete enrollment.",
+              });
+              window.scrollTo({ top: 0, behavior: "smooth" });
+              return;
+            }
+          } catch (stErr) {
+            console.warn("Stripe checkout error:", stErr);
+            setDone({
+              ...resData.data,
+              selectedMonth: payload.selectedMonth,
+              hasReceipt: false,
+            });
+            window.scrollTo({ top: 0, behavior: "smooth" });
+            return;
+          }
+        }
+
         setDone({
           ...resData.data,
           selectedMonth: payload.selectedMonth,
@@ -242,30 +292,50 @@ export default function RegistrationForm({ data }) {
   if (done) return <Success result={done} copy={copy} payment={payment} />;
 
   return (
-    <Container className="py-12 sm:py-16">
-      <div className="lg:grid lg:grid-cols-[1fr_360px] lg:gap-10">
+    <Container className={isCompact ? "py-4 px-0" : "py-12 sm:py-16"}>
+      <div className={isCompact ? "w-full" : "lg:grid lg:grid-cols-[1fr_360px] lg:gap-10"}>
         <div className="min-w-0" ref={formTop}>
+          {courseNotFoundMsg && (
+            <div className="mb-6 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start gap-2.5">
+              <Info size={16} className="text-amber-600 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold text-amber-950">Notice</p>
+                <p className="mt-0.5">{courseNotFoundMsg}</p>
+              </div>
+            </div>
+          )}
+
           {/* Section 1: Course Selection & Summary */}
           <Card className="p-6 sm:p-7 mb-8">
             <div className="mb-6">
               <label className="block text-sm font-bold text-ink-900 mb-2">
                 Step 1: Select Your Course <span className="text-red-500">*</span>
               </label>
-              <div className="relative">
-                <select
-                  value={selectedCourse?._id || ""}
-                  onChange={handleCourseChange}
-                  className="w-full px-4 py-3 border border-ink-200 rounded-xl focus:ring-2 focus:ring-brand-500 bg-white text-ink-900 font-medium text-sm sm:text-base appearance-none pr-10"
-                >
-                  <option value="">-- Click to choose a course --</option>
-                  {courses.map((c) => (
-                    <option key={c._id} value={c._id}>
-                      {c.name} {c.code ? `(${c.code})` : ""} {c.price ? `— ${c.currencySymbol || "£"}${c.price}` : ""}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-ink-400 pointer-events-none" />
-              </div>
+              {!allowChangeCourse && selectedCourse ? (
+                <div className="p-4 rounded-xl bg-blue-50/70 border border-blue-100 flex items-center justify-between">
+                  <div>
+                    <span className="text-xs font-semibold text-blue-600 uppercase tracking-wider block">Course Enrollment</span>
+                    <h3 className="text-base font-bold text-ink-900">{selectedCourse.name}</h3>
+                  </div>
+                  <Badge tone="primary">Preselected</Badge>
+                </div>
+              ) : (
+                <div className="relative">
+                  <select
+                    value={selectedCourse?._id || ""}
+                    onChange={handleCourseChange}
+                    className="w-full px-4 py-3 border border-ink-200 rounded-xl focus:ring-2 focus:ring-brand-500 bg-white text-ink-900 font-medium text-sm sm:text-base appearance-none pr-10"
+                  >
+                    <option value="">-- Click to choose a course --</option>
+                    {courses.map((c) => (
+                      <option key={c._id} value={c._id}>
+                        {c.name} {c.code ? `(${c.code})` : ""} {c.price ? `— ${c.currencySymbol || "£"}${c.price}` : ""}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-ink-400 pointer-events-none" />
+                </div>
+              )}
               {errors.course && (
                 <p className="mt-1.5 text-xs text-red-600 font-medium">{errors.course}</p>
               )}
@@ -408,66 +478,121 @@ export default function RegistrationForm({ data }) {
             </Card>
           )}
 
-          {/* Section 3: Payment Receipt / Deposit Slip Upload */}
+          {/* Section 3: Payment Method & Details */}
           <Card className="p-6 sm:p-7 mb-8">
             <h3 className="text-sm font-bold text-ink-900 mb-1 flex items-center gap-2">
-              <Upload className="w-4 h-4 text-brand-600" />
-              Step 3: Payment Receipt / Deposit Slip (Optional)
+              <Landmark className="w-4 h-4 text-brand-600" />
+              Step 3: Select Payment Method
             </h3>
             <p className="text-xs text-ink-500 mb-4">
-              If you have already paid or transferred the course fee, upload your deposit slip or receipt for faster enrollment verification (PDF, PNG, JPG, WEBP up to 25MB).
+              Choose how you wish to pay your registration or course fees.
             </p>
 
-            {receiptUrl ? (
-              <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-emerald-100 text-emerald-700 rounded-lg">
-                    <FileCheck className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-emerald-950 truncate max-w-xs sm:max-w-md">
-                      {receiptName || "Payment Receipt Uploaded"}
-                    </p>
-                    <a
-                      href={receiptUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs font-medium text-emerald-700 underline"
-                    >
-                      View uploaded receipt
-                    </a>
-                  </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+              <button
+                type="button"
+                onClick={() => setPaymentMethod("bank_transfer")}
+                className={`p-4 rounded-xl border text-left transition-all ${
+                  paymentMethod === "bank_transfer"
+                    ? "border-brand-600 bg-brand-50/40 ring-1 ring-brand-600 shadow-xs"
+                    : "border-ink-200 hover:border-ink-300 bg-white"
+                }`}
+              >
+                <div className="flex items-center gap-2.5 mb-1.5">
+                  <Landmark className={`w-4 h-4 ${paymentMethod === "bank_transfer" ? "text-brand-600" : "text-ink-500"}`} />
+                  <span className="font-semibold text-sm text-ink-900">Bank Transfer</span>
                 </div>
+                <p className="text-xs text-ink-500">
+                  Pay directly into our official bank account and submit your receipt.
+                </p>
+              </button>
+
+              {enableStripe && (
                 <button
                   type="button"
-                  onClick={handleRemoveReceipt}
-                  className="p-1 text-ink-400 hover:text-red-600 rounded-lg transition-colors"
-                  title="Remove receipt"
+                  onClick={() => setPaymentMethod("stripe")}
+                  className={`p-4 rounded-xl border text-left transition-all ${
+                    paymentMethod === "stripe"
+                      ? "border-brand-600 bg-brand-50/40 ring-1 ring-brand-600 shadow-xs"
+                      : "border-ink-200 hover:border-ink-300 bg-white"
+                  }`}
                 >
-                  <X className="w-5 h-5" />
+                  <div className="flex items-center gap-2.5 mb-1.5">
+                    <span className="font-bold text-xs bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded">CARD</span>
+                    <span className="font-semibold text-sm text-ink-900">Credit / Debit Card</span>
+                  </div>
+                  <p className="text-xs text-ink-500">
+                    Instant and secure online card checkout via Stripe.
+                  </p>
                 </button>
+              )}
+            </div>
+
+            {paymentMethod === "stripe" ? (
+              <div className="p-4 rounded-xl bg-indigo-50/60 border border-indigo-100 text-xs text-indigo-950 leading-relaxed">
+                <p className="font-semibold mb-1">Secure Online Card Checkout</p>
+                <p className="text-indigo-800">
+                  When you submit this registration, you will be redirected to the official Stripe payment gateway to complete your card transaction. Your place is reserved upon confirmation.
+                </p>
               </div>
-            ) : (
+            ) : showReceiptUpload ? (
               <div>
-                <label className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-ink-200 hover:border-brand-400 rounded-xl cursor-pointer bg-ink-50/50 hover:bg-brand-50/20 transition-all">
-                  <Upload className="w-8 h-8 text-ink-400 mb-2" />
-                  <span className="text-sm font-semibold text-ink-900">
-                    {uploadingReceipt ? "Uploading receipt..." : "Click to select or drag & drop receipt file"}
-                  </span>
-                  <span className="text-xs text-ink-500 mt-1">PDF, JPG, PNG, WEBP up to 25MB</span>
-                  <input
-                    type="file"
-                    accept="image/png,image/jpeg,image/jpg,image/webp,application/pdf"
-                    onChange={handleReceiptUpload}
-                    disabled={uploadingReceipt}
-                    className="hidden"
-                  />
-                </label>
-                {uploadError && (
-                  <p className="mt-2 text-xs text-red-600 font-medium">{uploadError}</p>
+                <p className="text-xs font-semibold text-ink-900 mb-2 flex items-center gap-1.5">
+                  <Upload className="w-3.5 h-3.5 text-brand-600" />
+                  Bank Payment Receipt / Deposit Slip (Optional)
+                </p>
+                {receiptUrl ? (
+                  <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-emerald-100 text-emerald-700 rounded-lg">
+                        <FileCheck className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-emerald-950 truncate max-w-xs sm:max-w-md">
+                          {receiptName || "Payment Receipt Uploaded"}
+                        </p>
+                        <a
+                          href={receiptUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs font-medium text-emerald-700 underline"
+                        >
+                          View uploaded receipt
+                        </a>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleRemoveReceipt}
+                      className="p-1 text-ink-400 hover:text-red-600 rounded-lg transition-colors"
+                      title="Remove receipt"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                ) : (
+                  <div>
+                    <label className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-ink-200 hover:border-brand-400 rounded-xl cursor-pointer bg-ink-50/50 hover:bg-brand-50/20 transition-all">
+                      <Upload className="w-8 h-8 text-ink-400 mb-2" />
+                      <span className="text-sm font-semibold text-ink-900">
+                        {uploadingReceipt ? "Uploading receipt..." : "Click to select or drag & drop receipt file"}
+                      </span>
+                      <span className="text-xs text-ink-500 mt-1">PDF, JPG, PNG, WEBP up to 25MB</span>
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/jpg,image/webp,application/pdf"
+                        onChange={handleReceiptUpload}
+                        disabled={uploadingReceipt}
+                        className="hidden"
+                      />
+                    </label>
+                    {uploadError && (
+                      <p className="mt-2 text-xs text-red-600 font-medium">{uploadError}</p>
+                    )}
+                  </div>
                 )}
               </div>
-            )}
+            ) : null}
           </Card>
 
           {/* Section 4: Candidate Information Form */}
@@ -525,12 +650,14 @@ export default function RegistrationForm({ data }) {
         </div>
 
         {/* Sidebar Help & Bank Info */}
-        <aside className="mt-10 lg:mt-0">
-          <div className="space-y-6 lg:sticky lg:top-24">
-            <HelpPanel panel={panel} />
-            <BankDetailsCard payment={payment} />
-          </div>
-        </aside>
+        {!isCompact && (
+          <aside className="mt-10 lg:mt-0">
+            <div className="space-y-6 lg:sticky lg:top-24">
+              <HelpPanel panel={panel} />
+              <BankDetailsCard payment={payment} />
+            </div>
+          </aside>
+        )}
       </div>
     </Container>
   );
@@ -661,6 +788,11 @@ function Success({ result, copy, payment }) {
               <FileCheck className="w-3.5 h-3.5" /> Receipt Attached
             </div>
           )}
+          {result.stripeNotice ? (
+            <div className="mt-3 p-3 bg-amber-50 border border-amber-200 text-amber-900 rounded-lg text-xs text-left">
+              {result.stripeNotice}
+            </div>
+          ) : null}
         </div>
 
         <div className="mt-8 text-left">

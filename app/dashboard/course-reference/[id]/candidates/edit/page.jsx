@@ -200,7 +200,6 @@ export default function AddCandidatesPage() {
 
       // Clear selections
       setSelectedCandidates([]);
-      setSelectAll(false);
       refreshCourses();
 
       toast.success(

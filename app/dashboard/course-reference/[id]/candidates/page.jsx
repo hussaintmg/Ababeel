@@ -81,6 +81,7 @@ export default function AddCandidatesPage() {
   const [candidatePageSize, setCandidatePageSize] = useState(20);
   const [candidateSearch, setCandidateSearch] = useState("");
   const [showDeleteSelectedModal, setShowDeleteSelectedModal] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
   const [isDeletingSelected, setIsDeletingSelected] = useState(false);
   const [selectedCandidatesList, setSelectedCandidatesList] = useState([]);
 
@@ -219,7 +220,6 @@ export default function AddCandidatesPage() {
     }
   };
 
-  const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploadFile, setUploadFile] = useState(null);
   const [uploadStats, setUploadStats] = useState(null);
   const [uploadLoading, setUploadLoading] = useState(false);

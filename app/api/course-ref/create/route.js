@@ -4,6 +4,7 @@ import CourseReference from "@/models/CourseReference";
 import { getAuthenticatedUser } from "@/lib/auth";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit";
 import { isValidObjectId } from "@/lib/validation";
+import { processWaitingQueueForCourse } from "@/lib/training/batchAllocation";
 
 export async function POST(request) {
   try {
@@ -88,6 +89,16 @@ export async function POST(request) {
     };
 
     const course = await CourseReference.create(courseData);
+
+    // If new session was created for a course, automatically process waiting queue
+    const courseTargetId = course.course || course.courseId;
+    if (courseTargetId) {
+      try {
+        await processWaitingQueueForCourse(courseTargetId);
+      } catch (queueErr) {
+        console.warn("Error processing waiting queue after session creation:", queueErr.message);
+      }
+    }
 
     return NextResponse.json({
       success: true,

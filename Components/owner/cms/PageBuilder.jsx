@@ -39,10 +39,12 @@ const ICONS = {
 };
 
 /* ---------------- nested children (Repeat containers) ---------------- */
-function ChildBlocks({ block, onChange, features, scopeHint, previewDoc, onOpenStudio }) {
+function ChildBlocks({ block, onChange, onMoveOut, features, scopeHint, previewDoc, onOpenStudio }) {
   const children = Array.isArray(block.children) ? block.children : [];
   const [expandedId, setExpandedId] = useState(null);
   const [showPalette, setShowPalette] = useState(false);
+
+  const isLayoutContainer = block.type === "container";
 
   const setChildren = (next) => onChange({ ...block, children: next });
   const add = (type) => {
@@ -62,15 +64,23 @@ function ChildBlocks({ block, onChange, features, scopeHint, previewDoc, onOpenS
     setChildren(next);
   };
 
-  return (
-    <CmsLoopScope source={block.props?.source} alias={scopeHint}><div className="rounded-lg border border-dashed border-blue-200 bg-blue-50/40 p-3">
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-blue-600 mb-2">
-        Repeated design — rendered once per record
-      </p>
+  const innerContent = (
+    <div className={`rounded-lg border border-dashed ${isLayoutContainer ? "border-indigo-200 bg-indigo-50/30" : "border-blue-200 bg-blue-50/40"} p-3`}>
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <p className={`text-[11px] font-semibold uppercase tracking-wide ${isLayoutContainer ? "text-indigo-600" : "text-blue-600"}`}>
+          {isLayoutContainer ? "Container Columns & Nested Sections" : "Repeated design — rendered once per record"}
+        </p>
+        {isLayoutContainer ? (
+          <span className="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-medium">
+            {children.length} {children.length === 1 ? "column" : "columns"}
+          </span>
+        ) : null}
+      </div>
       {children.length === 0 ? (
-        <p className="text-xs text-gray-400 mb-2">
-          Add the blocks that make up one card, then bind their properties to{" "}
-          <code className="font-mono">{scopeHint}</code>.
+        <p className="text-xs text-gray-500 mb-2">
+          {isLayoutContainer
+            ? "Empty container. Add sections below (e.g. Candidate Registration Form on left, Bank Details on right)."
+            : `Add the blocks that make up one card, then bind their properties to ${scopeHint}.`}
         </p>
       ) : null}
       <div className="space-y-2">
@@ -79,19 +89,25 @@ function ChildBlocks({ block, onChange, features, scopeHint, previewDoc, onOpenS
           const Icon = ICONS[def.icon] || Type;
           const open = expandedId === child.id;
           return (
-            <div key={child.id} className="rounded-lg border border-gray-200 bg-white overflow-hidden">
+            <div key={child.id} className="rounded-lg border border-gray-200 bg-white overflow-hidden shadow-2xs">
               <div className="flex items-center gap-1.5 px-2 py-2 bg-gray-50 border-b border-gray-100">
                 <button onClick={() => setExpandedId(open ? null : child.id)} className="flex items-center gap-2 min-w-0 flex-1 text-left">
                   <ChevronRight size={14} className={`text-gray-400 shrink-0 transition-transform ${open ? "rotate-90" : ""}`} />
-                  <span className="w-6 h-6 rounded bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                  <span className={`w-6 h-6 rounded ${isLayoutContainer ? "bg-indigo-50 text-indigo-600" : "bg-blue-50 text-blue-600"} flex items-center justify-center shrink-0`}>
                     <Icon size={13} />
                   </span>
                   <span className="font-medium text-xs text-gray-800 truncate">{def.label || child.type}</span>
+                  {isLayoutContainer ? (
+                    <span className="text-[10px] text-gray-400 ml-1">Col {i + 1}</span>
+                  ) : null}
                 </button>
                 <div className="flex items-center gap-0.5 shrink-0">
-                  <button onClick={() => move(child.id, -1)} disabled={i === 0} className="p-1 rounded hover:bg-gray-200 text-gray-500 disabled:opacity-30"><ChevronUp size={13} /></button>
-                  <button onClick={() => move(child.id, 1)} disabled={i === children.length - 1} className="p-1 rounded hover:bg-gray-200 text-gray-500 disabled:opacity-30"><ChevronDown size={13} /></button>
-                  <button onClick={() => remove(child.id)} className="p-1 rounded hover:bg-red-100 text-red-500"><Trash2 size={12} /></button>
+                  <button onClick={() => move(child.id, -1)} disabled={i === 0} className="p-1 rounded hover:bg-gray-200 text-gray-500 disabled:opacity-30" title="Move up/left"><ChevronUp size={13} /></button>
+                  <button onClick={() => move(child.id, 1)} disabled={i === children.length - 1} className="p-1 rounded hover:bg-gray-200 text-gray-500 disabled:opacity-30" title="Move down/right"><ChevronDown size={13} /></button>
+                  {isLayoutContainer && onMoveOut ? (
+                    <button onClick={() => onMoveOut(child.id)} className="p-1 rounded hover:bg-indigo-100 text-indigo-600" title="Move section out of container to main page"><ExternalLink size={12} /></button>
+                  ) : null}
+                  <button onClick={() => remove(child.id)} className="p-1 rounded hover:bg-red-100 text-red-500" title="Delete"><Trash2 size={12} /></button>
                 </div>
               </div>
               {open ? (
@@ -105,19 +121,19 @@ function ChildBlocks({ block, onChange, features, scopeHint, previewDoc, onOpenS
       </div>
       <button
         onClick={() => setShowPalette(true)}
-        className="mt-2 w-full inline-flex items-center justify-center gap-1.5 py-2 rounded-lg border-2 border-dashed border-blue-300 text-xs text-blue-600 hover:bg-blue-50"
+        className={`mt-2 w-full inline-flex items-center justify-center gap-1.5 py-2 rounded-lg border-2 border-dashed ${isLayoutContainer ? "border-indigo-300 text-indigo-600 hover:bg-indigo-50" : "border-blue-300 text-blue-600 hover:bg-blue-50"} text-xs transition-colors`}
       >
-        <Plus size={14} /> Add a block inside the repeat
+        <Plus size={14} /> {isLayoutContainer ? "Add section inside container" : "Add a block inside the repeat"}
       </button>
       <AnimatePresence>
         {showPalette ? (
-          <Modal onClose={() => setShowPalette(false)} title="Add a block inside the repeat">
+          <Modal onClose={() => setShowPalette(false)} title={isLayoutContainer ? "Add a section into container" : "Add a block inside the repeat"}>
             <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[60vh] overflow-y-auto">
               {BLOCK_TYPE_LIST.filter((bl) => !isContainer(bl.type)).map((bl) => {
                 const Icon = ICONS[bl.icon] || Type;
                 return (
-                  <button key={bl.type} onClick={() => add(bl.type)} className="flex items-start gap-3 p-3 rounded-xl border border-gray-200 text-left hover:border-blue-400 hover:bg-blue-50/40 transition-colors">
-                    <span className="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0"><Icon size={17} /></span>
+                  <button key={bl.type} onClick={() => add(bl.type)} className="flex items-start gap-3 p-3 rounded-xl border border-gray-200 text-left hover:border-indigo-400 hover:bg-indigo-50/40 transition-colors">
+                    <span className="w-9 h-9 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0"><Icon size={17} /></span>
                     <span className="min-w-0">
                       <span className="block font-medium text-sm text-gray-800">{bl.label}</span>
                       <span className="block text-xs text-gray-500">{bl.description}</span>
@@ -129,8 +145,13 @@ function ChildBlocks({ block, onChange, features, scopeHint, previewDoc, onOpenS
           </Modal>
         ) : null}
       </AnimatePresence>
-    </div></CmsLoopScope>
+    </div>
   );
+
+  if (isLayoutContainer) {
+    return innerContent;
+  }
+  return <CmsLoopScope source={block.props?.source} alias={scopeHint}>{innerContent}</CmsLoopScope>;
 }
 
 class BlockEditorErrorBoundary extends Component {
@@ -148,19 +169,7 @@ class BlockEditorErrorBoundary extends Component {
     if (this.state.hasError) {
       return (
         <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-900">
-          <div className="font-semibold flex items-center gap-1.5 mb-1">
-            <span>Notice: Could not load some block settings</span>
-          </div>
-          <p className="font-mono text-[11px] text-amber-700 bg-white/70 p-1.5 rounded border border-amber-200 mb-2">
-            {this.state.error?.message || "Render error"}
-          </p>
-          <button
-            type="button"
-            onClick={() => this.setState({ hasError: false, error: null })}
-            className="px-2.5 py-1 bg-amber-200 hover:bg-amber-300 text-amber-900 rounded font-medium text-xs transition-colors"
-          >
-            Retry Settings
-          </button>
+          Failed to render editor for this block.
         </div>
       );
     }
@@ -169,7 +178,23 @@ class BlockEditorErrorBoundary extends Component {
 }
 
 /* ---------------- single draggable block card ---------------- */
-function BlockCard({ block, index, total, expanded, onToggle, onChange, onMove, onDuplicate, onRemove, features, previewDoc, onOpenStudio }) {
+function BlockCard({
+  block,
+  index,
+  total,
+  expanded,
+  onToggle,
+  onChange,
+  onMove,
+  onDuplicate,
+  onRemove,
+  onWrap,
+  onUnwrap,
+  onMoveChildOut,
+  features,
+  previewDoc,
+  onOpenStudio,
+}) {
   const controls = useDragControls();
   const def = BLOCK_TYPES[block.type] || {};
   const Icon = ICONS[def.icon] || Type;
@@ -194,11 +219,15 @@ function BlockCard({ block, index, total, expanded, onToggle, onChange, onMove, 
         </button>
         <button onClick={onToggle} className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1 text-left">
           <ChevronRight size={16} className={`text-gray-400 shrink-0 transition-transform ${expanded ? "rotate-90" : ""}`} />
-          <span className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+          <span className={`w-7 h-7 rounded-lg ${block.type === "container" ? "bg-indigo-50 text-indigo-600" : "bg-blue-50 text-blue-600"} flex items-center justify-center shrink-0`}>
             <Icon size={15} />
           </span>
           <span className="font-medium text-xs sm:text-sm text-gray-800 truncate">{def.label || block.type}</span>
-          {container && block.props?.source ? (
+          {block.type === "container" ? (
+            <span className="shrink-0 rounded border border-indigo-200 bg-indigo-50 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-700 hidden sm:inline-block">
+              {block.props?.layout || "grid-2"} ({(block.children || []).length} cols)
+            </span>
+          ) : container && block.props?.source ? (
             <span className="shrink-0 rounded border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-mono text-emerald-700 hidden sm:inline-block">
               {block.props.source}
             </span>
@@ -214,6 +243,15 @@ function BlockCard({ block, index, total, expanded, onToggle, onChange, onMove, 
           <button onClick={() => onMove(1)} disabled={index === total - 1} className="p-1.5 rounded hover:bg-gray-200 text-gray-500 disabled:opacity-30" title="Move down">
             <ChevronDown size={15} />
           </button>
+          {block.type === "container" && onUnwrap ? (
+            <button onClick={onUnwrap} className="p-1.5 rounded hover:bg-amber-100 text-amber-700" title="Unwrap container (keep sections)">
+              <Columns2 size={14} />
+            </button>
+          ) : !isContainer(block.type) && onWrap ? (
+            <button onClick={onWrap} className="p-1.5 rounded hover:bg-indigo-100 text-indigo-600" title="Wrap in multi-column container">
+              <Columns2 size={14} />
+            </button>
+          ) : null}
           <button onClick={onDuplicate} className="p-1.5 rounded hover:bg-gray-200 text-gray-500" title="Duplicate">
             <Copy size={14} />
           </button>
@@ -230,7 +268,15 @@ function BlockCard({ block, index, total, expanded, onToggle, onChange, onMove, 
                 <BlockEditor block={block} onChange={onChange} features={features} previewDoc={previewDoc} onOpenStudio={onOpenStudio} />
               </BlockEditorErrorBoundary>
               {container ? (
-                <ChildBlocks block={block} onChange={onChange} features={features} scopeHint={scopeHint} previewDoc={previewDoc} onOpenStudio={onOpenStudio} />
+                <ChildBlocks
+                  block={block}
+                  onChange={onChange}
+                  onMoveOut={(childId) => onMoveChildOut && onMoveChildOut(block.id, childId)}
+                  features={features}
+                  scopeHint={scopeHint}
+                  previewDoc={previewDoc}
+                  onOpenStudio={onOpenStudio}
+                />
               ) : null}
             </div>
           </motion.div>
@@ -512,6 +558,58 @@ function PageBuilderInner({ pageKey, meta }) {
       [next[i], next[j]] = [next[j], next[i]];
       return next;
     });
+  const wrapInContainer = (id) =>
+    setBlocks((prev) => {
+      const idx = prev.findIndex((b) => b.id === id);
+      if (idx === -1) return prev;
+      const target = prev[idx];
+      const container = createBlock("container");
+      if (!container) return prev;
+      container.children = [
+        {
+          ...target,
+          _style: { ...(target._style || {}), _inContainer: true },
+        },
+      ];
+      const next = [...prev];
+      next.splice(idx, 1, container);
+      return next;
+    });
+  const unwrapContainer = (id) =>
+    setBlocks((prev) => {
+      const idx = prev.findIndex((b) => b.id === id);
+      if (idx === -1) return prev;
+      const container = prev[idx];
+      const children = (container.children || []).map((child) => ({
+        ...child,
+        _style: { ...(child._style || {}), _inContainer: false },
+      }));
+      const next = [...prev];
+      next.splice(idx, 1, ...children);
+      return next;
+    });
+  const moveChildOut = (containerId, childId) =>
+    setBlocks((prev) => {
+      const idx = prev.findIndex((b) => b.id === containerId);
+      if (idx === -1) return prev;
+      const container = prev[idx];
+      const children = Array.isArray(container.children) ? container.children : [];
+      const childIdx = children.findIndex((c) => c.id === childId);
+      if (childIdx === -1) return prev;
+      const child = children[childIdx];
+      const unnestedChild = {
+        ...child,
+        _style: { ...(child._style || {}), _inContainer: false },
+      };
+      const newChildren = children.filter((c) => c.id !== childId);
+      const updatedContainer = {
+        ...container,
+        children: newChildren,
+      };
+      const next = [...prev];
+      next.splice(idx, 1, updatedContainer, unnestedChild);
+      return next;
+    });
 
   if (loading) {
     return (
@@ -662,6 +760,9 @@ function PageBuilderInner({ pageKey, meta }) {
                   onMove={(dir) => move(block.id, dir)}
                   onDuplicate={() => duplicateBlock(block.id)}
                   onRemove={() => removeBlock(block.id)}
+                  onWrap={() => wrapInContainer(block.id)}
+                  onUnwrap={() => unwrapContainer(block.id)}
+                  onMoveChildOut={moveChildOut}
                   features={features}
                   previewDoc={previewDoc}
                   onOpenStudio={openStudioForBlock}

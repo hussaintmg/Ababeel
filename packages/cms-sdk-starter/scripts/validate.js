@@ -6,7 +6,7 @@
 import { readFileSync } from "fs";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
-import { validateTemplate } from "../../lib/cms/templateValidator.js";
+import { validateTemplate } from "../../../lib/cms/templateValidator.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
