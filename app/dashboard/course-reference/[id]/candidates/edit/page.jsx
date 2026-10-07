@@ -63,8 +63,12 @@ export default function AddCandidatesPage() {
   }, [courses, courseId]);
 
   const [candidates, setCandidates] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [tableLoading, setTableLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [isAllPagesSelected, setIsAllPagesSelected] = useState(false);
+  const [searchInputValue, setSearchInputValue] = useState("");
+  const [candidateSearchQuery, setCandidateSearchQuery] = useState("");
   const [showCountryDropdown, setShowCountryDropdown] = useState(false);
   const [countrySearch, setCountrySearch] = useState("");
   const [allCountries, setAllCountries] = useState([]);
@@ -110,16 +114,29 @@ export default function AddCandidatesPage() {
   // Pagination & Multi-Page Persistent Selection
   const [candidatePage, setCandidatePage] = useState(1);
   const [candidatePageSize, setCandidatePageSize] = useState(20);
-  const [candidateSearch, setCandidateSearch] = useState("");
   const [selectedCandidates, setSelectedCandidates] = useState([]);
   const [showDeleteSelectedModal, setShowDeleteSelectedModal] = useState(false);
   const [isDeletingSelected, setIsDeletingSelected] = useState(false);
   const [selectedCandidatesList, setSelectedCandidatesList] = useState([]);
 
+  // Debounced search input
+  useEffect(() => {
+    setTableLoading(true);
+    const timer = setTimeout(() => {
+      setCandidateSearchQuery(searchInputValue);
+      setCandidatePage(1);
+      // Clear selection on search change to ensure only search results can be selected
+      setSelectedCandidates([]);
+      setIsAllPagesSelected(false);
+      setTableLoading(false);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [searchInputValue]);
+
   // Filter candidates by search
   const filteredCandidates = useMemo(() => {
-    if (!candidateSearch.trim()) return candidates;
-    const q = candidateSearch.toLowerCase();
+    if (!candidateSearchQuery.trim()) return candidates;
+    const q = candidateSearchQuery.toLowerCase().trim();
     return candidates.filter((c) =>
       c.firstName?.toLowerCase().includes(q) ||
       c.lastName?.toLowerCase().includes(q) ||
@@ -128,7 +145,14 @@ export default function AddCandidatesPage() {
       c.traineeId?.toLowerCase().includes(q) ||
       c.country?.toLowerCase().includes(q)
     );
-  }, [candidates, candidateSearch]);
+  }, [candidates, candidateSearchQuery]);
+
+  useEffect(() => {
+    const maxPage = Math.max(1, Math.ceil(filteredCandidates.length / candidatePageSize));
+    if (candidatePage > maxPage) {
+      setCandidatePage(maxPage);
+    }
+  }, [filteredCandidates.length, candidatePageSize, candidatePage]);
 
   // Current page visible slice
   const startIndex = (candidatePage - 1) * candidatePageSize;
@@ -136,34 +160,75 @@ export default function AddCandidatesPage() {
     return filteredCandidates.slice(startIndex, startIndex + candidatePageSize);
   }, [filteredCandidates, startIndex, candidatePageSize]);
 
+  const visibleCandidateIds = useMemo(() => {
+    return visibleCandidates.map((c) => c._id);
+  }, [visibleCandidates]);
+
+  const allFilteredCandidateIds = useMemo(() => {
+    return filteredCandidates.map((c) => c._id);
+  }, [filteredCandidates]);
+
   // Check if all visible rows on CURRENT page are selected
-  const isPageAllSelected =
-    visibleCandidates.length > 0 &&
-    visibleCandidates.every((c) => selectedCandidates.includes(c._id));
+  const isPageAllSelected = useMemo(() => {
+    if (visibleCandidateIds.length === 0) return false;
+    return visibleCandidateIds.every((id) => selectedCandidates.includes(id));
+  }, [visibleCandidateIds, selectedCandidates]);
+
+  const isTrulyAllPagesSelected = useMemo(() => {
+    if (allFilteredCandidateIds.length === 0) return false;
+    return allFilteredCandidateIds.every((id) => selectedCandidates.includes(id));
+  }, [allFilteredCandidateIds, selectedCandidates]);
 
   // Toggle selection for a single candidate
   const handleSelectCandidate = (candidateId) => {
-    setSelectedCandidates((prev) =>
-      prev.includes(candidateId)
+    setSelectedCandidates((prev) => {
+      const next = prev.includes(candidateId)
         ? prev.filter((id) => id !== candidateId)
-        : [...prev, candidateId]
-    );
+        : [...prev, candidateId];
+      if (prev.includes(candidateId)) {
+        setIsAllPagesSelected(false);
+      }
+      return next;
+    });
   };
 
-  // Toggle selection for visible rows on the CURRENT page (persisting selections across other pages)
+  // Toggle selection for visible rows on the CURRENT page
   const handleToggleSelectPage = () => {
     if (isPageAllSelected) {
-      const visibleIds = new Set(visibleCandidates.map((c) => c._id));
-      setSelectedCandidates((prev) => prev.filter((id) => !visibleIds.has(id)));
+      setSelectedCandidates((prev) =>
+        prev.filter((id) => !visibleCandidateIds.includes(id))
+      );
+      setIsAllPagesSelected(false);
     } else {
-      const visibleIds = visibleCandidates.map((c) => c._id);
-      setSelectedCandidates((prev) => Array.from(new Set([...prev, ...visibleIds])));
+      setSelectedCandidates((prev) => {
+        const set = new Set(prev);
+        visibleCandidateIds.forEach((id) => set.add(id));
+        return Array.from(set);
+      });
     }
   };
 
+  const handleSelectAllPages = () => {
+    setSelectedCandidates(allFilteredCandidateIds);
+    setIsAllPagesSelected(true);
+  };
+
+  const handleClearAllSelection = () => {
+    setSelectedCandidates([]);
+    setIsAllPagesSelected(false);
+  };
+
+  const handlePageChange = (newPage) => {
+    setTableLoading(true);
+    setCandidatePage(newPage);
+    setTimeout(() => setTableLoading(false), 120);
+  };
+
   const handlePageSizeChange = (newSize) => {
+    setTableLoading(true);
     setCandidatePageSize(newSize);
     setCandidatePage(1);
+    setTimeout(() => setTableLoading(false), 120);
   };
 
   const handleDeleteSelected = () => {
@@ -341,7 +406,7 @@ export default function AddCandidatesPage() {
 
   const fetchCourseAndCandidates = async () => {
     try {
-      setLoading(true);
+      setTableLoading(true);
       const res = await axios.post(`/api/course-ref/candidates`, {
         courseId,
       });
@@ -354,7 +419,8 @@ export default function AddCandidatesPage() {
       console.error("Error fetching data:", error);
       toast.error("Failed to fetch candidates");
     } finally {
-      setLoading(false);
+      setInitialLoading(false);
+      setTableLoading(false);
     }
   };
 
@@ -1169,7 +1235,7 @@ export default function AddCandidatesPage() {
     URL.revokeObjectURL(url);
   };
 
-  if (loading) {
+  if (initialLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
@@ -1574,13 +1640,19 @@ export default function AddCandidatesPage() {
                       <input
                         type="text"
                         placeholder="Search candidates..."
-                        value={candidateSearch}
-                        onChange={(e) => {
-                          setCandidateSearch(e.target.value);
-                          setCandidatePage(1);
-                        }}
-                        className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                        value={searchInputValue}
+                        onChange={(e) => setSearchInputValue(e.target.value)}
+                        className="w-full pl-9 pr-8 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
                       />
+                      {searchInputValue && (
+                        <button
+                          type="button"
+                          onClick={() => setSearchInputValue("")}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1589,7 +1661,7 @@ export default function AddCandidatesPage() {
                 <div className="px-6 pt-4">
                   <DataTableBulkBar
                     selectedCount={selectedCandidates.length}
-                    onClearSelection={() => setSelectedCandidates([])}
+                    onClearSelection={handleClearAllSelection}
                     itemName="candidates"
                   >
                     <button
@@ -1642,6 +1714,36 @@ export default function AddCandidatesPage() {
                   </DataTableBulkBar>
                 </div>
 
+                {/* Cross-page selection banner */}
+                {isPageAllSelected && filteredCandidates.length > visibleCandidates.length && (
+                  <div className="bg-blue-50 border-t border-b border-blue-200 px-6 py-2.5 text-sm text-blue-900 flex items-center justify-between">
+                    <span>
+                      {isTrulyAllPagesSelected ? (
+                        <>All <strong>{filteredCandidates.length}</strong> candidates across all pages are selected.</>
+                      ) : (
+                        <>All <strong>{visibleCandidates.length}</strong> candidates on this page are selected.</>
+                      )}
+                    </span>
+                    {isTrulyAllPagesSelected ? (
+                      <button
+                        type="button"
+                        onClick={handleClearAllSelection}
+                        className="text-blue-700 hover:text-blue-900 font-semibold underline text-xs cursor-pointer ml-4"
+                      >
+                        Clear selection
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleSelectAllPages}
+                        className="text-blue-700 hover:text-blue-900 font-semibold underline text-xs cursor-pointer ml-4"
+                      >
+                        Select all {filteredCandidates.length} candidates across all pages
+                      </button>
+                    )}
+                  </div>
+                )}
+
                 <div className="overflow-x-auto rounded-lg border-t border-gray-200">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
@@ -1689,7 +1791,40 @@ export default function AddCandidatesPage() {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {filteredCandidates.length === 0 ? (
+                      {tableLoading ? (
+                        Array.from({ length: Math.min(candidatePageSize, 8) }).map((_, idx) => (
+                          <tr key={`skeleton-${idx}`} className="animate-pulse">
+                            <td className="px-4 py-3 text-center">
+                              <div className="h-4 w-4 bg-gray-200 rounded mx-auto" />
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="h-10 w-10 bg-gray-200 rounded-full" />
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="h-4 w-32 bg-gray-200 rounded mb-1" />
+                              <div className="h-3 w-20 bg-gray-100 rounded" />
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="h-4 w-36 bg-gray-200 rounded" />
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="h-4 w-24 bg-gray-200 rounded" />
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="h-4 w-16 bg-gray-200 rounded" />
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="h-4 w-20 bg-gray-200 rounded" />
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex gap-2">
+                                <div className="h-8 w-8 bg-gray-200 rounded" />
+                                <div className="h-8 w-8 bg-gray-200 rounded" />
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      ) : filteredCandidates.length === 0 ? (
                         <tr>
                           <td
                             colSpan="8"
@@ -1700,10 +1835,10 @@ export default function AddCandidatesPage() {
                                 <User className="h-8 w-8 text-gray-400" />
                               </div>
                               <p className="text-lg font-medium text-gray-700 mb-1">
-                                {candidateSearch ? "No candidates match your search" : "No candidates added yet"}
+                                {candidateSearchQuery ? "No candidates match your search" : "No candidates added yet"}
                               </p>
                               <p className="text-sm text-gray-500">
-                                {candidateSearch ? "Try a different search term" : "Add your first candidate using the form above"}
+                                {candidateSearchQuery ? "Try a different search term" : "Add your first candidate using the form above"}
                               </p>
                             </div>
                           </td>
@@ -1852,7 +1987,7 @@ export default function AddCandidatesPage() {
                   page={candidatePage}
                   pageSize={candidatePageSize}
                   totalItems={filteredCandidates.length}
-                  onPageChange={setCandidatePage}
+                  onPageChange={handlePageChange}
                   onPageSizeChange={handlePageSizeChange}
                   itemName="candidates"
                 />
