@@ -14,7 +14,7 @@ export async function POST(req) {
     await connectDB();
     const { courseId } = await req.json();
 
-    if (!courseId || !isValidObjectId(courseId)) {
+    if (!courseId) {
       return NextResponse.json(
         { success: false, error: "Valid courseId is required" },
         { status: 400 }
@@ -22,7 +22,16 @@ export async function POST(req) {
     }
 
     // Check if course exists
-    const course = await CourseReference.findById(courseId);
+    let course = null;
+    if (isValidObjectId(courseId)) {
+      course = await CourseReference.findById(courseId);
+    }
+    if (!course) {
+      course = await CourseReference.findOne({
+        $or: [{ referenceNumber: courseId }, { sequenceId: courseId }],
+      });
+    }
+
     if (!course) {
       return NextResponse.json(
         { success: false, error: "Course not found" },

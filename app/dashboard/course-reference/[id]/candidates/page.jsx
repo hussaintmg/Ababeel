@@ -37,16 +37,19 @@ export default function AddCandidatesPage() {
     refreshCourses,
   } = useCourseReference();
   const [course, setCourse] = useState({});
+  const [courseLoading, setCourseLoading] = useState(true);
 
   useEffect(() => {
     if (courses.length) {
-      const foundCourse = courses.find((c) => c._id === courseId);
+      const foundCourse = courses.find((c) => c._id === courseId || String(c._id) === String(courseId));
       if (foundCourse) {
         setCourse(foundCourse);
+        setCourseLoading(false);
         return;
       }
     }
     if (courseId) {
+      setCourseLoading(true);
       axios
         .get(`/api/course-ref/${courseId}`)
         .then((res) => {
@@ -58,7 +61,12 @@ export default function AddCandidatesPage() {
         })
         .catch((err) => {
           console.warn("Direct fetch course ref error:", err);
+        })
+        .finally(() => {
+          setCourseLoading(false);
         });
+    } else {
+      setCourseLoading(false);
     }
   }, [courses, courseId]);
 
@@ -1138,7 +1146,7 @@ export default function AddCandidatesPage() {
     URL.revokeObjectURL(url);
   };
 
-  if (initialLoading) {
+  if (initialLoading || courseLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>

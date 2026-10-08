@@ -10,14 +10,25 @@ export const dynamic = "force-dynamic";
 export async function GET(request, { params }) {
   try {
     const { id } = await params;
-    if (!id || !isValidObjectId(id)) {
+    if (!id) {
       return NextResponse.json({ success: false, error: "Invalid ID" }, { status: 400 });
     }
 
     await connectDB();
-    const reference = await CourseReference.findById(id)
-      .populate("course", "name code slug price currency duration level awardingBody")
-      .populate("candidates");
+    let reference = null;
+    if (isValidObjectId(id)) {
+      reference = await CourseReference.findById(id)
+        .populate("course", "name code slug price currency duration level awardingBody")
+        .populate("candidates");
+    }
+
+    if (!reference) {
+      reference = await CourseReference.findOne({
+        $or: [{ referenceNumber: id }, { sequenceId: id }],
+      })
+        .populate("course", "name code slug price currency duration level awardingBody")
+        .populate("candidates");
+    }
 
     if (!reference) {
       return NextResponse.json({ success: false, error: "Course reference not found" }, { status: 404 });

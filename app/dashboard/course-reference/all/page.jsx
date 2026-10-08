@@ -134,7 +134,7 @@ export default function CourseReferencesPage() {
     itemIdKey: "_id",
     tableId: "dashboard.course-references",
     onDeleteSelected: () => setShowBulkDeleteModal(true),
-    onActivateItem: (item) => router.push(`/dashboard/course-reference/${item._id}/candidates`),
+    onActivateItem: (item) => router.push(`/dashboard/course-reference/${item._id}/candidates/edit`),
     onCopySelected: (ids) => {
       const selectedItems = courses.filter((c) => ids.includes(c._id));
       const text = selectedItems
@@ -548,11 +548,17 @@ export default function CourseReferencesPage() {
                         </td>
 
                         {/* Action */}
-                        <td className="px-6 py-4 text-right whitespace-nowrap">
+                        <td
+                          className="px-6 py-4 text-right whitespace-nowrap"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <Link
                             href={`/dashboard/course-reference/${course._id}/candidates/edit`}
-                            className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-800"
-                            onClick={(e) => e.stopPropagation()}
+                            className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-800 transition-colors cursor-pointer"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              router.push(`/dashboard/course-reference/${course._id}/candidates/edit`);
+                            }}
                           >
                             Candidates
                             <ChevronRight className="w-4 h-4" />
