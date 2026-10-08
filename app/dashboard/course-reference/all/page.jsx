@@ -432,6 +432,9 @@ export default function CourseReferencesPage() {
                       <tr
                         key={course._id}
                         onClick={(e) => {
+                          if (e.target?.closest("a, button, input, label, [role='button']")) {
+                            return;
+                          }
                           if (e.shiftKey || e.ctrlKey || e.metaKey) {
                             handleSelectionRowClick(course._id, idx, e);
                           } else {
@@ -548,22 +551,11 @@ export default function CourseReferencesPage() {
                         </td>
 
                         {/* Action */}
-                        <td
-                          className="px-6 py-4 text-right whitespace-nowrap"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const targetId = course._id || course.id;
-                            if (targetId) {
-                              router.push(`/dashboard/course-reference/${targetId}/candidates/edit`);
-                            }
-                          }}
-                        >
+                        <td className="px-6 py-4 text-right whitespace-nowrap">
                           <Link
-                            href={`/dashboard/course-reference/${course._id || course.id}/candidates/edit`}
+                            href={`/dashboard/course-reference/${course._id || course.id || course.referenceNumber}/candidates/edit`}
+                            prefetch={false}
                             className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-800 transition-colors cursor-pointer"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                            }}
                           >
                             <span>Candidates</span>
                             <ChevronRight className="w-4 h-4 pointer-events-none" />
