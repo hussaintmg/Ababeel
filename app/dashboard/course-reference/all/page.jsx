@@ -213,27 +213,9 @@ export default function CourseReferencesPage() {
     }
   };
 
-  const navigateToCandidates = useCallback(
-    (courseId) => {
-      if (!courseId) return;
-      const url = `/dashboard/course-reference/${courseId}/candidates/edit`;
-      router.push(url);
-      setTimeout(() => {
-        if (typeof window !== "undefined" && window.location.pathname.endsWith("/course-reference/all")) {
-          window.location.assign(url);
-        }
-      }, 250);
-    },
-    [router]
-  );
-
   const handleRowClick = (courseId) => {
-    navigateToCandidates(courseId);
-  };
-
-  const handleCandidatesClick = (e, courseId) => {
-    e?.stopPropagation?.();
-    navigateToCandidates(courseId);
+    if (!courseId) return;
+    router.push(`/dashboard/course-reference/${courseId}/candidates/edit`);
   };
 
   const handleStatusBadge = (status) => {
@@ -521,13 +503,9 @@ export default function CourseReferencesPage() {
                         </td>
 
                         {/* Enrolled / Seats */}
-                        <td
-                          className="px-6 py-4 whitespace-nowrap"
-                          onClick={(e) => handleCandidatesClick(e, course._id || course.id || course.referenceNumber)}
-                        >
+                        <td className="px-6 py-4 whitespace-nowrap">
                           <Link
                             href={`/dashboard/course-reference/${course._id || course.id || course.referenceNumber}/candidates/edit`}
-                            onClick={(e) => handleCandidatesClick(e, course._id || course.id || course.referenceNumber)}
                             className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors cursor-pointer"
                             title="View / Manage Candidates"
                           >
@@ -578,13 +556,9 @@ export default function CourseReferencesPage() {
                         </td>
 
                         {/* Action */}
-                        <td
-                          className="px-6 py-4 text-right whitespace-nowrap"
-                          onClick={(e) => handleCandidatesClick(e, course._id || course.id || course.referenceNumber)}
-                        >
+                        <td className="px-6 py-4 text-right whitespace-nowrap">
                           <Link
                             href={`/dashboard/course-reference/${course._id || course.id || course.referenceNumber}/candidates/edit`}
-                            onClick={(e) => handleCandidatesClick(e, course._id || course.id || course.referenceNumber)}
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 hover:text-blue-900 rounded-lg text-xs font-semibold transition-colors cursor-pointer shadow-xs border border-blue-200/70"
                           >
                             <Users className="w-3.5 h-3.5 text-blue-600 pointer-events-none" />
