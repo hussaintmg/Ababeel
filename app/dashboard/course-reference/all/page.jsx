@@ -550,18 +550,23 @@ export default function CourseReferencesPage() {
                         {/* Action */}
                         <td
                           className="px-6 py-4 text-right whitespace-nowrap"
-                          onClick={(e) => e.stopPropagation()}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const targetId = course._id || course.id;
+                            if (targetId) {
+                              router.push(`/dashboard/course-reference/${targetId}/candidates/edit`);
+                            }
+                          }}
                         >
                           <Link
-                            href={`/dashboard/course-reference/${course._id}/candidates/edit`}
+                            href={`/dashboard/course-reference/${course._id || course.id}/candidates/edit`}
                             className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-800 transition-colors cursor-pointer"
                             onClick={(e) => {
                               e.stopPropagation();
-                              router.push(`/dashboard/course-reference/${course._id}/candidates/edit`);
                             }}
                           >
-                            Candidates
-                            <ChevronRight className="w-4 h-4" />
+                            <span>Candidates</span>
+                            <ChevronRight className="w-4 h-4 pointer-events-none" />
                           </Link>
                         </td>
                       </tr>

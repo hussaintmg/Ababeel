@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/utils/db";
+import "@/models";
 import CourseReference from "@/models/CourseReference";
 import { getAuthenticatedUser } from "@/lib/auth";
 import { isValidObjectId } from "@/lib/validation";

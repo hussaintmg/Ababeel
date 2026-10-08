@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/utils/db";
+import "@/models";
 import Candidate from "@/models/Candidate";
 import CourseReference from "@/models/CourseReference";
 import { getAuthenticatedUser } from "@/lib/auth";
@@ -39,9 +40,18 @@ export async function POST(req) {
       );
     }
 
-    if (course.userId.toString() !== authUser._id.toString() && !["admin", "owner"].includes(authUser.role)) {
+    const isOwnerOrAdmin = ["admin", "owner"].includes(authUser?.role);
+    const courseUserId = course.userId ? course.userId.toString() : null;
+    const courseCreatedBy = course.createdBy ? course.createdBy.toString() : null;
+    const authUserId = authUser?._id ? authUser._id.toString() : null;
+
+    const isAuthorized =
+      isOwnerOrAdmin ||
+      (authUserId && (courseUserId === authUserId || courseCreatedBy === authUserId));
+
+    if (!isAuthorized) {
       return NextResponse.json(
-        { success: false, error: "Access denied: not the course owner" },
+        { success: false, error: "Access denied: not authorized to view candidates for this course" },
         { status: 403 }
       );
     }
