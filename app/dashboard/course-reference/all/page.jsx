@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useCourseReference } from "@/context/CourseReferenceContext";
@@ -38,7 +38,6 @@ export default function CourseReferencesPage() {
   } = useCourseReference();
 
   const [courses, setCourses] = useState([]);
-  const [filteredCourses, setFilteredCourses] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("createdAt");
   const [sortOrder, setSortOrder] = useState("desc");
@@ -57,23 +56,30 @@ export default function CourseReferencesPage() {
       const res = await axios.get("/api/course-ref");
       if (res.data?.success) {
         setCourses(res.data.data || []);
-      } else if (contextCourses) {
+      } else if (contextCourses?.length) {
         setCourses(contextCourses);
       }
     } catch (error) {
       console.error("Error loading courses:", error);
-      if (contextCourses) setCourses(contextCourses);
+      if (contextCourses?.length) setCourses(contextCourses);
     } finally {
       setIsLoading(false);
     }
-  }, [contextCourses]);
+  }, []);
 
   useEffect(() => {
     loadCourses();
   }, [loadCourses]);
 
-  // Filter and sort courses
+  // Sync from context when context courses are loaded and local is still empty
   useEffect(() => {
+    if (contextCourses?.length && courses.length === 0) {
+      setCourses(contextCourses);
+    }
+  }, [contextCourses]);
+
+  // Filter and sort courses via useMemo
+  const filteredCourses = useMemo(() => {
     let result = [...courses];
 
     if (searchTerm) {
@@ -107,14 +113,40 @@ export default function CourseReferencesPage() {
       }
     });
 
-    setFilteredCourses(result);
-    setPage(1);
+    return result;
   }, [courses, searchTerm, sortBy, sortOrder]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm, sortBy, sortOrder]);
 
   const totalItems = filteredCourses.length;
   const totalPages = Math.ceil(totalItems / pageSize) || 1;
   const startIndex = (page - 1) * pageSize;
-  const visibleCourses = filteredCourses.slice(startIndex, startIndex + pageSize);
+  const visibleCourses = useMemo(() => {
+    return filteredCourses.slice(startIndex, startIndex + pageSize);
+  }, [filteredCourses, startIndex, pageSize]);
+
+  const handleDeleteSelected = useCallback(() => {
+    setShowBulkDeleteModal(true);
+  }, []);
+
+  const handleActivateItem = useCallback((item) => {
+    const targetId = item?._id || item?.id;
+    if (targetId) {
+      router.push(`/dashboard/course-reference/${targetId}/candidates/edit`);
+    }
+  }, [router]);
+
+  const handleCopySelected = useCallback((ids) => {
+    const selectedItems = courses.filter((c) => ids.includes(c._id));
+    const text = selectedItems
+      .map((c) => `${c.courseName} (${c.referenceName || c.referenceCode || ""})`)
+      .join("\n");
+    navigator.clipboard?.writeText(text);
+    toast.info(`Copied ${ids.length} course reference(s) to clipboard`);
+  }, [courses]);
 
   const {
     selectedIds: selectedCourses,
@@ -133,16 +165,9 @@ export default function CourseReferencesPage() {
     items: visibleCourses,
     itemIdKey: "_id",
     tableId: "dashboard.course-references",
-    onDeleteSelected: () => setShowBulkDeleteModal(true),
-    onActivateItem: (item) => router.push(`/dashboard/course-reference/${item._id}/candidates/edit`),
-    onCopySelected: (ids) => {
-      const selectedItems = courses.filter((c) => ids.includes(c._id));
-      const text = selectedItems
-        .map((c) => `${c.courseName} (${c.referenceName || c.referenceCode || ""})`)
-        .join("\n");
-      navigator.clipboard?.writeText(text);
-      toast.info(`Copied ${ids.length} course reference(s) to clipboard`);
-    },
+    onDeleteSelected: handleDeleteSelected,
+    onActivateItem: handleActivateItem,
+    onCopySelected: handleCopySelected,
   });
 
   const handleBulkDelete = async () => {
@@ -503,7 +528,10 @@ export default function CourseReferencesPage() {
                         </td>
 
                         {/* Enrolled / Seats */}
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td
+                          className="px-6 py-4 whitespace-nowrap"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <Link
                             href={`/dashboard/course-reference/${course._id || course.id || course.referenceNumber}/candidates/edit`}
                             className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors cursor-pointer"
@@ -556,7 +584,10 @@ export default function CourseReferencesPage() {
                         </td>
 
                         {/* Action */}
-                        <td className="px-6 py-4 text-right whitespace-nowrap">
+                        <td
+                          className="px-6 py-4 text-right whitespace-nowrap"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <Link
                             href={`/dashboard/course-reference/${course._id || course.id || course.referenceNumber}/candidates/edit`}
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 hover:text-blue-900 rounded-lg text-xs font-semibold transition-colors cursor-pointer shadow-xs border border-blue-200/70"

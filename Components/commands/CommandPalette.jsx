@@ -75,11 +75,20 @@ export default function CommandPalette() {
     [user, activeScopes]
   );
 
+  // Subscribe to command changes only while palette is open
+  const [paletteRegistryTick, setPaletteRegistryTick] = useState(0);
+  useEffect(() => {
+    if (!paletteOpen) return;
+    return commandRegistry.subscribe(() => {
+      setPaletteRegistryTick((t) => t + 1);
+    });
+  }, [paletteOpen, commandRegistry]);
+
   // Fetch available registered commands
   const availableCommands = useMemo(() => {
     if (!paletteOpen) return [];
     return commandRegistry.getAvailable(commandContext);
-  }, [paletteOpen, commandRegistry, commandContext]);
+  }, [paletteOpen, commandRegistry, commandContext, paletteRegistryTick]);
 
   // Filter commands by query
   const filteredCommands = useMemo(() => {

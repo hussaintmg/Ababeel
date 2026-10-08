@@ -260,15 +260,32 @@ export function useSelection({
     ]
   );
 
+  const isFocusedRef = useRef(isFocused);
+  isFocusedRef.current = isFocused;
+  const selectedCountRef = useRef(selectedCount);
+  selectedCountRef.current = selectedCount;
+  const visibleIdsRef = useRef(visibleIds);
+  visibleIdsRef.current = visibleIds;
+  const selectedIdsRef = useRef(selectedIds);
+  selectedIdsRef.current = selectedIds;
+  const onDeleteSelectedRef = useRef(onDeleteSelected);
+  onDeleteSelectedRef.current = onDeleteSelected;
+  const onCopySelectedRef = useRef(onCopySelected);
+  onCopySelectedRef.current = onCopySelected;
+  const selectAllRef = useRef(selectAll);
+  selectAllRef.current = selectAll;
+  const clearSelectionRef = useRef(clearSelection);
+  clearSelectionRef.current = clearSelection;
+
   // Manage active scope when focused or has selection
   useEffect(() => {
     if (isFocused || selectedCount > 0) {
       pushScope(scope);
       return () => popScope(scope);
     }
-  }, [isFocused, selectedCount, pushScope, popScope, scope]);
+  }, [isFocused, selectedCount > 0, pushScope, popScope, scope]);
 
-  // Register contextual commands for this table with CommandContext
+  // Register contextual commands for this table with CommandContext once per table mount
   useEffect(() => {
     if (!enabled) return;
 
@@ -283,9 +300,9 @@ export function useSelection({
         scope,
         shortcut: "$mod+a",
         allowInEditable: false,
-        isAvailable: () => isFocused || selectedCount > 0,
-        isEnabled: () => visibleIds.length > 0,
-        run: () => selectAll(),
+        isAvailable: () => isFocusedRef.current || selectedCountRef.current > 0,
+        isEnabled: () => visibleIdsRef.current.length > 0,
+        run: () => selectAllRef.current(),
       })
     );
 
@@ -298,64 +315,47 @@ export function useSelection({
         scope,
         shortcut: "escape",
         allowInEditable: false,
-        isAvailable: () => selectedCount > 0,
-        isEnabled: () => selectedCount > 0,
-        run: () => clearSelection(),
+        isAvailable: () => selectedCountRef.current > 0,
+        isEnabled: () => selectedCountRef.current > 0,
+        run: () => clearSelectionRef.current(),
       })
     );
 
     // Delete Selected command
-    if (onDeleteSelected) {
-      unregs.push(
-        registerCommand({
-          id: `${tableId}.deleteSelected`,
-          title: `Delete Selected (${selectedCount})`,
-          category: CommandCategory.ACTIONS,
-          scope,
-          shortcut: "delete",
-          allowInEditable: false,
-          isDestructive: true,
-          isAvailable: () => selectedCount > 0,
-          isEnabled: () => selectedCount > 0,
-          run: () => onDeleteSelected(selectedIds),
-        })
-      );
-    }
+    unregs.push(
+      registerCommand({
+        id: `${tableId}.deleteSelected`,
+        title: "Delete Selected",
+        category: CommandCategory.ACTIONS,
+        scope,
+        shortcut: "delete",
+        allowInEditable: false,
+        isDestructive: true,
+        isAvailable: () => Boolean(onDeleteSelectedRef.current) && selectedCountRef.current > 0,
+        isEnabled: () => Boolean(onDeleteSelectedRef.current) && selectedCountRef.current > 0,
+        run: () => onDeleteSelectedRef.current?.(selectedIdsRef.current),
+      })
+    );
 
     // Copy Selected command
-    if (onCopySelected) {
-      unregs.push(
-        registerCommand({
-          id: `${tableId}.copySelected`,
-          title: `Copy Selected (${selectedCount})`,
-          category: CommandCategory.ACTIONS,
-          scope,
-          shortcut: "$mod+c",
-          allowInEditable: false,
-          isAvailable: () => selectedCount > 0,
-          isEnabled: () => selectedCount > 0,
-          run: () => onCopySelected(selectedIds),
-        })
-      );
-    }
+    unregs.push(
+      registerCommand({
+        id: `${tableId}.copySelected`,
+        title: "Copy Selected",
+        category: CommandCategory.ACTIONS,
+        scope,
+        shortcut: "$mod+c",
+        allowInEditable: false,
+        isAvailable: () => Boolean(onCopySelectedRef.current) && selectedCountRef.current > 0,
+        isEnabled: () => Boolean(onCopySelectedRef.current) && selectedCountRef.current > 0,
+        run: () => onCopySelectedRef.current?.(selectedIdsRef.current),
+      })
+    );
 
     return () => {
       unregs.forEach((fn) => fn());
     };
-  }, [
-    enabled,
-    tableId,
-    scope,
-    isFocused,
-    selectedCount,
-    visibleIds.length,
-    selectedIds,
-    onDeleteSelected,
-    onCopySelected,
-    registerCommand,
-    selectAll,
-    clearSelection,
-  ]);
+  }, [enabled, tableId, scope, registerCommand]);
 
   return {
     selectedIds,

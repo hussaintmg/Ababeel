@@ -44,17 +44,9 @@ export function CommandProvider({ children }) {
   const [shortcutsModalOpen, setShortcutsModalOpen] = useState(false);
   const [paletteInitialQuery, setPaletteInitialQuery] = useState("");
   const [activeScopes, setActiveScopes] = useState([CommandScope.GLOBAL, CommandScope.PAGE]);
-  const [registryVersion, setRegistryVersion] = useState(0);
 
   // Store last active element to restore focus after palette or help dismissal
   const lastActiveElementRef = useRef(null);
-
-  // Re-render when commands in registry change
-  useEffect(() => {
-    return commandRegistry.subscribe(() => {
-      setRegistryVersion((v) => v + 1);
-    });
-  }, []);
 
   // Clear overlays and reset scopes on route change
   useEffect(() => {
@@ -343,7 +335,7 @@ export function CommandProvider({ children }) {
       closeShortcutsModal,
       formatShortcut,
       isMac: isMac(),
-      registryVersion,
+      registryVersion: 0,
     }),
     [
       registerCommand,
@@ -361,7 +353,6 @@ export function CommandProvider({ children }) {
       shortcutsModalOpen,
       openShortcutsModal,
       closeShortcutsModal,
-      registryVersion,
     ]
   );
 
@@ -403,26 +394,16 @@ export function useCommands(commands = []) {
   const commandsRef = useRef(commands);
   commandsRef.current = commands;
 
-  // Keep registry updated with latest execute handlers and enabled flags
   useEffect(() => {
-    if (!Array.isArray(commands)) return;
-    commands.forEach((c) => {
+    if (!Array.isArray(commandsRef.current) || commandsRef.current.length === 0) return;
+    const unregs = [];
+    commandsRef.current.forEach((c) => {
       if (c && c.id) {
-        cmd.registerCommand(c);
+        unregs.push(cmd.registerCommand(c));
       }
     });
-  });
-
-  // Unregister on unmount
-  useEffect(() => {
     return () => {
-      if (Array.isArray(commandsRef.current)) {
-        commandsRef.current.forEach((c) => {
-          if (c && c.id) {
-            cmd.unregisterCommand(c.id);
-          }
-        });
-      }
+      unregs.forEach((fn) => fn());
     };
   }, [cmd]);
 }
