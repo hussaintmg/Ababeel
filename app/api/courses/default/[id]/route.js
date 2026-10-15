@@ -116,8 +116,8 @@ export async function PUT(request, { params }) {
     if (body.currencySymbol !== undefined) updateFields.currencySymbol = body.currencySymbol?.trim() || "£";
     if (body.currencyCode !== undefined) updateFields.currencyCode = body.currencyCode?.trim() || "GBP";
     if (body.country !== undefined) updateFields.country = body.country?.trim() || "United Kingdom";
-    if (body.level !== undefined) updateFields.level = body.level || null;
-    if (body.awardingBody !== undefined) updateFields.awardingBody = body.awardingBody || null;
+    if (body.level !== undefined) updateFields.level = (body.level && isValidObjectId(body.level)) ? body.level : null;
+    if (body.awardingBody !== undefined) updateFields.awardingBody = (body.awardingBody && isValidObjectId(body.awardingBody)) ? body.awardingBody : null;
     if (body.category !== undefined) updateFields.category = body.category?.trim() || "";
     if (body.duration !== undefined) updateFields.duration = body.duration?.trim() || "";
     if (body.durationDays !== undefined) updateFields.durationDays = Number(body.durationDays) || 0;
@@ -133,6 +133,7 @@ export async function PUT(request, { params }) {
     if (body.featured !== undefined) updateFields.featured = !!body.featured;
     if (body.displayOrder !== undefined) updateFields.displayOrder = Number(body.displayOrder) || 0;
     if (body.status !== undefined) updateFields.status = body.status || "active";
+    if (authUser?._id) updateFields.updatedBy = authUser._id;
 
     const course = await Course.findByIdAndUpdate(
       id,

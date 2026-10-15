@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import {
   Plus,
   Edit,
@@ -29,6 +29,7 @@ import { useSelection } from "@/hooks/useSelection";
 
 const DefaultCoursesPage = () => {
   const router = useRouter();
+  const pathname = usePathname();
   const [courses, setCourses] = useState([]);
   const [filteredCourses, setFilteredCourses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -134,6 +135,19 @@ const DefaultCoursesPage = () => {
   const handlePageSizeChange = (newSize) => {
     setPageSize(newSize);
     setPage(1);
+  };
+
+  // Navigation handlers
+  const handleEditCourse = (courseId) => {
+    const isDefault = pathname?.includes("/default-course");
+    const target = isDefault ? "/admin/default-course/new" : "/admin/courses/new";
+    router.push(`${target}?edit=${courseId}`);
+  };
+
+  const handleAddCourse = () => {
+    const isDefault = pathname?.includes("/default-course");
+    const target = isDefault ? "/admin/default-course/new" : "/admin/courses/new";
+    router.push(target);
   };
 
   // Handle edit start
@@ -367,8 +381,8 @@ const DefaultCoursesPage = () => {
               Refresh
             </button>
             <button
-              onClick={() => router.push("/admin/default-course/new")}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+              onClick={handleAddCourse}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 cursor-pointer"
             >
               <Plus className="h-4 w-4" />
               Add Course
@@ -418,8 +432,8 @@ const DefaultCoursesPage = () => {
                 : "Get started by creating a new course"}
             </p>
             <button
-              onClick={() => router.push("/owner/default-course/new")}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+              onClick={handleAddCourse}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 cursor-pointer"
             >
               Create Course
             </button>
@@ -630,9 +644,9 @@ const DefaultCoursesPage = () => {
                           ) : (
                             <>
                               <button
-                                onClick={() => handleEditStart(course)}
-                                className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg"
-                                title="Edit"
+                                onClick={() => handleEditCourse(course._id)}
+                                className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                                title="Edit Course"
                               >
                                 <Edit className="h-4 w-4" />
                               </button>

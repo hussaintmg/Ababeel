@@ -19,10 +19,12 @@ import {
   HelpCircle,
   Image as ImageIcon,
   CheckCircle,
+  Check,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { fetchCurrencies, searchCurrencies } from "@/utils/currency";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import axios from "axios";
 
 const slugify = (text) =>
   String(text || "")
@@ -32,10 +34,22 @@ const slugify = (text) =>
     .replace(/[\s_-]+/g, "-")
     .replace(/^-+|-+$/g, "");
 
-export default function CreateCourseForm() {
+export default function CreateCourseForm({ editId: propEditId, onSuccess, redirectUrl }) {
   const { user, getUserData } = useAuth();
   const api = createApiClient();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+
+  const editId = propEditId || searchParams?.get("edit") || searchParams?.get("id") || searchParams?.get("courseId");
+  const isEditing = Boolean(editId);
+  const [isLoadingCourse, setIsLoadingCourse] = useState(false);
+
+  const isAdmin = pathname?.includes("/admin");
+  const isDefaultPath = pathname?.includes("/default-course");
+  const manageUrl = redirectUrl || (isAdmin
+    ? (isDefaultPath ? "/admin/default-course/all" : "/admin/courses/all")
+    : (isDefaultPath ? "/owner/default-course/all" : "/owner/courses/all"));
 
   const [activeTab, setActiveTab] = useState("general");
   const [isLoading, setIsLoading] = useState(false);
@@ -98,6 +112,70 @@ export default function CreateCourseForm() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Load existing course data if editing
+  useEffect(() => {
+    if (!editId) return;
+
+    let isMounted = true;
+    const fetchCourseDetails = async () => {
+      try {
+        setIsLoadingCourse(true);
+        const res = await axios.get(`/api/courses/default/${editId}`);
+        if (!isMounted) return;
+
+        if (res.data?.success && res.data?.data) {
+          const c = res.data.data;
+          setFormData({
+            name: c.name || "",
+            code: c.code || "",
+            slug: c.slug || "",
+            price: c.price !== undefined ? String(c.price) : "0",
+            currency: c.currency || "GBP",
+            currencySymbol: c.currencySymbol || "£",
+            currencyCode: c.currencyCode || "GBP",
+            country: c.country || "United Kingdom",
+            level: (c.level?._id || c.level) || "",
+            awardingBody: (c.awardingBody?._id || c.awardingBody) || "",
+            category: c.category || "",
+            duration: c.duration || "3 Days",
+            durationDays: c.durationDays !== undefined ? String(c.durationDays) : "3",
+            shortDescription: c.shortDescription || "",
+            description: c.description || "",
+            courseContent: c.courseContent || "",
+            learningOutcomes: c.learningOutcomes || "",
+            requirements: c.requirements || "",
+            whoShouldAttend: c.whoShouldAttend || "",
+            featuredImage: c.featuredImage || "",
+            certificateImage: c.certificateImage || "",
+            certificationInfo: c.certificationInfo || "",
+            featured: Boolean(c.featured),
+            displayOrder: c.displayOrder !== undefined ? c.displayOrder : 0,
+            status: c.status || "active",
+            faqs: Array.isArray(c.faqs) && c.faqs.length > 0
+              ? c.faqs.map((f) => ({ question: f.question || "", answer: f.answer || "" }))
+              : [{ question: "", answer: "" }],
+          });
+        } else {
+          toast.error(res.data?.error || "Course not found");
+          router.push(manageUrl);
+        }
+      } catch (err) {
+        if (!isMounted) return;
+        console.error("Error fetching course for edit:", err);
+        toast.error(err.response?.data?.error || "Failed to load course details");
+        router.push(manageUrl);
+      } finally {
+        if (isMounted) setIsLoadingCourse(false);
+      }
+    };
+
+    fetchCourseDetails();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [editId, manageUrl, router]);
 
   const loadLevelsAndAwardingBodies = async () => {
     try {
@@ -202,7 +280,7 @@ export default function CreateCourseForm() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     if (!validateForm()) {
       toast.error("Please fill in the required course fields");
       return;
@@ -211,14 +289,14 @@ export default function CreateCourseForm() {
     setIsLoading(true);
     try {
       const cleanFaqs = formData.faqs.filter(
-        (f) => f.question.trim() !== "" || f.answer.trim() !== ""
+        (f) => f.question?.trim() !== "" || f.answer?.trim() !== ""
       );
 
       const apiData = {
         ...formData,
         name: formData.name.trim(),
-        code: formData.code.trim(),
-        slug: formData.slug.trim() || slugify(formData.name),
+        code: formData.code?.trim() || "",
+        slug: formData.slug?.trim() || slugify(formData.name),
         price: parseFloat(formData.price) || 0,
         durationDays: Number(formData.durationDays) || 0,
         displayOrder: Number(formData.displayOrder) || 0,
@@ -227,37 +305,63 @@ export default function CreateCourseForm() {
         faqs: cleanFaqs,
       };
 
-      const response = await api.post("/api/courses/default/add", apiData);
-
-      if (response.data?.success) {
-        toast.success("Course created successfully!");
-        if (getUserData) await getUserData();
-        router.push("/owner/default-course/all");
+      if (isEditing) {
+        const response = await axios.put(`/api/courses/default/${editId}`, apiData);
+        if (response.data?.success) {
+          toast.success("Course updated successfully!");
+          if (getUserData) await getUserData();
+          if (onSuccess) onSuccess(response.data.data);
+          router.push(manageUrl);
+        } else {
+          toast.error(response.data?.error || "Failed to update course");
+        }
       } else {
-        toast.error(response.data?.error || "Failed to create course");
+        const response = await api.post("/api/courses/default/add", apiData);
+        if (response.data?.success) {
+          toast.success("Course created successfully!");
+          if (getUserData) await getUserData();
+          if (onSuccess) onSuccess(response.data.course);
+          router.push(manageUrl);
+        } else {
+          toast.error(response.data?.error || "Failed to create course");
+        }
       }
     } catch (error) {
-      console.error("Course creation error:", error);
-      toast.error(error.response?.data?.error || error.message || "Failed to create course");
+      console.error("Course save error:", error);
+      toast.error(error.response?.data?.error || error.message || "Failed to save course");
     } finally {
       setIsLoading(false);
     }
   };
+
+  if (isLoadingCourse) {
+    return (
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+        <Loader2 className="w-10 h-10 text-blue-600 animate-spin mx-auto mb-4" />
+        <h3 className="text-lg font-semibold text-gray-800">Loading Course Data...</h3>
+        <p className="text-sm text-gray-500 mt-1">Fetching course details, syllabus, and settings</p>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
       {/* Header */}
       <div className="p-6 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gray-50/50">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">Create Course</h2>
+          <h2 className="text-xl font-bold text-gray-900">
+            {isEditing ? "Edit Course" : "Create Course"}
+          </h2>
           <p className="text-sm text-gray-500 mt-0.5">
-            Add a course with full syllabus, certification, outcomes, and pricing
+            {isEditing
+              ? "Update full course details, syllabus, media, and pricing"
+              : "Add a course with full syllabus, certification, outcomes, and pricing"}
           </p>
         </div>
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => router.push("/owner/default-course/all")}
+            onClick={() => router.push(manageUrl)}
             className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
           >
             Cancel
@@ -268,8 +372,14 @@ export default function CreateCourseForm() {
             disabled={isLoading || !formData.name}
             className="inline-flex items-center gap-2 px-5 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-            Save Course
+            {isLoading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : isEditing ? (
+              <Check className="w-4 h-4" />
+            ) : (
+              <Plus className="w-4 h-4" />
+            )}
+            {isEditing ? "Update Course" : "Save Course"}
           </button>
         </div>
       </div>
@@ -752,18 +862,24 @@ export default function CreateCourseForm() {
         <div className="pt-6 mt-8 border-t border-gray-200 flex items-center justify-between">
           <button
             type="button"
-            onClick={() => router.push("/owner/default-course/all")}
-            className="px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+            onClick={() => router.push(manageUrl)}
+            className="px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={isLoading || !formData.name}
-            className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+            className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm cursor-pointer"
           >
-            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
-            Save & Publish Course
+            {isLoading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : isEditing ? (
+              <Check className="w-4 h-4" />
+            ) : (
+              <CheckCircle className="w-4 h-4" />
+            )}
+            {isEditing ? "Update Course" : "Save & Publish Course"}
           </button>
         </div>
       </form>
