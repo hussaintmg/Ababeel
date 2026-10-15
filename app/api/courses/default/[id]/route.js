@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/utils/db";
 import Course from "@/models/Course";
+import CourseLevel from "@/models/CourseLevel";
+import AwardingBody from "@/models/AwardingBody";
 import { getAuthenticatedUser, requireAdmin } from "@/lib/auth";
 import { isValidObjectId } from "@/lib/validation";
 
@@ -17,7 +19,9 @@ export async function GET(request, { params }) {
 
     await connectDB();
 
-    const course = await Course.findById(id);
+    const course = await Course.findById(id)
+      .populate("level", "name slug color icon")
+      .populate("awardingBody", "name slug logo");
 
     if (!course) {
       return NextResponse.json(

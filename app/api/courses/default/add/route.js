@@ -3,6 +3,8 @@ import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import connectDB from "@/utils/db";
 import Course from "@/models/Course";
+import CourseLevel from "@/models/CourseLevel";
+import AwardingBody from "@/models/AwardingBody";
 import User from "@/models/User";
 
 export const dynamic = "force-dynamic";

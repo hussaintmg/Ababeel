@@ -1,6 +1,9 @@
 // models/Course.js
 import mongoose from 'mongoose';
 import { slugify } from '@/lib/models/shared';
+import '@/models/CourseLevel';
+import '@/models/AwardingBody';
+import '@/models/User';
 
 const GalleryImageSchema = new mongoose.Schema(
   {
